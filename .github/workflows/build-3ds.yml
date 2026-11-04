@@ -20,11 +20,6 @@ jobs:
       - name: Check out project
         uses: actions/checkout@v4
 
-      - name: Install 3DS libraries and tools
-        run: |
-          dkp-pacman -Syu --noconfirm
-          dkp-pacman -S --noconfirm --needed 3ds-dev citro2d 3dstools
-
       - name: Prepare original homebrew icon
         run: base64 -d native/icon.png.b64 > native/icon.png
 
