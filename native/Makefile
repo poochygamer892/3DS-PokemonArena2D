@@ -35,6 +35,10 @@ else
 export OUTPUT := $(CURDIR)/$(TARGET)
 export TOPDIR := $(CURDIR)
 export APP_ICON := $(CURDIR)/$(ICON)
+export _3DSXDEPS := $(if $(NO_SMDH),,$(OUTPUT).smdh)
+ifeq ($(strip $(NO_SMDH)),)
+export _3DSXFLAGS += --smdh=$(OUTPUT).smdh
+endif
 export VPATH := $(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 export DEPSDIR := $(CURDIR)/$(BUILD)
 
