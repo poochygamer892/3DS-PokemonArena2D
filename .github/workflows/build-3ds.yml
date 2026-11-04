@@ -1,0 +1,51 @@
+name: Build Nintendo 3DS homebrew
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "native/**"
+      - ".github/workflows/build-3ds.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitarm:latest
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Install 3DS libraries and tools
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed 3ds-dev citro2d 3dstools
+
+      - name: Prepare original homebrew icon
+        run: base64 -d native/icon.png.b64 > native/icon.png
+
+      - name: Build 3DSX, SMDH and ELF
+        run: make -C native
+
+      - name: Package CIA for homebrew-enabled consoles
+        run: |
+          makerom -f cia -o native/pokemonarena2d.cia \
+            -rsf native/pokemonarena2d.rsf \
+            -target t \
+            -elf native/pokemonarena2d.elf \
+            -icon native/pokemonarena2d.smdh \
+            -desc app:4
+
+      - name: Upload 3DS packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokemon-arena-2d-homebrew
+          path: |
+            native/pokemonarena2d.3dsx
+            native/pokemonarena2d.cia
+            native/pokemonarena2d.elf
+            native/pokemonarena2d.smdh
