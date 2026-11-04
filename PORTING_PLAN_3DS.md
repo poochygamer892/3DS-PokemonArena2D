@@ -10,12 +10,12 @@ El proyecto conserva dos referencias distintas: las compilaciones finales de Emp
 
 1. Implementar el bucle nativo en C con devkitARM/libctru, citro3d y citro2d. El primer prototipo está en [`native/`](native/).
 2. Completar la pelea offline: movimiento, ataques, HP, enfriamientos, cambios, esquiva, definitivo y suministros.
-3. Compilar `.3dsx` y empaquetar el mismo juego como `.cia`; `.github/workflows/build-3ds.yml` hace esta compilación en GitHub Actions.
-4. Comprobar ambos formatos en emulador o consola. Añadir Historia, editor de equipos, más Pokémon y arenas después del combate local.
+3. Compilar `.3dsx` y empaquetar el mismo juego como `.cia`; GitHub Actions ya generó ambos formatos y los publicó como [artefactos descargables](https://github.com/poochygamer892/3DS-PokemonArena2D/actions/runs/41822110482).
+4. Probar ambos formatos en emulador o consola. Añadir Historia, editor de equipos, más Pokémon y arenas después del combate local.
 
 ## Bloqueos de compilación
 
-El host local no tiene una toolchain 3DS ejecutable. Docker descargó imágenes de devkitPro, pero no pudo crear sus sistemas de archivos por falta de espacio; por eso la compilación se trasladó a GitHub Actions. Todavía no hay binarios. La primera versión contiene un equipo reducido y una arena dibujada en el código; usa sprites Pokémon propios para el prototipo, no los sprites o escenarios de Poke2D Arena.
+El host local no tiene una toolchain 3DS ejecutable. Docker descargó imágenes de devkitPro, pero no pudo crear sus sistemas de archivos por falta de espacio; la compilación se trasladó a GitHub Actions. La CI ya produjo `.3dsx`, `.cia`, `.elf` y `.smdh`; los archivos están en los [artefactos de compilación](https://github.com/poochygamer892/3DS-PokemonArena2D/actions/runs/41822110482). La build no se ha ejecutado en un emulador ni en hardware 3DS. La primera versión contiene un equipo reducido y una arena dibujada en el código; usa sprites Pokémon dibujados para este proyecto, no los sprites o escenarios de Poke2D Arena.
 
 ## Referencia web: Poke2D Arena
 
