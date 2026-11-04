@@ -17,7 +17,7 @@ APP_AUTHOR   := poochygamer892
 ICON         := icon.png
 
 ARCH         := -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
-CFLAGS       := -g -Wall -Wextra -O2 -mword-relocations -ffunction-sections -fdata-sections $(ARCH) -D__3DS__
+CFLAGS       := -g -Wall -Wextra -O2 -mword-relocations -ffunction-sections -fdata-sections $(ARCH) $(INCLUDE) -D__3DS__
 LDFLAGS      := -specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(TARGET).map -Wl,--gc-sections
 LIBS         := -lcitro2d -lcitro3d -lctru -lm
 LIBDIRS      := $(CTRULIB)
