@@ -28,7 +28,7 @@ jobs:
 
       - name: Package CIA for homebrew-enabled consoles
         run: |
-          makerom -f cia -o native/pokemonarena2d.cia \
+          /opt/devkitpro/tools/bin/makerom -f cia -o native/pokemonarena2d.cia \
             -rsf native/pokemonarena2d.rsf \
             -target t \
             -elf native/pokemonarena2d.elf \
