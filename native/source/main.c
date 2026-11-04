@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "pokemon_sprites.h"
 
 #define TEAM_SIZE 3
 #define TOP_W 400.0f
@@ -38,24 +39,11 @@ typedef struct {
     float x, y, vx, vy, life;
     int damage;
     int active;
+    int side;
     u32 color;
 } Shot;
 
-static const u32 kBody[6] = {
-    0xFFD83DFF, 0x72C979FF, 0x69BCEBFF,
-    0xEF813FFF, 0x397ED1FF, 0xA96D48FF
-};
-static const u32 kAccent[6] = {
-    0xFFF078FF, 0x4F9E57FF, 0xC98955FF,
-    0xF7C545FF, 0xE44852FF, 0xF3DDB2FF
-};
-static const u32 kDark[6] = {
-    0x493523FF, 0x28563EFF, 0x29475AFF,
-    0x673C31FF, 0x244B77FF, 0x573B2EFF
-};
-static const u32 kOutline = 0x242637FF;
 static const u32 kWhite = 0xFFF3D9FF;
-static const u32 kRed = 0xE84D5BFF;
 
 static Pokemon gTeam[2][TEAM_SIZE] = {
     {
@@ -83,11 +71,12 @@ static C3D_RenderTarget *gBottom;
 static C2D_TextBuf gTextBuf;
 static Scene gScene = SCENE_TITLE;
 static Combatant gFighter[2];
-static Shot gShots[4];
+static Shot gShots[8];
 static int gActive[2] = { 0, 0 };
 static int gWinner = -1;
 static float gBattleTime = 0.0f;
 static float gCpuBasicCd = 0.0f;
+static float gCpuSkillCd = 2.0f;
 static float gSupplyIn = 10.0f;
 static float gSupplyX = 0.0f;
 static float gSupplyY = 0.0f;
@@ -158,127 +147,39 @@ static void drawBar(float x, float y, float w, float h, int hp, int maxHp)
         rect(x + 1.0f, y + 1.0f, (w - 2.0f) * ratio, h - 2.0f, ratio > 0.35f ? C_GREEN : C_RED);
 }
 
-static void spriteBox(float x, float y, float pixel, int sx, int sy, int w, int h, u32 color)
+static void drawSpriteRuns(const PokemonSpriteRun *runs, int count, int resolution,
+                           float x, float y, float size, int mirror)
 {
-    rect(x + (float)sx * pixel, y + (float)sy * pixel,
-         (float)w * pixel, (float)h * pixel, color);
+    const float scale = size / (float)resolution;
+    for (int i = 0; i < count; ++i) {
+        const PokemonSpriteRun *run = &runs[i];
+        float sx = mirror ? (float)resolution - (float)run->x - (float)run->w : (float)run->x;
+        rect(x + sx * scale, y + (float)run->y * scale,
+             (float)run->w * scale + 0.2f, scale + 0.2f, run->rgba);
+    }
 }
 
-static void spriteOutline(float x, float y, float pixel, int sx, int sy, int w, int h, u32 fill)
+static void drawPokemonSprite(int art, int back, float x, float y, float size, int mirror)
 {
-    spriteBox(x, y, pixel, sx, sy, w, h, kOutline);
-    if (w > 2 && h > 2)
-        spriteBox(x, y, pixel, sx + 1, sy + 1, w - 2, h - 2, fill);
+    if (art < 0) art = 0;
+    art %= 6;
+    int side = back ? 1 : 0;
+    drawSpriteRuns(kPokemonSprites48[side][art], kPokemonSpriteRunCount48[side][art],
+                   48, x, y, size, mirror);
+}
+
+static void drawPokemonIcon(int art, int back, float x, float y, float size)
+{
+    if (art < 0) art = 0;
+    art %= 6;
+    int side = back ? 1 : 0;
+    drawSpriteRuns(kPokemonSprites16[side][art], kPokemonSpriteRunCount16[side][art],
+                   16, x, y, size, 0);
 }
 
 static void drawCreature(int art, float x, float y, float pixel)
 {
-    art %= 6;
-    u32 body = kBody[art];
-    u32 light = kAccent[art];
-    u32 shade = kDark[art];
-
-    /* Each design uses a large silhouette and species-specific details so it
-       stays recognizable on the 3DS screen at small sizes. */
-    if (art == 0) { /* Pikachu: pointed ears, red cheeks and lightning tail. */
-        spriteOutline(x, y, pixel, 13, 7, 3, 3, body);
-        spriteOutline(x, y, pixel, 14, 5, 2, 3, body);
-        spriteBox(x, y, pixel, 14, 5, 2, 1, shade);
-        spriteOutline(x, y, pixel, 3, 0, 3, 7, body);
-        spriteOutline(x, y, pixel, 10, 0, 3, 7, body);
-        spriteBox(x, y, pixel, 3, 0, 3, 2, shade);
-        spriteBox(x, y, pixel, 10, 0, 3, 2, shade);
-        spriteOutline(x, y, pixel, 3, 4, 10, 8, body);
-        spriteOutline(x, y, pixel, 5, 10, 7, 5, body);
-        spriteBox(x, y, pixel, 4, 7, 2, 2, kOutline);
-        spriteBox(x, y, pixel, 10, 7, 2, 2, kOutline);
-        spriteBox(x, y, pixel, 3, 9, 2, 2, kRed);
-        spriteBox(x, y, pixel, 11, 9, 2, 2, kRed);
-        spriteBox(x, y, pixel, 7, 5, 2, 1, light);
-        spriteBox(x, y, pixel, 6, 14, 2, 2, shade);
-        spriteBox(x, y, pixel, 10, 14, 2, 2, shade);
-        spriteBox(x, y, pixel, 12, 8, 2, 1, light);
-    } else if (art == 1) { /* Bulbasaur: squat body and unmistakable seed bulb. */
-        spriteOutline(x, y, pixel, 6, 1, 8, 8, shade);
-        spriteBox(x, y, pixel, 7, 2, 6, 6, 0x79B94EFF);
-        spriteBox(x, y, pixel, 5, 4, 3, 2, 0x79B94EFF);
-        spriteBox(x, y, pixel, 12, 3, 3, 2, 0x79B94EFF);
-        spriteBox(x, y, pixel, 9, 0, 2, 3, 0x79B94EFF);
-        spriteOutline(x, y, pixel, 3, 8, 11, 6, body);
-        spriteOutline(x, y, pixel, 1, 5, 9, 7, body);
-        spriteBox(x, y, pixel, 2, 6, 2, 2, light);
-        spriteBox(x, y, pixel, 4, 7, 1, 2, kOutline);
-        spriteBox(x, y, pixel, 7, 7, 1, 2, kOutline);
-        spriteBox(x, y, pixel, 3, 12, 2, 3, shade);
-        spriteBox(x, y, pixel, 10, 12, 2, 3, shade);
-        spriteBox(x, y, pixel, 5, 13, 2, 2, shade);
-        spriteBox(x, y, pixel, 8, 13, 2, 2, shade);
-    } else if (art == 2) { /* Squirtle: blue turtle, curled tail and shell. */
-        spriteOutline(x, y, pixel, 8, 7, 7, 7, shade);
-        spriteBox(x, y, pixel, 9, 8, 5, 5, 0xC98C58FF);
-        spriteBox(x, y, pixel, 11, 8, 1, 5, 0x815039FF);
-        spriteBox(x, y, pixel, 9, 10, 5, 1, 0x815039FF);
-        spriteOutline(x, y, pixel, 3, 8, 8, 6, body);
-        spriteOutline(x, y, pixel, 1, 4, 8, 7, body);
-        spriteBox(x, y, pixel, 2, 5, 2, 2, light);
-        spriteBox(x, y, pixel, 4, 6, 1, 2, kOutline);
-        spriteBox(x, y, pixel, 7, 6, 1, 2, kOutline);
-        spriteBox(x, y, pixel, 4, 9, 4, 2, kWhite);
-        spriteBox(x, y, pixel, 3, 13, 2, 2, shade);
-        spriteBox(x, y, pixel, 9, 13, 2, 2, shade);
-        spriteOutline(x, y, pixel, 12, 12, 3, 3, body);
-    } else if (art == 3) { /* Charizard: wings, horns and a flaming tail. */
-        spriteOutline(x, y, pixel, 0, 4, 6, 9, shade);
-        spriteOutline(x, y, pixel, 10, 4, 6, 9, shade);
-        spriteBox(x, y, pixel, 1, 6, 4, 5, 0x5475C4FF);
-        spriteBox(x, y, pixel, 11, 6, 4, 5, 0x5475C4FF);
-        spriteBox(x, y, pixel, 2, 7, 2, 3, 0x8EB0EFFF);
-        spriteBox(x, y, pixel, 12, 7, 2, 3, 0x8EB0EFFF);
-        spriteOutline(x, y, pixel, 6, 6, 5, 8, body);
-        spriteOutline(x, y, pixel, 5, 3, 6, 6, body);
-        spriteBox(x, y, pixel, 5, 2, 2, 2, light);
-        spriteBox(x, y, pixel, 9, 2, 2, 2, light);
-        spriteBox(x, y, pixel, 7, 5, 1, 1, kOutline);
-        spriteBox(x, y, pixel, 10, 5, 1, 1, kOutline);
-        spriteBox(x, y, pixel, 7, 13, 2, 2, shade);
-        spriteBox(x, y, pixel, 10, 13, 2, 2, shade);
-        spriteBox(x, y, pixel, 10, 12, 3, 2, body);
-        spriteBox(x, y, pixel, 13, 11, 2, 3, kRed);
-        spriteBox(x, y, pixel, 14, 12, 1, 2, light);
-    } else if (art == 4) { /* Gyarados: long arched body, crest, fins and whiskers. */
-        spriteOutline(x, y, pixel, 7, 1, 7, 5, shade);
-        spriteBox(x, y, pixel, 8, 2, 5, 3, body);
-        spriteBox(x, y, pixel, 8, 0, 2, 2, kRed);
-        spriteBox(x, y, pixel, 11, 0, 2, 2, kRed);
-        spriteOutline(x, y, pixel, 6, 5, 5, 4, shade);
-        spriteOutline(x, y, pixel, 3, 8, 6, 4, shade);
-        spriteOutline(x, y, pixel, 6, 11, 6, 4, shade);
-        spriteBox(x, y, pixel, 7, 6, 3, 2, body);
-        spriteBox(x, y, pixel, 4, 9, 4, 2, body);
-        spriteBox(x, y, pixel, 7, 12, 4, 2, body);
-        spriteBox(x, y, pixel, 4, 6, 2, 2, kRed);
-        spriteBox(x, y, pixel, 2, 7, 2, 1, kWhite);
-        spriteBox(x, y, pixel, 2, 9, 2, 1, kWhite);
-        spriteBox(x, y, pixel, 11, 5, 3, 2, kRed);
-        spriteBox(x, y, pixel, 11, 13, 3, 2, kRed);
-        spriteBox(x, y, pixel, 8, 3, 1, 1, kWhite);
-    } else { /* Eevee: large ears, cream ruff and fluffy tail. */
-        spriteOutline(x, y, pixel, 3, 0, 4, 7, shade);
-        spriteOutline(x, y, pixel, 10, 0, 4, 7, shade);
-        spriteBox(x, y, pixel, 4, 1, 2, 4, 0xE8BFA1FF);
-        spriteBox(x, y, pixel, 11, 1, 2, 4, 0xE8BFA1FF);
-        spriteOutline(x, y, pixel, 4, 4, 9, 8, body);
-        spriteBox(x, y, pixel, 3, 9, 3, 3, light);
-        spriteBox(x, y, pixel, 11, 9, 3, 3, light);
-        spriteBox(x, y, pixel, 5, 11, 7, 4, shade);
-        spriteBox(x, y, pixel, 5, 7, 1, 2, kOutline);
-        spriteBox(x, y, pixel, 11, 7, 1, 2, kOutline);
-        spriteBox(x, y, pixel, 8, 9, 2, 1, shade);
-        spriteOutline(x, y, pixel, 12, 10, 4, 4, body);
-        spriteBox(x, y, pixel, 14, 11, 2, 2, light);
-        spriteBox(x, y, pixel, 6, 14, 2, 2, shade);
-        spriteBox(x, y, pixel, 10, 14, 2, 2, shade);
-    }
+    drawPokemonSprite(art, 0, x, y, pixel * 16.0f, 0);
 }
 
 static void resetBattle(void)
@@ -292,13 +193,14 @@ static void resetBattle(void)
     memset(gFighter, 0, sizeof(gFighter));
     memset(gShots, 0, sizeof(gShots));
     gFighter[0].x = 92.0f;
-    gFighter[0].y = 135.0f;
+    gFighter[0].y = 155.0f;
     gFighter[1].x = 308.0f;
-    gFighter[1].y = 105.0f;
+    gFighter[1].y = 130.0f;
     gFighter[0].ultimate = 50.0f;
     gFighter[1].ultimate = 50.0f;
     gBattleTime = 0.0f;
     gCpuBasicCd = 0.8f;
+    gCpuSkillCd = 2.0f;
     gSupplyIn = 10.0f;
     gSupplyLife = 0.0f;
     gSupplyCount = 0;
@@ -367,16 +269,17 @@ static void damagePokemon(int side, int damage, float chargeRatio)
     }
 }
 
-static void fireSkillShot(int slot, int damage, float range)
+static void fireSkillShot(int side, int slot, int damage, float range)
 {
-    float dx = gFighter[1].x - gFighter[0].x;
-    float dy = gFighter[1].y - gFighter[0].y;
+    int opponent = side == 0 ? 1 : 0;
+    float dx = gFighter[opponent].x - gFighter[side].x;
+    float dy = gFighter[opponent].y - gFighter[side].y;
     float mag = sqrtf(dx * dx + dy * dy);
     if (mag < 0.1f || mag > range) return;
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 8; ++i) {
         if (gShots[i].active) continue;
-        int species = gTeam[0][gActive[0]].speciesArt;
+        int species = gTeam[side][gActive[side]].speciesArt;
         static const u32 colors[6][3] = {
             { 0xFFF04FFF, 0xF5C735FF, 0x9B79FFFF },
             { 0x65D878FF, 0xA8E657FF, 0xFFF07AFF },
@@ -385,29 +288,31 @@ static void fireSkillShot(int slot, int damage, float range)
             { 0x4A9EFFFF, 0xED5062FF, 0x7DD8F2FF },
             { 0xB48BFFFF, 0xF2DDB6FF, 0xF3A85FFF }
         };
-        gShots[i].x = gFighter[0].x;
-        gShots[i].y = gFighter[0].y;
+        gShots[i].x = gFighter[side].x;
+        gShots[i].y = gFighter[side].y;
         gShots[i].vx = dx / mag * 245.0f;
         gShots[i].vy = dy / mag * 245.0f;
         gShots[i].life = 1.4f;
         gShots[i].damage = damage;
         gShots[i].color = colors[species][slot];
         gShots[i].active = 1;
+        gShots[i].side = side;
         return;
     }
 }
 
 static void updateShots(float dt)
 {
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 8; ++i) {
         Shot *shot = &gShots[i];
         if (!shot->active) continue;
         shot->x += shot->vx * dt;
         shot->y += shot->vy * dt;
         shot->life -= dt;
-        if (distance2(shot->x, shot->y, gFighter[1].x, gFighter[1].y) < 20.0f * 20.0f) {
-            damagePokemon(1, shot->damage, 30.0f);
-            gFighter[0].ultimate = clampf(gFighter[0].ultimate + 6.0f, 0.0f, 100.0f);
+        int target = shot->side == 0 ? 1 : 0;
+        if (distance2(shot->x, shot->y, gFighter[target].x, gFighter[target].y) < 24.0f * 24.0f) {
+            damagePokemon(target, shot->damage, 30.0f);
+            gFighter[shot->side].ultimate = clampf(gFighter[shot->side].ultimate + 6.0f, 0.0f, 100.0f);
             shot->active = 0;
         } else if (shot->life <= 0.0f || shot->x < 12.0f || shot->x > 388.0f ||
                    shot->y < 42.0f || shot->y > 230.0f) {
@@ -442,7 +347,7 @@ static void useSkill(int slot)
     static const int damage[3] = { 12, 17, 22 };
     static const float range[3] = { 175.0f, 220.0f, 270.0f };
     c->skillCd[slot] = cooldown[slot];
-    fireSkillShot(slot, damage[slot], range[slot]);
+    fireSkillShot(0, slot, damage[slot], range[slot]);
 }
 
 static void useDash(void)
@@ -477,7 +382,7 @@ static void useUltimate(void)
 static void spawnSupply(void)
 {
     static const float points[8][2] = {
-        { 70, 78 }, { 200, 72 }, { 330, 78 }, { 72, 180 },
+        { 70, 104 }, { 200, 96 }, { 330, 104 }, { 72, 180 },
         { 200, 185 }, { 330, 180 }, { 120, 125 }, { 280, 125 }
     };
     int p = gSupplyCount % 8;
@@ -526,20 +431,29 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     player->moveY = moveY;
     float speed = player->speedBoost > 0.0f ? 125.0f : 96.0f;
     player->x = clampf(player->x + moveX * speed * dt, 26.0f, 374.0f);
-    player->y = clampf(player->y + moveY * speed * dt, 50.0f, 216.0f);
+    player->y = clampf(player->y + moveY * speed * dt, 96.0f, 184.0f);
 
     float dx = player->x - cpu->x;
     float dy = player->y - cpu->y;
     float d = sqrtf(dx * dx + dy * dy);
     if (d > 58.0f && d > 0.1f) {
         cpu->x = clampf(cpu->x + dx / d * 34.0f * dt, 26.0f, 374.0f);
-        cpu->y = clampf(cpu->y + dy / d * 34.0f * dt, 50.0f, 216.0f);
+        cpu->y = clampf(cpu->y + dy / d * 34.0f * dt, 96.0f, 184.0f);
     } else {
         gCpuBasicCd -= dt;
         if (gCpuBasicCd <= 0.0f) {
             gCpuBasicCd = 0.9f;
             damagePokemon(0, 7, 30.0f);
         }
+    }
+
+    gCpuSkillCd -= dt;
+    if (gCpuSkillCd <= 0.0f && d <= 250.0f) {
+        int cpuSpecies = gTeam[1][gActive[1]].speciesArt;
+        int slot = gActive[1] % 3;
+        int damage = cpuSpecies == 4 ? 18 : 14;
+        fireSkillShot(1, slot, damage, 250.0f);
+        gCpuSkillCd = 3.4f + (float)slot * 0.5f;
     }
 
     player->basicCd = fmaxf(0.0f, player->basicCd - dt);
@@ -572,24 +486,38 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
 static void drawArena(void)
 {
-    rect(0, 0, TOP_W, TOP_H, 0x315D3FFF);
-    rect(10, 44, 380, 186, 0x6CAF50FF);
-    for (int row = 0; row < 12; ++row) {
-        for (int col = 0; col < 20; ++col) {
-            if ((row + col) % 3 == 0)
-                rect(12.0f + col * 19.0f, 46.0f + row * 15.0f, 18.0f, 14.0f, 0x70B554FF);
+    static const u32 crowd[5] = { 0xF16864FF, 0xF4C44EFF, 0x5BC5C6FF, 0x7889E8FF, 0xF2F0D8FF };
+    rect(0, 0, TOP_W, TOP_H, 0x182239FF);
+    rect(8, 42, 384, 39, 0x2A3451FF);
+    rect(8, 43, 384, 3, 0xE4B550FF);
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 36; ++col) {
+            if ((col + row * 2) % 5 != 0)
+                rect(13.0f + col * 10.4f, 49.0f + row * 8.0f, 6.0f, 4.0f,
+                     crowd[(col * 3 + row * 2) % 5]);
         }
     }
-    rect(10, 44, 380, 2, 0xF0F0D8FF);
-    rect(10, 228, 380, 2, 0xF0F0D8FF);
-    rect(10, 44, 2, 186, 0xF0F0D8FF);
-    rect(388, 44, 2, 186, 0xF0F0D8FF);
-    rect(199, 44, 2, 186, 0xF0F0D8FF);
-    C2D_DrawCircleSolid(200, 137, 0.4f, 34, c2dColor(0xF0F0D8FF));
-    C2D_DrawCircleSolid(200, 137, 0.3f, 31, c2dColor(0x6CAF50FF));
-    rect(198, 134, 4, 6, 0xF0F0D8FF);
-    rect(196, 94, 8, 2, 0xF0F0D8FF);
-    rect(196, 178, 8, 2, 0xF0F0D8FF);
+    rect(8, 77, 384, 5, 0xD6A53EFF);
+    rect(10, 82, 380, 148, 0x357F51FF);
+    for (int col = 0; col < 10; ++col)
+        rect(12.0f + col * 38.0f, 84, 19.0f, 144, col % 2 ? 0x398655FF : 0x34794DFF);
+    rect(16, 86, 368, 140, 0x00000018);
+    rect(10, 82, 380, 2, 0xF1E8CFFF);
+    rect(10, 228, 380, 2, 0xF1E8CFFF);
+    rect(10, 82, 2, 148, 0xF1E8CFFF);
+    rect(388, 82, 2, 148, 0xF1E8CFFF);
+    rect(199, 82, 2, 148, 0xF1E8CFFF);
+    C2D_DrawCircleSolid(200, 156, 0.4f, 35, c2dColor(0xF1E8CFFF));
+    C2D_DrawCircleSolid(200, 156, 0.3f, 32, c2dColor(0x357F51FF));
+    rect(198, 153, 4, 6, 0xF1E8CFFF);
+    rect(108, 82, 2, 27, 0xF1E8CFFF);
+    rect(290, 82, 2, 27, 0xF1E8CFFF);
+    rect(108, 107, 36, 2, 0xF1E8CFFF);
+    rect(256, 107, 36, 2, 0xF1E8CFFF);
+    rect(108, 203, 36, 2, 0xF1E8CFFF);
+    rect(256, 203, 36, 2, 0xF1E8CFFF);
+    rect(108, 203, 2, 27, 0xF1E8CFFF);
+    rect(290, 203, 2, 27, 0xF1E8CFFF);
 }
 
 static void drawTeamMini(int side, float x, float y)
@@ -597,7 +525,7 @@ static void drawTeamMini(int side, float x, float y)
     for (int i = 0; i < TEAM_SIZE; ++i) {
         float bx = x + i * 18.0f;
         rect(bx, y, 15, 15, i == gActive[side] ? C_GOLD : C_PANEL2);
-        rect(bx + 2, y + 2, 11, 11, kBody[gTeam[side][i].speciesArt]);
+        drawPokemonIcon(gTeam[side][i].speciesArt, side == 0, bx + 1, y + 1, 13);
         if (gTeam[side][i].hp <= 0)
             rect(bx, y + 13, 15, 2, C_RED);
     }
@@ -632,18 +560,22 @@ static void drawBattleTop(void)
         C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.35f, 9, c2dColor(0x18243AFF));
         C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.30f, 6, c2dColor(supplyColor));
     }
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 8; ++i) {
         Shot *shot = &gShots[i];
         if (!shot->active) continue;
         float trailX = shot->x - shot->vx * 0.035f;
         float trailY = shot->y - shot->vy * 0.035f;
-        rect(trailX - 3.0f, trailY - 2.0f, 9.0f, 4.0f, c2dColor(shot->color));
+        rect(trailX - 3.0f, trailY - 2.0f, 9.0f, 4.0f, shot->color);
         C2D_DrawCircleSolid(shot->x, shot->y, 0.38f, 7.0f, c2dColor(shot->color));
         C2D_DrawCircleSolid(shot->x - 1.0f, shot->y - 1.0f, 0.42f, 2.5f, c2dColor(kWhite));
     }
     float bob = sinf(gBattleTime * 5.0f) * 2.0f;
-    drawCreature(p->speciesArt, gFighter[0].x - 32, gFighter[0].y - 32 + bob, 4.0f);
-    drawCreature(e->speciesArt, gFighter[1].x - 32, gFighter[1].y - 32 - bob, 4.0f);
+    rect(gFighter[0].x - 27.0f, gFighter[0].y + 29.0f, 54.0f, 7.0f, 0x17233866);
+    rect(gFighter[1].x - 27.0f, gFighter[1].y + 29.0f, 54.0f, 7.0f, 0x17233866);
+    drawPokemonSprite(p->speciesArt, 1, gFighter[0].x - 48.0f,
+                      gFighter[0].y - 48.0f + bob, 96.0f, 0);
+    drawPokemonSprite(e->speciesArt, 0, gFighter[1].x - 48.0f,
+                      gFighter[1].y - 48.0f - bob, 96.0f, 0);
     if (gFighter[0].dashIFrames > 0.0f)
         C2D_DrawCircleSolid(gFighter[0].x, gFighter[0].y, 0.25f, 30, c2dColor(0xFFFFFF66));
     if (gHitFlash > 0.0f)
@@ -676,8 +608,8 @@ static void drawBottomBattle(void)
         float x = 9.0f + i * 103.0f;
         Pokemon *p = &gTeam[0][i];
         rect(x, 32, 96, 50, i == gActive[0] ? 0x6A5528FF : C_PANEL);
-        rect(x + 3, 35, 20, 20, kBody[p->speciesArt]);
-        drawCreature(p->speciesArt, x + 4, 36, 1.0f);
+        rect(x + 3, 35, 20, 20, 0x182239FF);
+        drawPokemonIcon(p->speciesArt, 1, x + 3, 35, 20);
         textAt(x + 26, 37, 0.27f, C_TEXT, p->name);
         drawBar(x + 26, 56, 65, 7, p->hp, p->maxHp);
         char hp[16];

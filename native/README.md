@@ -1,8 +1,8 @@
-# Prototipo homebrew para 3DS
+# Prototipo homebrew para Nintendo 3DS
 
-Primera implementación nativa de combate local para el perfil Old 2DS. El mismo `.3dsx` y `.cia` está pensado para New 3DS XL.
+Combate en tiempo real 3 contra 3 para Old 2DS y New 3DS XL. Incluye equipos con Pikachu, Bulbasaur, Squirtle, Charizard, Gyarados y Eevee; sprites Pokémon de frente y espalda; una arena de estadio; habilidades a distancia, esquiva, cambio de Pokémon, suministros y CPU que ataca cuerpo a cuerpo y con proyectiles.
 
-Incluye un menú, pelea de entrenamiento 3 contra 3 contra CPU, tres Pokémon por equipo, cambio de miembro, ataque básico, tres habilidades, esquiva, medidor de definitivo y suministros. Los sprites están dibujados para este prototipo en pixel art; no se copiaron las imágenes del sitio web.
+Los sprites incluidos proceden de [PokéAPI Sprites](https://github.com/PokeAPI/sprites). Se conservan los PNG originales en `assets/pokemon/` y el código dibuja sus versiones compactadas de `source/pokemon_sprites.h`. Consulta `assets/pokemon/ATTRIBUTION.md` para la procedencia.
 
 ## Controles
 
@@ -22,4 +22,4 @@ Con devkitARM, libctru, citro3d, citro2d y las herramientas de 3DS:
 make -C native
 ```
 
-La acción de GitHub `Build Nintendo 3DS homebrew` adjunta `.3dsx`, `.cia`, `.elf` y `.smdh` como artefacto.
+La acción de GitHub `Build Nintendo 3DS homebrew` adjunta `.3dsx`, `.cia`, `.elf` y `.smdh` como artefactos.
