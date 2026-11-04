@@ -10,4 +10,4 @@ También se inspeccionó [Poke2D Arena](https://poke2darena.com/) como referenci
 
 La build de 3DS de PokéSurvivor facilitada para este proyecto se usa como referencia técnica para estudiar formatos y despliegue en la consola. Su Title ID es `000400000F5A3D00`. El [repositorio del juego original](https://github.com/JPTER78/pokesurvivor) contiene su código web; no se han copiado ese código ni sus recursos.
 
-El diseño apunta a Old 2DS como perfil mínimo y a New 3DS XL como dispositivo compatible con el mismo homebrew. Estado: análisis y planificación; todavía no hay una versión compilada para 3DS.
+El diseño apunta a Old 2DS como perfil mínimo y a New 3DS XL como dispositivo compatible con el mismo homebrew. Ya existe un primer prototipo nativo con sprites Pokémon dibujados para el proyecto; la compilación `.3dsx`/`.cia` está pendiente. Consulta [`native/README.md`](native/README.md) y el [plan de port](PORTING_PLAN_3DS.md).
