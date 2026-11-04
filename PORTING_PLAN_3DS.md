@@ -2,22 +2,20 @@
 
 ## Estado actual
 
-El proyecto conserva dos referencias distintas: las compilaciones finales de Empress Pokémon 2D Arena para Windows (PE x64 + Unity IL2CPP) y Android (IL2CPP ARM64), y el juego web Poke2D Arena en `poke2darena.com`. El README mantiene la atribución que pidió el usuario a Empress; el análisis web más reciente es una referencia separada y no se debe confundir con esas builds. No se dispone del proyecto fuente de Unity ni del código fuente del juego web.
+El proyecto conserva dos referencias distintas: las compilaciones finales de Empress Pokémon 2D Arena para Windows (PE x64 + Unity IL2CPP) y Android (IL2CPP ARM64), y el juego web Poke2D Arena en `poke2darena.com`. El README mantiene la atribución que pidió el usuario a Empress; el análisis web más reciente es una referencia separada. No se dispone del proyecto fuente de Unity ni del código fuente del juego web.
 
 `.3dsx` y `.cia` son formatos de programas nativos de 3DS. No pueden envolver directamente la compilación Unity x64/ARM64 ni la aplicación web. Hace falta implementar el juego como programa nativo para 3DS. El perfil objetivo es Old 2DS; New 3DS XL puede ejecutar el mismo binario.
 
 ## Ruta técnica
 
-1. Reimplementar el bucle de juego en C/C++ con devkitARM/libctru y citro2d.
-2. Prototipo offline en una arena: movimiento, apuntado/autoapuntado, ataques, daño, HP, enfriamientos y rival CPU.
-3. Añadir un equipo de tres con un combatiente activo, cambios, esquiva, ataque definitivo y suministros, según las reglas documentadas de Poke2D Arena.
-4. Diseñar la vista superior de 400×240 para la arena y usar la táctil inferior de 320×240 para acciones/equipo. Es una adaptación propuesta; no reproduce el lienzo web de 648×408.
-5. Compilar `.3dsx` y empaquetar el mismo programa como `.cia` con metadatos e icono.
-6. Comprobar ambos formatos en emulador o consola. Añadir Historia, editor de equipos y otros modos después del combate local.
+1. Implementar el bucle nativo en C con devkitARM/libctru, citro3d y citro2d. El primer prototipo está en [`native/`](native/).
+2. Completar la pelea offline: movimiento, ataques, HP, enfriamientos, cambios, esquiva, definitivo y suministros.
+3. Compilar `.3dsx` y empaquetar el mismo juego como `.cia`; `.github/workflows/build-3ds.yml` hace esta compilación en GitHub Actions.
+4. Comprobar ambos formatos en emulador o consola. Añadir Historia, editor de equipos, más Pokémon y arenas después del combate local.
 
 ## Bloqueos de compilación
 
-La carpeta de trabajo todavía no tiene código nativo; este entorno no tiene devkitARM, libctru, citro2d, `3dsxtool` ni `makerom`. Hace falta instalar la toolchain antes de compilar. El sitio web entrega un bundle JavaScript minificado de cliente y contenido propio del navegador; no proporciona un proyecto 3DS, assets con licencia para redistribuir ni el servidor online. No se añadieron al repositorio su código, sprites, efectos ni sonidos. El primer paquete será un prototipo local y no una conversión completa.
+El host local no tiene una toolchain 3DS ejecutable. Docker descargó imágenes de devkitPro, pero no pudo crear sus sistemas de archivos por falta de espacio; por eso la compilación se trasladó a GitHub Actions. Todavía no hay binarios. La primera versión contiene un equipo reducido y una arena dibujada en el código; usa sprites Pokémon propios para el prototipo, no los sprites o escenarios de Poke2D Arena.
 
 ## Referencia web: Poke2D Arena
 
