@@ -18,6 +18,21 @@ El material disponible son dos compilaciones finales: Windows (`GameAssembly.dll
 
 La carpeta de trabajo no tiene aún código nativo y este entorno no tiene devkitARM, libctru, citro2d, `3dsxtool` ni `makerom`. Hace falta instalar la toolchain antes de producir cualquier paquete. Un primer paquete reproduciría solo el prototipo del paso 2; no sería una conversión completa del juego original.
 
-Los paquetes de referencia adjuntos (`pokesurvivor-3ds.cia` y `pokesurvivor-3ds.3dsx`) llegaron como archivos Sediment mayores de 32 MiB; el mecanismo de descarga del entorno los rechaza por ese límite. Todavía no se ha inspeccionado su estructura ni su versión. Para analizarlos hace falta un enlace de descarga accesible (por ejemplo, Drive o GitHub Release) o copias menores de 32 MiB.
+## Referencia: PokéSurvivor 3DS
+
+Se descargaron desde Drive y se inspeccionaron estáticamente los dos paquetes proporcionados:
+
+| Paquete | Tamaño | SHA-256 |
+|---|---:|---|
+| `pokesurvivor-3ds.3dsx` | 41,307,932 bytes | `f5625764b2c087d655174e1c19060cb5ec0973b19cb974b4762673f4e31687d3` |
+| `pokesurvivor-3ds.cia` | 40,809,408 bytes | `6d7f066fb4a12ed741ae604dd7450809b6e704a930f5303c4011b9ace059b523` |
+
+El `.3dsx` se reconoce como una aplicación homebrew de Nintendo 3DS. Los metadatos SMDH embebidos en ambos archivos muestran el título `PokéSurvivor 3DS` y el publicador `juanluismm520`. El CIA contiene el Title ID `000400000F5A3D00` y el código de producto `CTR-H-PSV3`.
+
+Las cadenas estáticas nombran `curl` y Mbed TLS de devkitPro, el servicio HTTP de 3DS, configuración en `sdmc:/3ds/pokesurvivor-3ds/` y un flujo de consulta/descarga de actualizaciones. Esto ofrece una referencia de empaquetado y actualización; no prueba que esas funciones se ejecuten en cada modo. No ejecuté los paquetes.
+
+El binario acredita a `juanluismm520` como autor del port y contiene un enlace a `juanluismm521/pokesurvivor3ds`, que no se pudo resolver en GitHub. El repositorio público relacionado que sí apareció, [`DanFranza/pokesurvivor3DS`](https://github.com/DanFranza/pokesurvivor3DS), es un fork del juego web original [`JPTER78/pokesurvivor`](https://github.com/JPTER78/pokesurvivor): su README describe HTML/CSS/JavaScript sobre Canvas 2D y no incluye el código nativo que produjo estos paquetes. La licencia del código web actual es PolyForm Noncommercial; sus recursos también tienen licencias propias. Por ahora se toma el paquete como referencia técnica, sin copiar código ni assets.
+
+REA no admite estos formatos para `inspect_artifact`; el reconocimiento de 3DSX, el encabezado CIA, SMDH, hashes y cadenas se obtuvieron mediante inspección estática local.
 
 La nota de análisis estático está en [`REVERSE_ENGINEERING_NOTES.md`](REVERSE_ENGINEERING_NOTES.md).
