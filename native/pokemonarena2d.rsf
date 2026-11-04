@@ -1,0 +1,16 @@
+BasicInfo:
+  Title:              "Pokemon Arena 2D"
+  Company:            "poochygamer892"
+  ProductCode:        "CTR-H-PA2D"
+  ContentType:        Application
+  Logo:               Nintendo
+
+TitleInfo:
+  UniqueId:           0xA2D2D2
+  Category:           Application
+
+Option:
+  UseOnSD:            True
+  FreeProductCode:    True
+  EnableCrypt:        False
+  EnableCompress:     True
