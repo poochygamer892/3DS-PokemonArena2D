@@ -34,27 +34,28 @@ typedef struct {
     float hurtFlash;
 } Combatant;
 
-static const char *const kSprite[6][12] = {
-    { "....B..B....", "...AB..BA...", "...AB..BA...", "....BBBB....", "..BBBBBBBB..", ".BBDBBBBDBB.", ".BBEBBBBEBB.", ".BBBBRRBBBB.", "..BBBRRBBB..", "...BBBBBB...", "..BB....BB..", ".BB......BB." }, /* Pikachu */
-    { "....AAAA....", "...AABBAA...", "..AABBBBAA..", "..BBBBBBBB..", ".BBBBBBBBBB.", ".BBDBBBBDBB.", ".BBEBBBBEBB.", ".BBBBBBBBBB.", "..BBBBBBBB..", "...BAAAAB...", "..BB....BB..", ".BB......BB." }, /* Bulbasaur */
-    { "....BBBB....", "...BBBBBB...", "..BBBBBBBB..", ".BBBBAABBBB.", ".BBDBBBBDBB.", ".BBEBBBBEBB.", ".BBBBBBBBBB.", "..BBBBBBBB..", "..BBAAAABB..", "...BAAAAB...", "..BB....BB..", ".BB......BB." }, /* Squirtle */
-    { "BB........BB", "BBB......BBB", ".BBB....BBB.", "..BBBBBBBB..", "...BBBBBB...", "..BBBBBBBB..", ".BBDBBBBDBB.", ".BBEBBBBEBB.", "..BBBBBBBB..", "...BBBBBB...", "..BB....BB..", ".BB......BB." }, /* Charizard */
-    { "...BB....BB.", "..BBBBBBBB..", ".ABBBBBBBBBA", "ABBBBBBBBBBB", "BBDBBBBBBDBB", "BBEBBBBBBEBB", "ABBBBBBBBBBA", ".ABBBBBBBBA.", "..AABBBBBA..", "...AABBBBA..", "....ABBA....", ".....BB....." }, /* Gyarados */
-    { "..B......B..", ".AB......BA.", ".AB......BA.", "..BBBBBBBB..", ".BBBBBBBBBB.", ".BBDBBBBDBB.", ".BBEBBBBEBB.", ".BBBBBBBBBB.", "..BAAAAAAB..", "...BBBBBB...", "..BB....BB..", ".BB......BB." }  /* Eevee */
-};
+typedef struct {
+    float x, y, vx, vy, life;
+    int damage;
+    int active;
+    u32 color;
+} Shot;
 
 static const u32 kBody[6] = {
-    0xFFE238FF, 0x83D96AFF, 0x66C8F0FF,
-    0xF07C32FF, 0x328AD8FF, 0xA46B46FF
+    0xFFD83DFF, 0x72C979FF, 0x69BCEBFF,
+    0xEF813FFF, 0x397ED1FF, 0xA96D48FF
 };
 static const u32 kAccent[6] = {
-    0xF5A72BFF, 0x46A849FF, 0xA56C42FF,
-    0xB84138FF, 0xD84848FF, 0xE6D3A8FF
+    0xFFF078FF, 0x4F9E57FF, 0xC98955FF,
+    0xF7C545FF, 0xE44852FF, 0xF3DDB2FF
 };
 static const u32 kDark[6] = {
-    0x332842FF, 0x244533FF, 0x26384AFF,
-    0x472A35FF, 0x26364DFF, 0x493630FF
+    0x493523FF, 0x28563EFF, 0x29475AFF,
+    0x673C31FF, 0x244B77FF, 0x573B2EFF
 };
+static const u32 kOutline = 0x242637FF;
+static const u32 kWhite = 0xFFF3D9FF;
+static const u32 kRed = 0xE84D5BFF;
 
 static Pokemon gTeam[2][TEAM_SIZE] = {
     {
@@ -68,12 +69,21 @@ static Pokemon gTeam[2][TEAM_SIZE] = {
         { "EEVEE", "NORMAL", 5, 100, 100 }
     }
 };
+static const char *const kMoveLabel[6][3] = {
+    { "THUNDER", "QUICK", "IRON" },
+    { "VINE", "RAZOR", "SEED" },
+    { "WATER", "BUBBLE", "SHELL" },
+    { "FLAME", "WING", "BLAST" },
+    { "WATER", "BITE", "CRUNCH" },
+    { "QUICK", "BITE", "SWIFT" }
+};
 
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
 static C2D_TextBuf gTextBuf;
 static Scene gScene = SCENE_TITLE;
 static Combatant gFighter[2];
+static Shot gShots[4];
 static int gActive[2] = { 0, 0 };
 static int gWinner = -1;
 static float gBattleTime = 0.0f;
@@ -148,23 +158,126 @@ static void drawBar(float x, float y, float w, float h, int hp, int maxHp)
         rect(x + 1.0f, y + 1.0f, (w - 2.0f) * ratio, h - 2.0f, ratio > 0.35f ? C_GREEN : C_RED);
 }
 
+static void spriteBox(float x, float y, float pixel, int sx, int sy, int w, int h, u32 color)
+{
+    rect(x + (float)sx * pixel, y + (float)sy * pixel,
+         (float)w * pixel, (float)h * pixel, color);
+}
+
+static void spriteOutline(float x, float y, float pixel, int sx, int sy, int w, int h, u32 fill)
+{
+    spriteBox(x, y, pixel, sx, sy, w, h, kOutline);
+    if (w > 2 && h > 2)
+        spriteBox(x, y, pixel, sx + 1, sy + 1, w - 2, h - 2, fill);
+}
+
 static void drawCreature(int art, float x, float y, float pixel)
 {
-    const char *const *rows = kSprite[art % 6];
-    for (int row = 0; row < 12; ++row) {
-        for (int col = 0; col < 12; ++col) {
-            char p = rows[row][col];
-            u32 color;
-            switch (p) {
-                case 'B': color = kBody[art % 6]; break;
-                case 'A': color = kAccent[art % 6]; break;
-                case 'D': color = kDark[art % 6]; break;
-                case 'E': color = C_TEXT; break;
-                case 'R': color = C_RED; break;
-                default: continue;
-            }
-            rect(x + col * pixel, y + row * pixel, pixel, pixel, color);
-        }
+    art %= 6;
+    u32 body = kBody[art];
+    u32 light = kAccent[art];
+    u32 shade = kDark[art];
+
+    /* Each design uses a large silhouette and species-specific details so it
+       stays recognizable on the 3DS screen at small sizes. */
+    if (art == 0) { /* Pikachu: pointed ears, red cheeks and lightning tail. */
+        spriteOutline(x, y, pixel, 13, 7, 3, 3, body);
+        spriteOutline(x, y, pixel, 14, 5, 2, 3, body);
+        spriteBox(x, y, pixel, 14, 5, 2, 1, shade);
+        spriteOutline(x, y, pixel, 3, 0, 3, 7, body);
+        spriteOutline(x, y, pixel, 10, 0, 3, 7, body);
+        spriteBox(x, y, pixel, 3, 0, 3, 2, shade);
+        spriteBox(x, y, pixel, 10, 0, 3, 2, shade);
+        spriteOutline(x, y, pixel, 3, 4, 10, 8, body);
+        spriteOutline(x, y, pixel, 5, 10, 7, 5, body);
+        spriteBox(x, y, pixel, 4, 7, 2, 2, kOutline);
+        spriteBox(x, y, pixel, 10, 7, 2, 2, kOutline);
+        spriteBox(x, y, pixel, 3, 9, 2, 2, kRed);
+        spriteBox(x, y, pixel, 11, 9, 2, 2, kRed);
+        spriteBox(x, y, pixel, 7, 5, 2, 1, light);
+        spriteBox(x, y, pixel, 6, 14, 2, 2, shade);
+        spriteBox(x, y, pixel, 10, 14, 2, 2, shade);
+        spriteBox(x, y, pixel, 12, 8, 2, 1, light);
+    } else if (art == 1) { /* Bulbasaur: squat body and unmistakable seed bulb. */
+        spriteOutline(x, y, pixel, 6, 1, 8, 8, shade);
+        spriteBox(x, y, pixel, 7, 2, 6, 6, 0x79B94EFF);
+        spriteBox(x, y, pixel, 5, 4, 3, 2, 0x79B94EFF);
+        spriteBox(x, y, pixel, 12, 3, 3, 2, 0x79B94EFF);
+        spriteBox(x, y, pixel, 9, 0, 2, 3, 0x79B94EFF);
+        spriteOutline(x, y, pixel, 3, 8, 11, 6, body);
+        spriteOutline(x, y, pixel, 1, 5, 9, 7, body);
+        spriteBox(x, y, pixel, 2, 6, 2, 2, light);
+        spriteBox(x, y, pixel, 4, 7, 1, 2, kOutline);
+        spriteBox(x, y, pixel, 7, 7, 1, 2, kOutline);
+        spriteBox(x, y, pixel, 3, 12, 2, 3, shade);
+        spriteBox(x, y, pixel, 10, 12, 2, 3, shade);
+        spriteBox(x, y, pixel, 5, 13, 2, 2, shade);
+        spriteBox(x, y, pixel, 8, 13, 2, 2, shade);
+    } else if (art == 2) { /* Squirtle: blue turtle, curled tail and shell. */
+        spriteOutline(x, y, pixel, 8, 7, 7, 7, shade);
+        spriteBox(x, y, pixel, 9, 8, 5, 5, 0xC98C58FF);
+        spriteBox(x, y, pixel, 11, 8, 1, 5, 0x815039FF);
+        spriteBox(x, y, pixel, 9, 10, 5, 1, 0x815039FF);
+        spriteOutline(x, y, pixel, 3, 8, 8, 6, body);
+        spriteOutline(x, y, pixel, 1, 4, 8, 7, body);
+        spriteBox(x, y, pixel, 2, 5, 2, 2, light);
+        spriteBox(x, y, pixel, 4, 6, 1, 2, kOutline);
+        spriteBox(x, y, pixel, 7, 6, 1, 2, kOutline);
+        spriteBox(x, y, pixel, 4, 9, 4, 2, kWhite);
+        spriteBox(x, y, pixel, 3, 13, 2, 2, shade);
+        spriteBox(x, y, pixel, 9, 13, 2, 2, shade);
+        spriteOutline(x, y, pixel, 12, 12, 3, 3, body);
+    } else if (art == 3) { /* Charizard: wings, horns and a flaming tail. */
+        spriteOutline(x, y, pixel, 0, 4, 6, 9, shade);
+        spriteOutline(x, y, pixel, 10, 4, 6, 9, shade);
+        spriteBox(x, y, pixel, 1, 6, 4, 5, 0x5475C4FF);
+        spriteBox(x, y, pixel, 11, 6, 4, 5, 0x5475C4FF);
+        spriteBox(x, y, pixel, 2, 7, 2, 3, 0x8EB0EFFF);
+        spriteBox(x, y, pixel, 12, 7, 2, 3, 0x8EB0EFFF);
+        spriteOutline(x, y, pixel, 6, 6, 5, 8, body);
+        spriteOutline(x, y, pixel, 5, 3, 6, 6, body);
+        spriteBox(x, y, pixel, 5, 2, 2, 2, light);
+        spriteBox(x, y, pixel, 9, 2, 2, 2, light);
+        spriteBox(x, y, pixel, 7, 5, 1, 1, kOutline);
+        spriteBox(x, y, pixel, 10, 5, 1, 1, kOutline);
+        spriteBox(x, y, pixel, 7, 13, 2, 2, shade);
+        spriteBox(x, y, pixel, 10, 13, 2, 2, shade);
+        spriteBox(x, y, pixel, 10, 12, 3, 2, body);
+        spriteBox(x, y, pixel, 13, 11, 2, 3, kRed);
+        spriteBox(x, y, pixel, 14, 12, 1, 2, light);
+    } else if (art == 4) { /* Gyarados: long arched body, crest, fins and whiskers. */
+        spriteOutline(x, y, pixel, 7, 1, 7, 5, shade);
+        spriteBox(x, y, pixel, 8, 2, 5, 3, body);
+        spriteBox(x, y, pixel, 8, 0, 2, 2, kRed);
+        spriteBox(x, y, pixel, 11, 0, 2, 2, kRed);
+        spriteOutline(x, y, pixel, 6, 5, 5, 4, shade);
+        spriteOutline(x, y, pixel, 3, 8, 6, 4, shade);
+        spriteOutline(x, y, pixel, 6, 11, 6, 4, shade);
+        spriteBox(x, y, pixel, 7, 6, 3, 2, body);
+        spriteBox(x, y, pixel, 4, 9, 4, 2, body);
+        spriteBox(x, y, pixel, 7, 12, 4, 2, body);
+        spriteBox(x, y, pixel, 4, 6, 2, 2, kRed);
+        spriteBox(x, y, pixel, 2, 7, 2, 1, kWhite);
+        spriteBox(x, y, pixel, 2, 9, 2, 1, kWhite);
+        spriteBox(x, y, pixel, 11, 5, 3, 2, kRed);
+        spriteBox(x, y, pixel, 11, 13, 3, 2, kRed);
+        spriteBox(x, y, pixel, 8, 3, 1, 1, kWhite);
+    } else { /* Eevee: large ears, cream ruff and fluffy tail. */
+        spriteOutline(x, y, pixel, 3, 0, 4, 7, shade);
+        spriteOutline(x, y, pixel, 10, 0, 4, 7, shade);
+        spriteBox(x, y, pixel, 4, 1, 2, 4, 0xE8BFA1FF);
+        spriteBox(x, y, pixel, 11, 1, 2, 4, 0xE8BFA1FF);
+        spriteOutline(x, y, pixel, 4, 4, 9, 8, body);
+        spriteBox(x, y, pixel, 3, 9, 3, 3, light);
+        spriteBox(x, y, pixel, 11, 9, 3, 3, light);
+        spriteBox(x, y, pixel, 5, 11, 7, 4, shade);
+        spriteBox(x, y, pixel, 5, 7, 1, 2, kOutline);
+        spriteBox(x, y, pixel, 11, 7, 1, 2, kOutline);
+        spriteBox(x, y, pixel, 8, 9, 2, 1, shade);
+        spriteOutline(x, y, pixel, 12, 10, 4, 4, body);
+        spriteBox(x, y, pixel, 14, 11, 2, 2, light);
+        spriteBox(x, y, pixel, 6, 14, 2, 2, shade);
+        spriteBox(x, y, pixel, 10, 14, 2, 2, shade);
     }
 }
 
@@ -177,6 +290,7 @@ static void resetBattle(void)
     gActive[0] = 0;
     gActive[1] = 0;
     memset(gFighter, 0, sizeof(gFighter));
+    memset(gShots, 0, sizeof(gShots));
     gFighter[0].x = 92.0f;
     gFighter[0].y = 135.0f;
     gFighter[1].x = 308.0f;
@@ -253,6 +367,55 @@ static void damagePokemon(int side, int damage, float chargeRatio)
     }
 }
 
+static void fireSkillShot(int slot, int damage, float range)
+{
+    float dx = gFighter[1].x - gFighter[0].x;
+    float dy = gFighter[1].y - gFighter[0].y;
+    float mag = sqrtf(dx * dx + dy * dy);
+    if (mag < 0.1f || mag > range) return;
+
+    for (int i = 0; i < 4; ++i) {
+        if (gShots[i].active) continue;
+        int species = gTeam[0][gActive[0]].speciesArt;
+        static const u32 colors[6][3] = {
+            { 0xFFF04FFF, 0xF5C735FF, 0x9B79FFFF },
+            { 0x65D878FF, 0xA8E657FF, 0xFFF07AFF },
+            { 0x65C8F2FF, 0xA9E6F5FF, 0x4F9CFFFF },
+            { 0xFF8A42FF, 0xF4C64EFF, 0xF94D38FF },
+            { 0x4A9EFFFF, 0xED5062FF, 0x7DD8F2FF },
+            { 0xB48BFFFF, 0xF2DDB6FF, 0xF3A85FFF }
+        };
+        gShots[i].x = gFighter[0].x;
+        gShots[i].y = gFighter[0].y;
+        gShots[i].vx = dx / mag * 245.0f;
+        gShots[i].vy = dy / mag * 245.0f;
+        gShots[i].life = 1.4f;
+        gShots[i].damage = damage;
+        gShots[i].color = colors[species][slot];
+        gShots[i].active = 1;
+        return;
+    }
+}
+
+static void updateShots(float dt)
+{
+    for (int i = 0; i < 4; ++i) {
+        Shot *shot = &gShots[i];
+        if (!shot->active) continue;
+        shot->x += shot->vx * dt;
+        shot->y += shot->vy * dt;
+        shot->life -= dt;
+        if (distance2(shot->x, shot->y, gFighter[1].x, gFighter[1].y) < 20.0f * 20.0f) {
+            damagePokemon(1, shot->damage, 30.0f);
+            gFighter[0].ultimate = clampf(gFighter[0].ultimate + 6.0f, 0.0f, 100.0f);
+            shot->active = 0;
+        } else if (shot->life <= 0.0f || shot->x < 12.0f || shot->x > 388.0f ||
+                   shot->y < 42.0f || shot->y > 230.0f) {
+            shot->active = 0;
+        }
+    }
+}
+
 static void useBasic(int side)
 {
     Combatant *c = &gFighter[side];
@@ -261,7 +424,7 @@ static void useBasic(int side)
         return;
     c->basicCd = 0.5f;
     float d2 = distance2(c->x, c->y, gFighter[opponent].x, gFighter[opponent].y);
-    if (d2 <= 230.0f * 230.0f) {
+    if (d2 <= 70.0f * 70.0f) {
         int targetMax = gTeam[opponent][gActive[opponent]].maxHp;
         int dmg = targetMax > 0 ? (int)(targetMax * 0.032f) : 4;
         if (dmg < 4) dmg = 4;
@@ -279,10 +442,7 @@ static void useSkill(int slot)
     static const int damage[3] = { 12, 17, 22 };
     static const float range[3] = { 175.0f, 220.0f, 270.0f };
     c->skillCd[slot] = cooldown[slot];
-    if (distance2(c->x, c->y, gFighter[1].x, gFighter[1].y) <= range[slot] * range[slot]) {
-        damagePokemon(1, damage[slot], 30.0f);
-        c->ultimate = clampf(c->ultimate + 6.0f, 0.0f, 100.0f);
-    }
+    fireSkillShot(slot, damage[slot], range[slot]);
 }
 
 static void useDash(void)
@@ -355,6 +515,7 @@ static void updateSupply(float dt)
 static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad)
 {
     gBattleTime += dt;
+    updateShots(dt);
     Combatant *player = &gFighter[0];
     Combatant *cpu = &gFighter[1];
     float moveX = (float)pad->dx / 156.0f;
@@ -471,8 +632,18 @@ static void drawBattleTop(void)
         C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.35f, 9, c2dColor(0x18243AFF));
         C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.30f, 6, c2dColor(supplyColor));
     }
-    drawCreature(p->speciesArt, gFighter[0].x - 24, gFighter[0].y - 24, 4.0f);
-    drawCreature(e->speciesArt, gFighter[1].x - 24, gFighter[1].y - 24, 4.0f);
+    for (int i = 0; i < 4; ++i) {
+        Shot *shot = &gShots[i];
+        if (!shot->active) continue;
+        float trailX = shot->x - shot->vx * 0.035f;
+        float trailY = shot->y - shot->vy * 0.035f;
+        rect(trailX - 3.0f, trailY - 2.0f, 9.0f, 4.0f, c2dColor(shot->color));
+        C2D_DrawCircleSolid(shot->x, shot->y, 0.38f, 7.0f, c2dColor(shot->color));
+        C2D_DrawCircleSolid(shot->x - 1.0f, shot->y - 1.0f, 0.42f, 2.5f, c2dColor(kWhite));
+    }
+    float bob = sinf(gBattleTime * 5.0f) * 2.0f;
+    drawCreature(p->speciesArt, gFighter[0].x - 32, gFighter[0].y - 32 + bob, 4.0f);
+    drawCreature(e->speciesArt, gFighter[1].x - 32, gFighter[1].y - 32 - bob, 4.0f);
     if (gFighter[0].dashIFrames > 0.0f)
         C2D_DrawCircleSolid(gFighter[0].x, gFighter[0].y, 0.25f, 30, c2dColor(0xFFFFFF66));
     if (gHitFlash > 0.0f)
@@ -481,17 +652,17 @@ static void drawBattleTop(void)
 
 static void actionButton(float x, const char *key, const char *label, float cooldown, u32 tint)
 {
-    rect(x, 129, 72, 58, C_PANEL2);
-    rect(x + 2, 131, 68, 54, C_BG);
-    rect(x + 2, 131, 68, 4, tint);
-    textAt(x + 7, 139, 0.34f, C_GOLD, key);
-    textAt(x + 7, 157, 0.28f, C_TEXT, label);
+    rect(x, 129, 48, 58, C_PANEL2);
+    rect(x + 2, 131, 44, 54, C_BG);
+    rect(x + 2, 131, 44, 3, tint);
+    textAt(x + 4, 139, 0.30f, C_GOLD, key);
+    textAt(x + 4, 157, 0.21f, C_TEXT, label);
     if (cooldown > 0.0f) {
         char cd[10];
         snprintf(cd, sizeof(cd), "%.1f", cooldown);
-        textAt(x + 48, 139, 0.26f, C_MUTED, cd);
+        textAt(x + 29, 139, 0.20f, C_MUTED, cd);
     } else {
-        textAt(x + 50, 139, 0.26f, C_GREEN, "OK");
+        textAt(x + 30, 139, 0.20f, C_GREEN, "OK");
     }
 }
 
@@ -506,7 +677,7 @@ static void drawBottomBattle(void)
         Pokemon *p = &gTeam[0][i];
         rect(x, 32, 96, 50, i == gActive[0] ? 0x6A5528FF : C_PANEL);
         rect(x + 3, 35, 20, 20, kBody[p->speciesArt]);
-        drawCreature(p->speciesArt, x + 4, 36, 1.5f);
+        drawCreature(p->speciesArt, x + 4, 36, 1.0f);
         textAt(x + 26, 37, 0.27f, C_TEXT, p->name);
         drawBar(x + 26, 56, 65, 7, p->hp, p->maxHp);
         char hp[16];
@@ -517,12 +688,15 @@ static void drawBottomBattle(void)
     snprintf(ult, sizeof(ult), "ULTIMATE %d%%", (int)gFighter[0].ultimate);
     textAt(10, 93, 0.34f, C_TEXT, ult);
     drawBar(126, 96, 181, 9, (int)gFighter[0].ultimate, 100);
-    actionButton(9, "A", "BASIC", gFighter[0].basicCd, 0x7FB9FFFF);
-    actionButton(87, "B/X/Y", "SKILLS", gFighter[0].skillCd[0], 0xE17E64FF);
-    actionButton(165, "L", "DASH", gFighter[0].dashCd, 0x68DAE5FF);
-    actionButton(243, "R", "ULT", fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xC587F2FF);
-    textAt(10, 199, 0.27f, C_MUTED, "CIRCLE PAD: MOVE   A: BASIC   L: DODGE");
-    textAt(10, 215, 0.24f, C_MUTED, "TOUCH AN ACTION OR A TEAM SLOT");
+    int species = gTeam[0][gActive[0]].speciesArt;
+    actionButton(8, "A", "TACKLE", gFighter[0].basicCd, 0x7FB9FFFF);
+    actionButton(60, "B", kMoveLabel[species][0], gFighter[0].skillCd[0], 0xE17E64FF);
+    actionButton(112, "X", kMoveLabel[species][1], gFighter[0].skillCd[1], 0xE9A95AFF);
+    actionButton(164, "Y", kMoveLabel[species][2], gFighter[0].skillCd[2], 0xAB87F2FF);
+    actionButton(216, "L", "DODGE", gFighter[0].dashCd, 0x68DAE5FF);
+    actionButton(268, "R", "ULT", fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xC587F2FF);
+    textAt(10, 199, 0.27f, C_MUTED, "CIRCLE PAD: MOVE   D-PAD: SWITCH");
+    textAt(10, 215, 0.24f, C_MUTED, "A BASIC   B/X/Y MOVES   L DODGE   R ULT");
 }
 
 static void drawTitle(void)
@@ -533,9 +707,9 @@ static void drawTitle(void)
         rect(22 + i * 22, 22, 15, 3, 0x82C85BFF);
     centeredText(200, 48, 0.85f, C_TEXT, "POKEMON ARENA 2D");
     centeredText(200, 80, 0.43f, C_GOLD, "REAL-TIME 3V3 BATTLE");
-    drawCreature(0, 116, 112, 7.0f);
-    drawCreature(4, 248, 112, 7.0f);
-    centeredText(200, 190, 0.38f, C_TEXT, "PRESS A TO START");
+    drawCreature(0, 94, 105, 5.0f);
+    drawCreature(4, 226, 105, 5.0f);
+    centeredText(200, 205, 0.38f, C_TEXT, "PRESS A TO START");
     rect(0, 0, 400, 3, C_GOLD);
 }
 
@@ -557,7 +731,7 @@ static void drawResult(void)
     rect(53, 72, 294, 92, C_PANEL);
     centeredText(200, 89, 0.72f, gWinner == 0 ? C_GREEN : C_RED, gWinner == 0 ? "YOU WIN" : "YOU LOSE");
     centeredText(200, 124, 0.38f, C_TEXT, "A: REMATCH   B: TITLE");
-    drawCreature(gTeam[gWinner == 0 ? 0 : 1][gActive[gWinner == 0 ? 0 : 1]].speciesArt, 176, 172, 4.0f);
+    drawCreature(gTeam[gWinner == 0 ? 0 : 1][gActive[gWinner == 0 ? 0 : 1]].speciesArt, 168, 168, 4.0f);
 }
 
 static void drawResultBottom(void)
@@ -582,9 +756,11 @@ static void handleTouch(const touchPosition *touch)
         return;
     }
     if (touch->py >= 129 && touch->py <= 189) {
-        if (touch->px < 82) useBasic(0);
-        else if (touch->px < 160) useSkill(0);
-        else if (touch->px < 238) useDash();
+        if (touch->px < 60) useBasic(0);
+        else if (touch->px < 112) useSkill(0);
+        else if (touch->px < 164) useSkill(1);
+        else if (touch->px < 216) useSkill(2);
+        else if (touch->px < 268) useDash();
         else useUltimate();
     }
 }
