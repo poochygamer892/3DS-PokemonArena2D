@@ -83,8 +83,6 @@ static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
 static C2D_SpriteSheet gPoke2dAtlas;
 static C2D_SpriteSheet gEnvironmentAtlas;
-static C2D_Font gUiFont;
-static C2D_TextBuf gUiTextBuffer;
 static C2D_Image gArenaImage[4];
 static C2D_Image gMenuBackground;
 static C2D_Image gGameLogo;
@@ -192,7 +190,10 @@ static float bitmapTextWidth(const char *s, float scale)
 
 static void drawBitmapText(float x, float y, float scale, u32 color, const char *s)
 {
-    float glyphScale = scale * 1.65f * gUiTextScale * 2.0f;
+    /* Glyphs are rendered directly from the Pixelify Sans font served by the
+       web game. Keeping them as native-size textures avoids the missing system
+       font fallback seen in Azahar and on some homebrew setups. */
+    float glyphScale = scale * 1.80f * gUiTextScale;
     float startX = x;
     C2D_ImageTint edgeTint;
     C2D_ImageTint fillTint;
@@ -208,7 +209,8 @@ static void drawBitmapText(float x, float y, float scale, u32 color, const char 
         if (c < P2D_TEXT_FIRST || c > 126) c = '?';
         int index = c - P2D_TEXT_FIRST;
         if (c != ' ') {
-            C2D_DrawImageAt(gTextEdge[index], x - glyphScale, y - glyphScale,
+            C2D_DrawImageAt(gTextEdge[index], x - 2.0f * glyphScale,
+                            y - 2.0f * glyphScale,
                             0.60f, &edgeTint, glyphScale, glyphScale);
             C2D_DrawImageAt(gTextFill[index], x, y, 0.61f, &fillTint,
                             glyphScale, glyphScale);
@@ -217,52 +219,14 @@ static void drawBitmapText(float x, float y, float scale, u32 color, const char 
     }
 }
 
-static bool parseSystemText(const char *s, C2D_Text *text)
-{
-    if (!gUiFont || !gUiTextBuffer) return false;
-    C2D_TextBufClear(gUiTextBuffer);
-    return C2D_TextFontParse(text, gUiFont, gUiTextBuffer, s) != NULL;
-}
-
-static float systemTextWidth(const char *s, float scaleX, float scaleY)
-{
-    C2D_Text text;
-    float width = 0.0f;
-    if (parseSystemText(s, &text))
-        C2D_TextGetDimensions(&text, scaleX, scaleY, &width, NULL);
-    return width;
-}
-
-static void drawSystemText(float x, float y, float scaleX, float scaleY,
-                           u32 color, const char *s)
-{
-    C2D_Text text;
-    if (!parseSystemText(s, &text)) return;
-    C2D_DrawText(&text, C2D_WithColor, x + 0.7f, y + 0.8f, 0.60f,
-                 scaleX, scaleY, c2dColor(0x101B32FF));
-    C2D_DrawText(&text, C2D_WithColor, x, y, 0.61f,
-                 scaleX, scaleY, c2dColor(color));
-}
-
 static void textAt(float x, float y, float scale, u32 color, const char *s)
 {
-    if (gUiFont && gUiTextBuffer)
-        drawSystemText(x, y, scale * 1.75f * gUiTextScale,
-                       scale * gUiTextScale, color, s);
-    else
-        drawBitmapText(x, y, scale, color, s);
+    drawBitmapText(x, y, scale, color, s);
 }
 
 static void centeredText(float x, float y, float scale, u32 color, const char *s)
 {
-    if (gUiFont && gUiTextBuffer) {
-        float scaleX = scale * 1.75f * gUiTextScale;
-        float scaleY = scale * gUiTextScale;
-        x -= systemTextWidth(s, scaleX, scaleY) * 0.5f;
-        drawSystemText(x, y, scaleX, scaleY, color, s);
-        return;
-    }
-    float actualScale = scale * 1.65f * gUiTextScale * 2.0f;
+    float actualScale = scale * 1.80f * gUiTextScale;
     drawBitmapText(x - bitmapTextWidth(s, actualScale) * 0.5f,
                    y, scale, color, s);
 }
@@ -270,21 +234,7 @@ static void centeredText(float x, float y, float scale, u32 color, const char *s
 static void fittedText(float x, float y, float maxWidth, float scale,
                        u32 color, const char *s, bool centered)
 {
-    if (gUiFont && gUiTextBuffer) {
-        float scaleX = scale * 1.75f * gUiTextScale;
-        float scaleY = scale * gUiTextScale;
-        float width = systemTextWidth(s, scaleX, scaleY);
-        if (maxWidth > 0.0f && width > maxWidth) {
-            float fit = maxWidth / width;
-            scaleX *= fit;
-            scaleY *= fit;
-            width = maxWidth;
-        }
-        if (centered) x -= width * 0.5f;
-        drawSystemText(x, y, scaleX, scaleY, color, s);
-        return;
-    }
-    float actualScale = scale * 1.65f * gUiTextScale * 2.0f;
+    float actualScale = scale * 1.80f * gUiTextScale;
     float width = bitmapTextWidth(s, actualScale);
     if (maxWidth > 0.0f && width > maxWidth) {
         scale *= maxWidth / width;
@@ -1533,16 +1483,11 @@ int main(int argc, char **argv)
         gTextFill[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextFillIndex[i]);
         gTextEdge[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextEdgeIndex[i]);
     }
-    gUiFont = C2D_FontLoadSystem(CFG_REGION_USA);
-    if (gUiFont) C2D_FontSetFilter(gUiFont, GPU_LINEAR, GPU_LINEAR);
-    gUiTextBuffer = C2D_TextBufNew(512);
     gTop = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     gBottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     if (!gTop || !gBottom) {
         C2D_SpriteSheetFree(gPoke2dAtlas);
         C2D_SpriteSheetFree(gEnvironmentAtlas);
-        if (gUiTextBuffer) C2D_TextBufDelete(gUiTextBuffer);
-        if (gUiFont) C2D_FontFree(gUiFont);
         C2D_Fini();
         C3D_Fini();
         gfxExit();
@@ -1591,8 +1536,6 @@ int main(int argc, char **argv)
 
     C2D_SpriteSheetFree(gPoke2dAtlas);
     C2D_SpriteSheetFree(gEnvironmentAtlas);
-    if (gUiTextBuffer) C2D_TextBufDelete(gUiTextBuffer);
-    if (gUiFont) C2D_FontFree(gUiFont);
     C2D_Fini();
     C3D_Fini();
     gfxExit();

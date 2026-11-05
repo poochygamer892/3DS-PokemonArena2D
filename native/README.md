@@ -2,9 +2,10 @@
 
 Port nativo en progreso del juego web [Poké Arena 2D](https://www.pokearena2d.com/).
 La interfaz adapta los menús del sitio y usa su logo, fondos, cuatro arenas y
-seis Pokémon animados. El texto usa la fuente del sistema con el ajuste de
-filtro de Citro2D. Las etiquetas se dibujan delante de los paneles del menú; la
-versión anterior las dejaba detrás debido al orden de profundidad.
+seis Pokémon animados. Los glifos se generan desde Pixelify Sans, la fuente que
+carga la web, y se almacenan en el atlas a una resolución mayor. Esto evita el
+fallback de fuente que Azahar mostraba como texto deformado. Las etiquetas se
+dibujan delante de los paneles del menú.
 
 La versión local incluye combate contra CPU, Training, una progresión League,
 Arena Challenge de seis peleas, selección de equipos, Pokédex, Tutorial y
@@ -37,6 +38,6 @@ make -C native
 ```
 
 El proceso convierte las hojas de animación a 75% del tamaño original en un
-atlas RGBA4, y mantiene los fondos en RGB565 filtrado para preservar el color
-sin aumentar el uso de VRAM. GitHub Actions genera
+atlas RGBA5551 y mantiene los fondos en RGB888 para conservar las paletas de la
+web. GitHub Actions genera
 `.3dsx`, `.cia`, `.elf` y `.smdh`.
