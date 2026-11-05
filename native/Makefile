@@ -62,7 +62,7 @@ assets:
 		--source assets/poke2d/source \
 		--output generated/poke2d \
 		--include include/poke2d_sprite_meta.h
-	@$(TEX3DS) -a -f rgba4 -z lz11 -b transparent \
+	@$(TEX3DS) --atlas -f rgba4 -z lz11 \
 		-H include/poke2d_sprite_indices.h \
 		-o generated/poke2d/poke2d_atlas.t3x \
 		$$(find generated/poke2d/atlas_input -maxdepth 1 -name '*.png' -type f | sort)
