@@ -12,10 +12,9 @@ reference for this port:
   Pokémon and their artwork remain the property of their respective owners and
   contributors.
 
-The text glyphs in `source/font/` were rasterized from **Pixelify Sans** by The
-Pixelify Sans Project Authors. The included WOFF2 font and OFL text are from
-[Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans) and are licensed
-under the SIL Open Font License 1.1.
+The text glyphs are rasterized from **Open Sans Regular** at 40 px. The font is
+Copyright 2010–2011 Google Corporation and licensed under Apache License 2.0;
+the full license is included as `source/font/LICENSE-OpenSans.txt`.
 
 These files are included to build this personal, unofficial homebrew port. This
 repository does not claim ownership of these assets or grant rights beyond the

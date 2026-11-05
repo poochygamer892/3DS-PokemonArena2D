@@ -9,7 +9,7 @@ compact action row.
 
 This project keeps those menu labels and screen structure while splitting the
 interface across the 3DS top and touch screens. The home screen uses the site's
-logo, scenery, and Pixelify Sans style. The local build uses a selection of six
+logo, scenery, and pixel font style. The local build uses a selection of six
 Pokémon and four arenas from the reference game's publicly served assets. The
 battle is a native C implementation, not the original browser game or its
 JavaScript runtime.

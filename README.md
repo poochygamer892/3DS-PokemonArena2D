@@ -5,21 +5,25 @@ como inspiración inicial [Empress Pokémon 2D Arena](https://omniscye.itch.io/e
 y ahora usa [Poké Arena 2D](https://www.pokearena2d.com/) como referencia
 principal para los menús, el arte y el combate.
 
-Versión actual: **v0.5.1** (registrada en [`VERSION`](VERSION)). Los paquetes
+Versión actual: **v0.6.0** (registrada en [`VERSION`](VERSION)). Los paquetes
 generados llevan la versión en el nombre del archivo.
 
 La interfaz incluye Play, Online, Customize, Pokédex, Tutorial, Settings y
 Credits. Play abre League, VS CPU, 2 Players, Training y Arena. La build local
 tiene combate contra CPU, selección de equipos, seis Pokémon y cuatro arenas,
-con el logo, fondos de color mejorado y Pokémon animados. Esta versión usa la
-misma familia Pixelify Sans cargada por el juego web, rasterizada a resolución
-mayor para 3DS; ya no depende de la fuente del sistema de la consola. La v0.5.1
-corrige la navegación con Circle Pad y la selección vertical de VS CPU; durante
-el combate, la cruceta y Circle Pad mueven al personaje y SELECT cambia Pokémon.
+con el logo, fondos de color mejorado y Pokémon animados. La interfaz usa Open
+Sans Regular rasterizada con suavizado en una textura RGBA8, sin el contorno
+grueso anterior. El combate incluye una cadena de tres golpes, ataques
+cuerpo a cuerpo, embestidas, áreas, rayos y ráfagas de proyectiles según el
+Pokémon; también hay retroceso, quemadura, lentitud, aturdimiento y ventajas de
+tipo. La cruceta y Circle Pad mueven al personaje y SELECT cambia Pokémon.
 
 Esta es una reimplementación nativa en C para 3DS; no empaqueta el juego web ni
 incluye su catálogo completo. La red y el modo de dos jugadores siguen sin
 implementarse. El combate, la progresión y el roster son versiones reducidas.
+El ZIP de Windows facilitado para esta tarea es *Empress Pokémon Arena*, un
+juego separado; se consultó como referencia general, sin reutilizar su código
+ni sus recursos.
 La adaptación no está afiliada a los autores de los juegos, PMDCollab, Nintendo
 ni The Pokémon Company.
 

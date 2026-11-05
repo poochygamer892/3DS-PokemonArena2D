@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "poke2d_background_indices.h"
+#include "poke2d_font_indices.h"
 #include "poke2d_sprite_indices.h"
 #include "poke2d_sprite_meta.h"
 
@@ -33,6 +34,7 @@ typedef struct {
 typedef struct {
     float x, y;
     float moveX, moveY;
+    float knockbackX, knockbackY;
     float basicCd;
     float skillCd[3];
     float dashCd;
@@ -41,20 +43,50 @@ typedef struct {
     float speedBoost;
     float ultimate;
     float hurtFlash;
+    float hitStun;
+    float burnTime, burnTick;
+    float slowTime;
+    float comboTimer;
     float attackAnim;
     float animClock;
+    int comboCount;
     int animKind;
 } Combatant;
 
 typedef struct {
     float x, y, vx, vy, life;
     int damage;
+    int attackType;
+    int status;
+    float statusTime;
+    float knockback;
     int active;
     int side;
     u32 color;
 } Shot;
 
-static const u32 kWhite = 0xFFF3D9FF;
+typedef enum { MOVE_MELEE, MOVE_LINE, MOVE_BURST, MOVE_SPREAD, MOVE_DASH } MoveStyle;
+typedef enum { TYPE_NEUTRAL, TYPE_GRASS, TYPE_FIRE, TYPE_WATER, TYPE_ELECTRIC } AttackType;
+typedef enum { STATUS_NONE, STATUS_BURN, STATUS_SLOW, STATUS_STUN } StatusKind;
+typedef enum { FX_SLASH, FX_BURST, FX_DODGE } EffectKind;
+
+typedef struct {
+    MoveStyle style;
+    int damage;
+    float cooldown;
+    float range;
+    AttackType type;
+    StatusKind status;
+    float statusTime;
+    u32 color;
+} MoveDefinition;
+
+typedef struct {
+    float x, y, endX, endY;
+    float life, maxLife;
+    EffectKind kind;
+    u32 color;
+} AttackEffect;
 
 static const Pokemon kSpecies[6] = {
     { "BULBASAUR", "GRASS / POISON", 0, 126, 126 },
@@ -77,22 +109,56 @@ static const char *const kUltimateLabel[6] = {
     "SOLAR BEAM", "FIRE BLAST", "HYDRO PUMP", "THUNDER", "BLAST BURN", "HYDRO CANNON"
 };
 
+static const MoveDefinition kMoves[6][3] = {
+    {
+        { MOVE_MELEE, 13, 3.2f, 72.0f, TYPE_GRASS, STATUS_NONE, 0.0f, 0x75D448FF },
+        { MOVE_LINE, 15, 4.0f, 230.0f, TYPE_GRASS, STATUS_SLOW, 1.8f, 0x73D56EFF },
+        { MOVE_SPREAD, 20, 5.0f, 250.0f, TYPE_GRASS, STATUS_NONE, 0.0f, 0xA6E34FFF }
+    },
+    {
+        { MOVE_MELEE, 13, 3.2f, 70.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0xF4C44AFF },
+        { MOVE_SPREAD, 15, 4.0f, 230.0f, TYPE_FIRE, STATUS_BURN, 4.0f, 0xFF9B43FF },
+        { MOVE_BURST, 21, 5.0f, 200.0f, TYPE_FIRE, STATUS_BURN, 4.5f, 0xF35E3EFF }
+    },
+    {
+        { MOVE_MELEE, 13, 3.2f, 72.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0x75D9EFFF },
+        { MOVE_LINE, 15, 4.0f, 245.0f, TYPE_WATER, STATUS_NONE, 0.0f, 0x60BDF2FF },
+        { MOVE_SPREAD, 19, 5.0f, 235.0f, TYPE_WATER, STATUS_SLOW, 2.0f, 0x88DDF2FF }
+    },
+    {
+        { MOVE_DASH, 15, 3.2f, 104.0f, TYPE_ELECTRIC, STATUS_NONE, 0.0f, 0xFFE34CFF },
+        { MOVE_LINE, 14, 4.0f, 250.0f, TYPE_ELECTRIC, STATUS_STUN, 0.48f, 0xFFDA58FF },
+        { MOVE_BURST, 22, 5.0f, 270.0f, TYPE_ELECTRIC, STATUS_STUN, 0.62f, 0xFFEE8AFF }
+    },
+    {
+        { MOVE_DASH, 17, 3.2f, 110.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0x78C8FFFF },
+        { MOVE_LINE, 18, 4.0f, 260.0f, TYPE_FIRE, STATUS_BURN, 4.0f, 0xFF743CFF },
+        { MOVE_MELEE, 23, 5.0f, 78.0f, TYPE_NEUTRAL, STATUS_STUN, 0.3f, 0xE85E89FF }
+    },
+    {
+        { MOVE_MELEE, 15, 3.2f, 75.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0xE1C6A0FF },
+        { MOVE_BURST, 19, 4.0f, 205.0f, TYPE_WATER, STATUS_SLOW, 2.0f, 0x58BDF2FF },
+        { MOVE_LINE, 23, 5.0f, 275.0f, TYPE_WATER, STATUS_NONE, 0.0f, 0x81E0FFFF }
+    }
+};
+
 enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
 
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
 static C2D_SpriteSheet gPoke2dAtlas;
 static C2D_SpriteSheet gEnvironmentAtlas;
+static C2D_SpriteSheet gFontAtlas;
 static C2D_Image gArenaImage[4];
 static C2D_Image gMenuBackground;
 static C2D_Image gGameLogo;
 static C2D_Image gTextFill[P2D_TEXT_COUNT];
-static C2D_Image gTextEdge[P2D_TEXT_COUNT];
 static Scene gScene = SCENE_TITLE;
 static MenuPage gMenuPage = PAGE_HOME;
 static GameMode gGameMode = MODE_QUICK;
 static Combatant gFighter[2];
 static Shot gShots[8];
+static AttackEffect gEffects[16];
 static int gActive[2] = { 0, 0 };
 static int gWinner = -1;
 static int gMenuSelection = 0;
@@ -116,6 +182,7 @@ static float gSupplyLife = 0.0f;
 static int gSupplyKind = DROP_HEAL;
 static int gSupplyCount = 0;
 static float gHitFlash = 0.0f;
+static char gHitLabel[24] = "HIT!";
 static u32 gMenuStickDirection = 0;
 static float gMenuStickRepeat = 0.0f;
 
@@ -130,6 +197,8 @@ extern const unsigned char poke2d_atlas_start[];
 extern const unsigned char poke2d_atlas_end[];
 extern const unsigned char poke2d_background_atlas_start[];
 extern const unsigned char poke2d_background_atlas_end[];
+extern const unsigned char poke2d_font_atlas_start[];
+extern const unsigned char poke2d_font_atlas_end[];
 
 __asm__(
     ".section .rodata\n"
@@ -139,6 +208,17 @@ __asm__(
     ".incbin \"../generated/pokearena2d/poke2d_atlas.t3x\"\n"
     ".global poke2d_atlas_end\n"
     "poke2d_atlas_end:\n"
+    ".text\n"
+);
+
+__asm__(
+    ".section .rodata\n"
+    ".balign 4\n"
+    ".global poke2d_font_atlas_start\n"
+    "poke2d_font_atlas_start:\n"
+    ".incbin \"../generated/pokearena2d/poke2d_font_atlas.t3x\"\n"
+    ".global poke2d_font_atlas_end\n"
+    "poke2d_font_atlas_end:\n"
     ".text\n"
 );
 
@@ -192,28 +272,22 @@ static float bitmapTextWidth(const char *s, float scale)
 
 static void drawBitmapText(float x, float y, float scale, u32 color, const char *s)
 {
-    /* Glyphs are rendered directly from the Pixelify Sans font served by the
-       web game. Keeping them as native-size textures avoids the missing system
-       font fallback seen in Azahar and on some homebrew setups. */
-    float glyphScale = scale * 1.80f * gUiTextScale;
+    /* Open Sans glyphs are rasterized at 40 px and filtered from a separate
+       RGBA8 atlas so their thinner strokes remain smooth on the 3DS. */
+    float glyphScale = scale * 0.80f * gUiTextScale;
     float startX = x;
-    C2D_ImageTint edgeTint;
     C2D_ImageTint fillTint;
-    C2D_PlainImageTint(&edgeTint, c2dColor(0x101B32FF), 1.0f);
     C2D_PlainImageTint(&fillTint, c2dColor(color), 1.0f);
     while (*s) {
         unsigned char c = (unsigned char)*s++;
         if (c == '\n') {
             x = startX;
-            y += 18.0f * glyphScale;
+            y += 40.0f * glyphScale;
             continue;
         }
         if (c < P2D_TEXT_FIRST || c > 126) c = '?';
         int index = c - P2D_TEXT_FIRST;
         if (c != ' ') {
-            C2D_DrawImageAt(gTextEdge[index], x - 2.0f * glyphScale,
-                            y - 2.0f * glyphScale,
-                            0.60f, &edgeTint, glyphScale, glyphScale);
             C2D_DrawImageAt(gTextFill[index], x, y, 0.61f, &fillTint,
                             glyphScale, glyphScale);
         }
@@ -228,7 +302,7 @@ static void textAt(float x, float y, float scale, u32 color, const char *s)
 
 static void centeredText(float x, float y, float scale, u32 color, const char *s)
 {
-    float actualScale = scale * 1.80f * gUiTextScale;
+    float actualScale = scale * 0.80f * gUiTextScale;
     drawBitmapText(x - bitmapTextWidth(s, actualScale) * 0.5f,
                    y, scale, color, s);
 }
@@ -236,7 +310,7 @@ static void centeredText(float x, float y, float scale, u32 color, const char *s
 static void fittedText(float x, float y, float maxWidth, float scale,
                        u32 color, const char *s, bool centered)
 {
-    float actualScale = scale * 1.80f * gUiTextScale;
+    float actualScale = scale * 0.80f * gUiTextScale;
     float width = bitmapTextWidth(s, actualScale);
     if (maxWidth > 0.0f && width > maxWidth) {
         scale *= maxWidth / width;
@@ -337,6 +411,7 @@ static void resetBattle(void)
     gActive[1] = 0;
     memset(gFighter, 0, sizeof(gFighter));
     memset(gShots, 0, sizeof(gShots));
+    memset(gEffects, 0, sizeof(gEffects));
     gFighter[0].x = 92.0f;
     gFighter[0].y = 155.0f;
     gFighter[1].x = 308.0f;
@@ -352,6 +427,7 @@ static void resetBattle(void)
     gSupplyLife = 0.0f;
     gSupplyCount = 0;
     gHitFlash = 0.0f;
+    snprintf(gHitLabel, sizeof(gHitLabel), "HIT!");
     gWinner = -1;
     gScene = SCENE_BATTLE;
 }
@@ -384,6 +460,14 @@ static void switchPokemon(int side, int slot)
     gActive[side] = slot;
     gFighter[side].switchCd = 3.5f;
     gFighter[side].dashIFrames = 0.2f;
+    gFighter[side].burnTime = 0.0f;
+    gFighter[side].burnTick = 0.0f;
+    gFighter[side].slowTime = 0.0f;
+    gFighter[side].hitStun = 0.0f;
+    gFighter[side].knockbackX = 0.0f;
+    gFighter[side].knockbackY = 0.0f;
+    gFighter[side].comboCount = 0;
+    gFighter[side].comboTimer = 0.0f;
     if (side == 0) {
         gFighter[0].x = clampf(gFighter[0].x - 20.0f, 35.0f, 365.0f);
     } else {
@@ -393,7 +477,7 @@ static void switchPokemon(int side, int slot)
 
 static void damagePokemon(int side, int damage, float chargeRatio)
 {
-    if (side == 0 && gFighter[0].dashIFrames > 0.0f)
+    if (gFighter[side].dashIFrames > 0.0f)
         return;
     Pokemon *p = &gTeam[side][gActive[side]];
     if (p->hp <= 0) return;
@@ -412,6 +496,14 @@ static void damagePokemon(int side, int damage, float chargeRatio)
             gActive[side] = next;
             gFighter[side].switchCd = 0.0f;
             gFighter[side].dashIFrames = 0.78f;
+            gFighter[side].burnTime = 0.0f;
+            gFighter[side].burnTick = 0.0f;
+            gFighter[side].slowTime = 0.0f;
+            gFighter[side].hitStun = 0.0f;
+            gFighter[side].knockbackX = 0.0f;
+            gFighter[side].knockbackY = 0.0f;
+            gFighter[side].comboCount = 0;
+            gFighter[side].comboTimer = 0.0f;
         }
     }
 }
@@ -423,36 +515,175 @@ static void playAttackAnimation(int side)
     gFighter[side].animKind = ANIM_SHOOT;
 }
 
-static void fireSkillShot(int side, int slot, int damage, float range)
+static AttackEffect *spawnEffect(EffectKind kind, float x, float y,
+                                 float endX, float endY, float life, u32 color)
 {
-    playAttackAnimation(side);
-    int opponent = side == 0 ? 1 : 0;
-    float dx = gFighter[opponent].x - gFighter[side].x;
-    float dy = gFighter[opponent].y - gFighter[side].y;
-    float mag = sqrtf(dx * dx + dy * dy);
-    if (mag < 0.1f || mag > range) return;
+    for (int i = 0; i < 16; ++i) {
+        AttackEffect *effect = &gEffects[i];
+        if (effect->life > 0.0f) continue;
+        effect->x = x;
+        effect->y = y;
+        effect->endX = endX;
+        effect->endY = endY;
+        effect->life = effect->maxLife = life;
+        effect->kind = kind;
+        effect->color = color;
+        return effect;
+    }
+    return NULL;
+}
 
-    for (int i = 0; i < 8; ++i) {
-        if (gShots[i].active) continue;
-        int species = gTeam[side][gActive[side]].speciesArt;
-        static const u32 colors[6][3] = {
-            { 0xFFF04FFF, 0xF5C735FF, 0x9B79FFFF },
-            { 0x65D878FF, 0xA8E657FF, 0xFFF07AFF },
-            { 0x65C8F2FF, 0xA9E6F5FF, 0x4F9CFFFF },
-            { 0xFF8A42FF, 0xF4C64EFF, 0xF94D38FF },
-            { 0x4A9EFFFF, 0xED5062FF, 0x7DD8F2FF },
-            { 0xB48BFFFF, 0xF2DDB6FF, 0xF3A85FFF }
-        };
-        gShots[i].x = gFighter[side].x;
-        gShots[i].y = gFighter[side].y;
-        gShots[i].vx = dx / mag * 245.0f;
-        gShots[i].vy = dy / mag * 245.0f;
-        gShots[i].life = 1.4f;
-        gShots[i].damage = damage;
-        gShots[i].color = colors[species][slot];
-        gShots[i].active = 1;
-        gShots[i].side = side;
+static AttackType speciesType(int species)
+{
+    switch (species) {
+    case 0: return TYPE_GRASS;
+    case 1: return TYPE_FIRE;
+    case 2: return TYPE_WATER;
+    case 3: return TYPE_ELECTRIC;
+    case 4: return TYPE_FIRE;
+    case 5: return TYPE_WATER;
+    default: return TYPE_NEUTRAL;
+    }
+}
+
+static float typeMultiplier(AttackType attack, AttackType defender)
+{
+    if (attack == TYPE_NEUTRAL || defender == TYPE_NEUTRAL) return 1.0f;
+    if ((attack == TYPE_GRASS && defender == TYPE_WATER) ||
+        (attack == TYPE_FIRE && defender == TYPE_GRASS) ||
+        (attack == TYPE_WATER && defender == TYPE_FIRE) ||
+        (attack == TYPE_ELECTRIC && defender == TYPE_WATER))
+        return 1.5f;
+    if ((attack == TYPE_GRASS && defender == TYPE_FIRE) ||
+        (attack == TYPE_FIRE && defender == TYPE_WATER) ||
+        (attack == TYPE_WATER && defender == TYPE_GRASS) ||
+        (attack == TYPE_ELECTRIC && defender == TYPE_GRASS))
+        return 0.65f;
+    return 1.0f;
+}
+
+static void combatHit(int attacker, int rawDamage, AttackType attackType,
+                      StatusKind status, float statusTime, float knockback,
+                      float stun, u32 color)
+{
+    int target = attacker == 0 ? 1 : 0;
+    int attackerSpecies = gTeam[attacker][gActive[attacker]].speciesArt;
+    int targetSpecies = gTeam[target][gActive[target]].speciesArt;
+    AttackType defenderType = speciesType(targetSpecies);
+    float multiplier = typeMultiplier(attackType, defenderType);
+    if (attackType != TYPE_NEUTRAL && attackType == speciesType(attackerSpecies))
+        multiplier *= 1.2f;
+    int damage = (int)ceilf((float)rawDamage * multiplier);
+    if (damage < 1) damage = 1;
+    int activeBefore = gActive[target];
+    int hpBefore = gTeam[target][activeBefore].hp;
+    float dx = gFighter[target].x - gFighter[attacker].x;
+    float dy = gFighter[target].y - gFighter[attacker].y;
+    float length = sqrtf(dx * dx + dy * dy);
+    if (length < 0.1f) length = 1.0f;
+    damagePokemon(target, damage, 30.0f);
+    if (gActive[target] != activeBefore || gTeam[target][activeBefore].hp == hpBefore)
         return;
+
+    Combatant *victim = &gFighter[target];
+    victim->knockbackX = dx / length * knockback;
+    victim->knockbackY = dy / length * knockback;
+    victim->hitStun = fmaxf(victim->hitStun, stun);
+    if (status == STATUS_BURN) {
+        victim->burnTime = fmaxf(victim->burnTime, statusTime);
+        if (victim->burnTick <= 0.0f) victim->burnTick = 0.75f;
+    } else if (status == STATUS_SLOW) {
+        victim->slowTime = fmaxf(victim->slowTime, statusTime);
+    } else if (status == STATUS_STUN) {
+        victim->hitStun = fmaxf(victim->hitStun, statusTime);
+    }
+    spawnEffect(FX_BURST, gFighter[target].x, gFighter[target].y,
+                gFighter[target].x, gFighter[target].y, 0.24f, color);
+    if (multiplier > 1.01f)
+        snprintf(gHitLabel, sizeof(gHitLabel), "SUPER EFFECTIVE!");
+    else if (multiplier < 0.99f)
+        snprintf(gHitLabel, sizeof(gHitLabel), "RESISTED");
+    else
+        snprintf(gHitLabel, sizeof(gHitLabel), "HIT!");
+    gHitFlash = 0.42f;
+}
+
+static void fireProjectile(int side, const MoveDefinition *move,
+                           float dx, float dy, int damage, float angle)
+{
+    float cosine = cosf(angle);
+    float sine = sinf(angle);
+    float vx = (dx * cosine - dy * sine) * 250.0f;
+    float vy = (dx * sine + dy * cosine) * 250.0f;
+    for (int i = 0; i < 8; ++i) {
+        Shot *shot = &gShots[i];
+        if (shot->active) continue;
+        shot->x = gFighter[side].x;
+        shot->y = gFighter[side].y;
+        shot->vx = vx;
+        shot->vy = vy;
+        shot->life = 1.25f;
+        shot->damage = damage;
+        shot->attackType = move->type;
+        shot->status = move->status;
+        shot->statusTime = move->statusTime;
+        shot->knockback = 28.0f;
+        shot->color = move->color;
+        shot->active = 1;
+        shot->side = side;
+        return;
+    }
+}
+
+static void useMove(int side, int slot)
+{
+    int opponent = side == 0 ? 1 : 0;
+    int species = gTeam[side][gActive[side]].speciesArt;
+    const MoveDefinition *move = &kMoves[species][slot];
+    Combatant *fighter = &gFighter[side];
+    float startX = fighter->x;
+    float startY = fighter->y;
+    float dx = gFighter[opponent].x - startX;
+    float dy = gFighter[opponent].y - startY;
+    float distance = sqrtf(dx * dx + dy * dy);
+    if (distance < 0.1f) return;
+    if (distance > move->range) return;
+    dx /= distance;
+    dy /= distance;
+    playAttackAnimation(side);
+
+    if (move->style == MOVE_MELEE) {
+        if (distance > 78.0f) return;
+        spawnEffect(FX_SLASH, startX + dx * 8.0f, startY + dy * 8.0f,
+                    gFighter[opponent].x, gFighter[opponent].y, 0.22f, move->color);
+        combatHit(side, move->damage, move->type, move->status, move->statusTime,
+                  54.0f, 0.16f, move->color);
+    } else if (move->style == MOVE_DASH) {
+        float travel = fminf(48.0f, fmaxf(0.0f, distance - 29.0f));
+        fighter->x = clampf(fighter->x + dx * travel, 26.0f, 374.0f);
+        fighter->y = clampf(fighter->y + dy * travel, 96.0f, 184.0f);
+        spawnEffect(FX_SLASH, startX, startY, fighter->x, fighter->y,
+                    0.24f, move->color);
+        if (distance2(fighter->x, fighter->y, gFighter[opponent].x,
+                      gFighter[opponent].y) <= 53.0f * 53.0f)
+            combatHit(side, move->damage, move->type, move->status, move->statusTime,
+                      70.0f, 0.22f, move->color);
+    } else if (move->style == MOVE_BURST) {
+        spawnEffect(FX_BURST, gFighter[opponent].x, gFighter[opponent].y,
+                    gFighter[opponent].x, gFighter[opponent].y,
+                    0.38f, move->color);
+        combatHit(side, move->damage, move->type, move->status, move->statusTime,
+                  42.0f, 0.14f, move->color);
+    } else if (move->style == MOVE_SPREAD) {
+        int pelletDamage = move->damage / 2;
+        if (pelletDamage < 4) pelletDamage = 4;
+        fireProjectile(side, move, dx, dy, pelletDamage, -0.16f);
+        fireProjectile(side, move, dx, dy, pelletDamage, 0.0f);
+        fireProjectile(side, move, dx, dy, pelletDamage, 0.16f);
+    } else {
+        spawnEffect(FX_SLASH, startX, startY, gFighter[opponent].x,
+                    gFighter[opponent].y, 0.2f, move->color);
+        fireProjectile(side, move, dx, dy, move->damage, 0.0f);
     }
 }
 
@@ -465,9 +696,13 @@ static void updateShots(float dt)
         shot->y += shot->vy * dt;
         shot->life -= dt;
         int target = shot->side == 0 ? 1 : 0;
-        if (distance2(shot->x, shot->y, gFighter[target].x, gFighter[target].y) < 24.0f * 24.0f) {
-            damagePokemon(target, shot->damage, 30.0f);
-            gFighter[shot->side].ultimate = clampf(gFighter[shot->side].ultimate + 6.0f, 0.0f, 100.0f);
+        if (distance2(shot->x, shot->y, gFighter[target].x,
+                      gFighter[target].y) < 23.0f * 23.0f) {
+            combatHit(shot->side, shot->damage, (AttackType)shot->attackType,
+                      (StatusKind)shot->status, shot->statusTime,
+                      shot->knockback, 0.11f, shot->color);
+            gFighter[shot->side].ultimate = clampf(gFighter[shot->side].ultimate + 4.0f,
+                                                   0.0f, 100.0f);
             shot->active = 0;
         } else if (shot->life <= 0.0f || shot->x < 12.0f || shot->x > 388.0f ||
                    shot->y < 42.0f || shot->y > 230.0f) {
@@ -476,40 +711,56 @@ static void updateShots(float dt)
     }
 }
 
+static void performBasicAttack(int side)
+{
+    Combatant *fighter = &gFighter[side];
+    int opponent = side == 0 ? 1 : 0;
+    float range = 56.0f;
+    if (distance2(fighter->x, fighter->y, gFighter[opponent].x,
+                  gFighter[opponent].y) > range * range)
+        return;
+    if (fighter->comboTimer <= 0.0f) fighter->comboCount = 0;
+    fighter->comboCount = (fighter->comboCount % 3) + 1;
+    fighter->comboTimer = 0.92f;
+    playAttackAnimation(side);
+    static const float damageRatio[3] = { 0.032f, 0.046f, 0.066f };
+    static const float knockback[3] = { 24.0f, 39.0f, 72.0f };
+    static const float stun[3] = { 0.07f, 0.11f, 0.24f };
+    int targetMax = gTeam[opponent][gActive[opponent]].maxHp;
+    int damage = (int)ceilf((float)targetMax * damageRatio[fighter->comboCount - 1]);
+    spawnEffect(FX_SLASH, fighter->x, fighter->y,
+                gFighter[opponent].x, gFighter[opponent].y,
+                0.2f, fighter->comboCount == 3 ? C_GOLD : 0xF4E8C8FF);
+    combatHit(side, damage, speciesType(gTeam[side][gActive[side]].speciesArt),
+              STATUS_NONE, 0.0f, knockback[fighter->comboCount - 1],
+              stun[fighter->comboCount - 1], 0xFFF1D2FF);
+    if (fighter->comboCount == 3) fighter->comboTimer = 0.0f;
+}
+
 static void useBasic(int side)
 {
-    Combatant *c = &gFighter[side];
-    int opponent = side == 0 ? 1 : 0;
-    if (c->basicCd > 0.0f || gScene != SCENE_BATTLE)
+    Combatant *fighter = &gFighter[side];
+    if (fighter->basicCd > 0.0f || gScene != SCENE_BATTLE || fighter->hitStun > 0.0f)
         return;
-    c->basicCd = 0.5f;
-    float d2 = distance2(c->x, c->y, gFighter[opponent].x, gFighter[opponent].y);
-    if (d2 <= 70.0f * 70.0f) {
-        playAttackAnimation(side);
-        int targetMax = gTeam[opponent][gActive[opponent]].maxHp;
-        int dmg = targetMax > 0 ? (int)(targetMax * 0.032f) : 4;
-        if (dmg < 4) dmg = 4;
-        damagePokemon(opponent, dmg, 30.0f);
-        c->ultimate = clampf(c->ultimate + 3.0f, 0.0f, 100.0f);
-    }
+    fighter->basicCd = 0.38f;
+    performBasicAttack(side);
 }
 
 static void useSkill(int slot)
 {
-    Combatant *c = &gFighter[0];
-    if (gScene != SCENE_BATTLE || slot < 0 || slot > 2 || c->skillCd[slot] > 0.0f)
+    Combatant *fighter = &gFighter[0];
+    int species = gTeam[0][gActive[0]].speciesArt;
+    if (gScene != SCENE_BATTLE || slot < 0 || slot > 2 ||
+        fighter->skillCd[slot] > 0.0f || fighter->hitStun > 0.0f)
         return;
-    static const float cooldown[3] = { 3.2f, 4.0f, 5.0f };
-    static const int damage[3] = { 12, 17, 22 };
-    static const float range[3] = { 175.0f, 220.0f, 270.0f };
-    c->skillCd[slot] = cooldown[slot];
-    fireSkillShot(0, slot, damage[slot], range[slot]);
+    fighter->skillCd[slot] = kMoves[species][slot].cooldown;
+    useMove(0, slot);
 }
 
 static void useDash(void)
 {
     Combatant *c = &gFighter[0];
-    if (c->dashCd > 0.0f) return;
+    if (c->dashCd > 0.0f || c->hitStun > 0.0f) return;
     c->dashCd = 2.5f;
     c->dashIFrames = 0.3f;
     float dx = c->moveX;
@@ -523,16 +774,25 @@ static void useDash(void)
     if (mag > 0.1f) {
         c->x = clampf(c->x + dx / mag * 38.0f, 28.0f, 372.0f);
         c->y = clampf(c->y + dy / mag * 32.0f, 52.0f, 215.0f);
+        spawnEffect(FX_DODGE, c->x - dx / mag * 20.0f,
+                    c->y - dy / mag * 16.0f, c->x, c->y,
+                    0.24f, 0x76E4E8FF);
     }
 }
 
 static void useUltimate(void)
 {
     Combatant *c = &gFighter[0];
-    if (c->ultimate < 100.0f) return;
+    if (c->ultimate < 100.0f || c->hitStun > 0.0f) return;
     c->ultimate = 0.0f;
-    if (distance2(c->x, c->y, gFighter[1].x, gFighter[1].y) <= 285.0f * 285.0f)
-        damagePokemon(1, 45, 0.0f);
+    if (distance2(c->x, c->y, gFighter[1].x, gFighter[1].y) <= 285.0f * 285.0f) {
+        int species = gTeam[0][gActive[0]].speciesArt;
+        u32 color = kMoves[species][2].color;
+        spawnEffect(FX_BURST, gFighter[1].x, gFighter[1].y,
+                    gFighter[1].x, gFighter[1].y, 0.55f, color);
+        combatHit(0, 45, speciesType(species), STATUS_NONE, 0.0f,
+                  82.0f, 0.28f, color);
+    }
 }
 
 static void spawnSupply(void)
@@ -573,6 +833,32 @@ static void updateSupply(float dt)
     if (gSupplyLife < 0.0f) gSupplyLife = 0.0f;
 }
 
+static void updateStatusEffects(int side, float dt)
+{
+    Combatant *fighter = &gFighter[side];
+    if (fighter->burnTime > 0.0f) {
+        fighter->burnTime = fmaxf(0.0f, fighter->burnTime - dt);
+        fighter->burnTick -= dt;
+        if (fighter->burnTick <= 0.0f && fighter->burnTime > 0.0f) {
+            damagePokemon(side, 2, 0.0f);
+            fighter->burnTick = 0.85f;
+        }
+    } else {
+        fighter->burnTick = 0.0f;
+    }
+    fighter->slowTime = fmaxf(0.0f, fighter->slowTime - dt);
+    fighter->hitStun = fmaxf(0.0f, fighter->hitStun - dt);
+    fighter->comboTimer = fmaxf(0.0f, fighter->comboTimer - dt);
+    if (fighter->comboTimer <= 0.0f) fighter->comboCount = 0;
+}
+
+static void updateEffects(float dt)
+{
+    for (int i = 0; i < 16; ++i)
+        if (gEffects[i].life > 0.0f)
+            gEffects[i].life = fmaxf(0.0f, gEffects[i].life - dt);
+}
+
 static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad)
 {
     if (down & KEY_START) {
@@ -582,8 +868,11 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     }
     gBattleTime += dt;
     updateShots(dt);
+    updateEffects(dt);
     Combatant *player = &gFighter[0];
     Combatant *cpu = &gFighter[1];
+    updateStatusEffects(0, dt);
+    updateStatusEffects(1, dt);
     float moveX = (float)pad->dx / 156.0f;
     float moveY = -(float)pad->dy / 156.0f;
     /* The D-pad is a second movement option. It is only used when the Circle
@@ -596,11 +885,17 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     }
     float mag = sqrtf(moveX * moveX + moveY * moveY);
     if (mag > 1.0f) { moveX /= mag; moveY /= mag; }
+    if (player->hitStun > 0.0f) moveX = moveY = 0.0f;
     player->moveX = moveX;
     player->moveY = moveY;
     float speed = player->speedBoost > 0.0f ? 125.0f : 96.0f;
-    player->x = clampf(player->x + moveX * speed * dt, 26.0f, 374.0f);
-    player->y = clampf(player->y + moveY * speed * dt, 96.0f, 184.0f);
+    if (player->slowTime > 0.0f) speed *= 0.62f;
+    player->x = clampf(player->x + (moveX * speed + player->knockbackX) * dt,
+                       26.0f, 374.0f);
+    player->y = clampf(player->y + (moveY * speed + player->knockbackY) * dt,
+                       96.0f, 184.0f);
+    player->knockbackX *= expf(-8.0f * dt);
+    player->knockbackY *= expf(-8.0f * dt);
 
     float dx = player->x - cpu->x;
     float dy = player->y - cpu->y;
@@ -608,26 +903,28 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     static const float cpuSpeed[3] = { 23.0f, 34.0f, 47.0f };
     static const float basicDelay[3] = { 1.10f, 0.90f, 0.67f };
     static const float skillDelay[3] = { 4.70f, 3.40f, 2.45f };
-    static const int basicDamage[3] = { 5, 7, 9 };
-    static const int skillDamage[3] = { 10, 14, 18 };
-    if (d > 58.0f && d > 0.1f) {
-        cpu->x = clampf(cpu->x + dx / d * cpuSpeed[gCpuDifficulty] * dt, 26.0f, 374.0f);
-        cpu->y = clampf(cpu->y + dy / d * cpuSpeed[gCpuDifficulty] * dt, 96.0f, 184.0f);
-    } else {
+    if (cpu->hitStun <= 0.0f && d > 58.0f && d > 0.1f) {
+        float cpuMoveScale = cpu->slowTime > 0.0f ? 0.62f : 1.0f;
+        cpu->x = clampf(cpu->x + (dx / d * cpuSpeed[gCpuDifficulty] * cpuMoveScale +
+                                  cpu->knockbackX) * dt, 26.0f, 374.0f);
+        cpu->y = clampf(cpu->y + (dy / d * cpuSpeed[gCpuDifficulty] * cpuMoveScale +
+                                  cpu->knockbackY) * dt, 96.0f, 184.0f);
+    } else if (cpu->hitStun <= 0.0f && d <= 58.0f) {
         gCpuBasicCd -= dt;
         if (gCpuBasicCd <= 0.0f) {
             gCpuBasicCd = basicDelay[gCpuDifficulty];
-            playAttackAnimation(1);
-            damagePokemon(0, basicDamage[gCpuDifficulty], 30.0f);
+            performBasicAttack(1);
         }
     }
+    cpu->knockbackX *= expf(-8.0f * dt);
+    cpu->knockbackY *= expf(-8.0f * dt);
 
     gCpuSkillCd -= dt;
-    if (gCpuSkillCd <= 0.0f && d <= 250.0f) {
+    if (cpu->hitStun <= 0.0f && gCpuSkillCd <= 0.0f) {
         int cpuSpecies = gTeam[1][gActive[1]].speciesArt;
         int slot = gActive[1] % 3;
-        int damage = skillDamage[gCpuDifficulty] + (cpuSpecies == 4 ? 2 : 0);
-        fireSkillShot(1, slot, damage, 250.0f);
+        if (d <= kMoves[cpuSpecies][slot].range)
+            useMove(1, slot);
         gCpuSkillCd = skillDelay[gCpuDifficulty] + (float)slot * 0.45f;
     }
 
@@ -640,6 +937,7 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     player->animClock += dt;
     cpu->animClock += dt;
     player->basicCd = fmaxf(0.0f, player->basicCd - dt);
+    cpu->basicCd = fmaxf(0.0f, cpu->basicCd - dt);
     player->dashCd = fmaxf(0.0f, player->dashCd - dt);
     player->switchCd = fmaxf(0.0f, player->switchCd - dt);
     player->dashIFrames = fmaxf(0.0f, player->dashIFrames - dt);
@@ -647,6 +945,7 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     player->hurtFlash = fmaxf(0.0f, player->hurtFlash - dt);
     cpu->dashIFrames = fmaxf(0.0f, cpu->dashIFrames - dt);
     cpu->hurtFlash = fmaxf(0.0f, cpu->hurtFlash - dt);
+    cpu->switchCd = fmaxf(0.0f, cpu->switchCd - dt);
     for (int i = 0; i < 3; ++i)
         player->skillCd[i] = fmaxf(0.0f, player->skillCd[i] - dt);
     gHitFlash = fmaxf(0.0f, gHitFlash - dt);
@@ -721,6 +1020,52 @@ static void drawFighter(int side)
     if (side == 0 && fighter->dashIFrames > 0.0f)
         C2D_DrawCircleSolid(fighter->x, fighter->y - 6.0f, 0.25f, 23.0f,
                             c2dColor(0xE9F8FF55));
+    if (fighter->burnTime > 0.0f)
+        centeredText(fighter->x, fighter->y - 49.0f, 0.19f, 0xFF875AFF, "BURN");
+    else if (fighter->slowTime > 0.0f)
+        centeredText(fighter->x, fighter->y - 49.0f, 0.19f, 0x7CE1F2FF, "SLOW");
+    else if (fighter->hitStun > 0.0f)
+        centeredText(fighter->x, fighter->y - 49.0f, 0.19f, 0xFFE678FF, "STUN");
+}
+
+static void drawAttackEffects(void)
+{
+    for (int i = 0; i < 16; ++i) {
+        AttackEffect *effect = &gEffects[i];
+        if (effect->life <= 0.0f || effect->maxLife <= 0.0f) continue;
+        float progress = 1.0f - effect->life / effect->maxLife;
+        if (effect->kind == FX_BURST) {
+            float radius = 6.0f + progress * 27.0f;
+            for (int spoke = 0; spoke < 8; ++spoke) {
+                float angle = (float)spoke * 0.78539816339f;
+                float inner = radius * 0.55f;
+                float x0 = effect->x + cosf(angle) * inner;
+                float y0 = effect->y + sinf(angle) * inner;
+                float x1 = effect->x + cosf(angle) * radius;
+                float y1 = effect->y + sinf(angle) * radius;
+                C2D_DrawLine(x0, y0, c2dColor(effect->color), x1, y1,
+                             c2dColor(effect->color), 3.0f, 0.29f);
+            }
+        } else {
+            float thickness = effect->kind == FX_DODGE ? 7.0f : 5.0f;
+            C2D_DrawLine(effect->x, effect->y, c2dColor(effect->color),
+                         effect->endX, effect->endY, c2dColor(effect->color),
+                         thickness, 0.29f);
+            if (effect->kind == FX_SLASH) {
+                float dx = effect->endX - effect->x;
+                float dy = effect->endY - effect->y;
+                float length = sqrtf(dx * dx + dy * dy);
+                if (length > 1.0f) {
+                    float ox = -dy / length * 4.0f;
+                    float oy = dx / length * 4.0f;
+                    C2D_DrawLine(effect->x + ox, effect->y + oy,
+                                 c2dColor(effect->color), effect->endX + ox,
+                                 effect->endY + oy, c2dColor(effect->color),
+                                 2.0f, 0.28f);
+                }
+            }
+        }
+    }
 }
 
 static void drawBattleTop(void)
@@ -763,15 +1108,16 @@ static void drawBattleTop(void)
         if (!shot->active) continue;
         float trailX = shot->x - shot->vx * 0.035f;
         float trailY = shot->y - shot->vy * 0.035f;
-        rect(trailX - 3.0f, trailY - 2.0f, 8.0f, 3.0f, shot->color);
-        C2D_DrawCircleSolid(shot->x, shot->y, 0.38f, 4.0f, c2dColor(shot->color));
-        C2D_DrawCircleSolid(shot->x - 1.0f, shot->y - 1.0f, 0.42f, 1.5f,
-                            c2dColor(kWhite));
+        C2D_DrawLine(trailX, trailY, c2dColor(shot->color), shot->x, shot->y,
+                     c2dColor(shot->color), 6.0f, 0.37f);
+        C2D_DrawCircleSolid(shot->x, shot->y, 0.36f, 4.8f,
+                            c2dColor(shot->color));
     }
+    drawAttackEffects();
     drawFighter(0);
     drawFighter(1);
     if (gHitFlash > 0.0f)
-        centeredText(200, 52, 0.31f, C_GOLD, "HIT!");
+        centeredText(200, 52, 0.28f, C_GOLD, gHitLabel);
 }
 
 static void actionButton(float x, float y, const char *key, const char *label,
@@ -826,10 +1172,13 @@ static void drawBottomBattle(void)
     }
     char ult[32];
     int species = gTeam[0][gActive[0]].speciesArt;
+    char basicLabel[16];
+    snprintf(basicLabel, sizeof(basicLabel), "BASIC %d/3",
+             (gFighter[0].comboCount % 3) + 1);
     snprintf(ult, sizeof(ult), "ULTIMATE  %d%%", (int)gFighter[0].ultimate);
     textAt(9, 73, 0.25f, C_TEXT, ult);
     drawBar(113, 76, 198, 8, (int)gFighter[0].ultimate, 100);
-    actionButton(8, 91, "A", "BASIC", gFighter[0].basicCd, 0x75A8F8FF);
+    actionButton(8, 91, "A", basicLabel, gFighter[0].basicCd, 0x75A8F8FF);
     actionButton(112, 91, "B", kMoveLabel[species][0], gFighter[0].skillCd[0], 0xF08C43FF);
     actionButton(216, 91, "X", kMoveLabel[species][1], gFighter[0].skillCd[1], 0xF2B93AFF);
     actionButton(8, 148, "Y", kMoveLabel[species][2], gFighter[0].skillCd[2], 0x9B85E9FF);
@@ -1094,17 +1443,19 @@ static void drawTitleBottom(void)
     case PAGE_TUTORIAL:
         drawMenuHeader("HOW TO PLAY");
         drawMenuRow(34, "MOVE", "CIRCLE PAD OR D-PAD MOVES YOU", NULL, false, false);
-        drawMenuRow(62, "ATTACK", "A IS A BASIC ATTACK", NULL, false, false);
+        drawMenuRow(62, "ATTACK", "A CHAINS THREE BASIC HITS", NULL, false, false);
         drawMenuRow(90, "SPECIAL MOVES", "B / X / Y USE YOUR MOVES", NULL, false, false);
         drawMenuRow(118, "DODGE", "L DASHES AND AVOIDS DAMAGE", NULL, false, false);
         drawMenuRow(146, "ULTIMATE", "R USES A FULL CHARGE", NULL, false, false);
+        drawMenuRow(174, "TYPE AND STATUS", "MATCH TYPES; MOVES CAN BURN, SLOW OR STUN",
+                    NULL, false, false);
         textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
         break;
     case PAGE_CREDITS:
         drawMenuHeader("CREDITS");
         drawMenuRow(36, "INSPIRED BY", "POKE ARENA 2D", NULL, false, false);
         drawMenuRow(64, "POKEMON SPRITES", "PMDCOLLAB COMMUNITY", NULL, false, false);
-        drawMenuRow(92, "PIXEL FONT", "PIXELIFY SANS - GOOGLE FONTS", NULL, false, false);
+        drawMenuRow(92, "UI FONT", "OPEN SANS REGULAR - APACHE 2.0", NULL, false, false);
         drawMenuRow(120, "3DS HOMEBREW", "BUILT FOR OLD 2DS AND 3DS", NULL, false, false);
         textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
         break;
@@ -1513,9 +1864,13 @@ int main(int argc, char **argv)
         (size_t)(poke2d_background_atlas_end - poke2d_background_atlas_start));
     gPoke2dAtlas = C2D_SpriteSheetLoadFromMem(
         poke2d_atlas_start, (size_t)(poke2d_atlas_end - poke2d_atlas_start));
-    if (!gEnvironmentAtlas || !gPoke2dAtlas) {
+    gFontAtlas = C2D_SpriteSheetLoadFromMem(
+        poke2d_font_atlas_start,
+        (size_t)(poke2d_font_atlas_end - poke2d_font_atlas_start));
+    if (!gEnvironmentAtlas || !gPoke2dAtlas || !gFontAtlas) {
         if (gEnvironmentAtlas) C2D_SpriteSheetFree(gEnvironmentAtlas);
         if (gPoke2dAtlas) C2D_SpriteSheetFree(gPoke2dAtlas);
+        if (gFontAtlas) C2D_SpriteSheetFree(gFontAtlas);
         C2D_Fini();
         C3D_Fini();
         gfxExit();
@@ -1538,14 +1893,15 @@ int main(int argc, char **argv)
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gGameLogo.tex, GPU_NEAREST, GPU_NEAREST);
     for (int i = 0; i < P2D_TEXT_COUNT; ++i) {
-        gTextFill[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextFillIndex[i]);
-        gTextEdge[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextEdgeIndex[i]);
+        gTextFill[i] = C2D_SpriteSheetGetImage(gFontAtlas, p2dTextIndex[i]);
+        C3D_TexSetFilter(gTextFill[i].tex, GPU_LINEAR, GPU_LINEAR);
     }
     gTop = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     gBottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     if (!gTop || !gBottom) {
         C2D_SpriteSheetFree(gPoke2dAtlas);
         C2D_SpriteSheetFree(gEnvironmentAtlas);
+        C2D_SpriteSheetFree(gFontAtlas);
         C2D_Fini();
         C3D_Fini();
         gfxExit();
@@ -1600,6 +1956,7 @@ int main(int argc, char **argv)
 
     C2D_SpriteSheetFree(gPoke2dAtlas);
     C2D_SpriteSheetFree(gEnvironmentAtlas);
+    C2D_SpriteSheetFree(gFontAtlas);
     C2D_Fini();
     C3D_Fini();
     gfxExit();

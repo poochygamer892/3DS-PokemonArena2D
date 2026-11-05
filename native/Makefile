@@ -70,6 +70,10 @@ assets:
 		-H include/poke2d_sprite_indices.h \
 		-o generated/pokearena2d/poke2d_atlas.t3x \
 		$$(find generated/pokearena2d/atlas_input -maxdepth 1 -name '*.png' -type f | sort)
+	@$(TEX3DS) --atlas -f rgba8 -z lz11 \
+		-H include/poke2d_font_indices.h \
+		-o generated/pokearena2d/poke2d_font_atlas.t3x \
+		$$(find generated/pokearena2d/font_input -maxdepth 1 -name '*.png' -type f | sort)
 
 $(BUILD): assets
 	@mkdir -p $@

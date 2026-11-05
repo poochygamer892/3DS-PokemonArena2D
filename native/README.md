@@ -2,14 +2,16 @@
 
 Port nativo en progreso del juego web [Poké Arena 2D](https://www.pokearena2d.com/).
 La interfaz adapta los menús del sitio y usa su logo, fondos, cuatro arenas y
-seis Pokémon animados. Los glifos se generan desde Pixelify Sans, la fuente que
-carga la web, y se almacenan en el atlas a una resolución mayor. Esto evita el
-fallback de fuente que Azahar mostraba como texto deformado. Las etiquetas se
-dibujan delante de los paneles del menú.
+seis Pokémon animados. Los glifos se generan desde Open Sans Regular a 40 px y
+se almacenan en un atlas RGBA8 filtrado para reducir el grosor y los bordes
+dentados. Las etiquetas se dibujan delante de los paneles del menú.
 
-La versión local incluye combate contra CPU, Training, una progresión League,
-Arena Challenge de seis peleas, selección de equipos, Pokédex, Tutorial y
-Settings. Online y 2 Players aparecen en los menús, pero no están implementados.
+El combate incluye una cadena de tres golpes básicos, embestidas, ataques de
+contacto, rayos, ráfagas, explosiones, retroceso y estados de quemadura, lentitud
+y aturdimiento. Los tipos de movimiento tienen ventajas y resistencias. La
+versión local también incluye CPU, Training, una progresión League, Arena
+Challenge de seis peleas, selección de equipos, Pokédex, Tutorial y Settings.
+Online y 2 Players aparecen en los menús, pero no están implementados.
 Tampoco están incluidos el roster completo, la evolución web, la tienda, cuentas
 o el juego por red. Los detalles están en
 [`../POKEARENA2D_REFERENCE.md`](../POKEARENA2D_REFERENCE.md); el origen de los
@@ -38,6 +40,6 @@ make -C native
 ```
 
 El proceso convierte las hojas de animación a 75% del tamaño original en un
-atlas RGBA5551 y mantiene los fondos en RGB888 para conservar las paletas de la
-web. GitHub Actions genera
+atlas RGBA5551, la fuente en un atlas RGBA8 y mantiene los fondos en RGB888 para
+conservar las paletas de la web. GitHub Actions genera
 `.3dsx`, `.cia`, `.elf` y `.smdh`.
