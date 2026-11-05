@@ -1,13 +1,24 @@
-# 3DS Pokémon Arena 2D
+# Poke2D Arena para Nintendo 3DS
 
-Proyecto homebrew para Nintendo 3DS basado en [Empress Pokémon 2D Arena](https://omniscye.itch.io/empress-pokemon-2d-arena).
+Adaptación homebrew no oficial del juego web [Poke2D Arena](https://poke2darena.com/) para Old 2DS y New 3DS XL. El juego original corre en navegador; este proyecto reimplementa el combate como una aplicación nativa de 3DS.
 
-El objetivo es adaptar su concepto y mecánicas principales a Old 2DS mediante una implementación nativa para la consola. Es un proyecto no oficial y no está afiliado al creador del juego original.
+La versión actual se centra en Quick Battle offline 3 contra 3. Ya usa la arena volcánica, los sprites direccionales y las animaciones de Pokémon que carga el juego web, con un HUD adaptado a las dos pantallas y controles táctiles/botones. Online, Story Mode, Arena Run, selección de equipos y el catálogo completo aún quedan pendientes.
 
-También se inspeccionó [Poke2D Arena](https://poke2darena.com/) como referencia web adicional. Es un juego distinto de la build Unity de Empress analizada anteriormente; sus observaciones y una propuesta de controles para 3DS están en [POKE2D_WEB_ANALYSIS.md](POKE2D_WEB_ANALYSIS.md).
+## Compilar
 
-## Referencia técnica de 3DS
+Con devkitARM, libctru, citro3d, citro2d, `tex3ds` y Python con Pillow:
 
-La build de 3DS de PokéSurvivor facilitada para este proyecto se usa como referencia técnica para estudiar formatos y despliegue en la consola. Su Title ID es `000400000F5A3D00`. El [repositorio del juego original](https://github.com/JPTER78/pokesurvivor) contiene su código web; no se han copiado ese código ni sus recursos.
+```sh
+make -C native
+```
 
-El diseño apunta a Old 2DS como perfil mínimo y a New 3DS XL como dispositivo compatible con el mismo homebrew. Ya hay un prototipo nativo con Pikachu, Bulbasaur, Squirtle, Charizard, Gyarados y Eevee dibujados para el proyecto. GitHub Actions generó los formatos `.3dsx` y `.cia`; están en los [artefactos de esta compilación](https://github.com/poochygamer892/3DS-PokemonArena2D/actions/runs/41822110482). Aún falta probar el juego en emulador o consola. Consulta [`native/README.md`](native/README.md) y el [plan de port](PORTING_PLAN_3DS.md).
+El flujo de GitHub Actions compila `.3dsx` y `.cia`; consulta sus artefactos en [Actions](https://github.com/poochygamer892/3DS-PokemonArena2D/actions).
+
+## Estado y recursos
+
+- [Análisis de la web y reglas observadas](POKE2D_WEB_ANALYSIS.md)
+- [Plan de adaptación y limitaciones](PORTING_PLAN_3DS.md)
+- [Port nativo y controles](native/README.md)
+- [Procedencia de los recursos web incluidos](native/assets/poke2d/ATTRIBUTION.md)
+
+El proyecto no está afiliado a los desarrolladores de Poke2D Arena ni a Nintendo.

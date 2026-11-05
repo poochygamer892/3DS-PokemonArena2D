@@ -1,0 +1,10 @@
+/native/build/
+/native/generated/
+/native/include/poke2d_sprite_indices.h
+/native/include/poke2d_sprite_meta.h
+/native/pokemonarena2d.3dsx
+/native/pokemonarena2d.cia
+/native/pokemonarena2d.elf
+/native/pokemonarena2d.smdh
+/native/pokemonarena2d.map
+/dist/

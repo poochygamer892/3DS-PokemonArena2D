@@ -1,43 +1,34 @@
-# Port a Nintendo 3DS: estado y ruta
+# Adaptación de Poke2D Arena a Nintendo 3DS
 
 ## Estado actual
 
-El proyecto conserva dos referencias distintas: las compilaciones finales de Empress Pokémon 2D Arena para Windows (PE x64 + Unity IL2CPP) y Android (IL2CPP ARM64), y el juego web Poke2D Arena en `poke2darena.com`. El README mantiene la atribución que pidió el usuario a Empress; el análisis web más reciente es una referencia separada. No se dispone del proyecto fuente de Unity ni del código fuente del juego web.
+El objetivo es llevar a Old 2DS y New 3DS XL el juego web [Poke2D Arena](https://poke2darena.com/play-online/). No se puede empaquetar el navegador ni su bundle de Phaser directamente como `.3dsx` o `.cia`; la aplicación se está reimplementando en C con libctru, citro3d y citro2d.
 
-`.3dsx` y `.cia` son formatos de programas nativos de 3DS. No pueden envolver directamente la compilación Unity x64/ARM64 ni la aplicación web. Hace falta implementar el juego como programa nativo para 3DS. El perfil objetivo es Old 2DS; New 3DS XL puede ejecutar el mismo binario.
+La base de la versión actual es Quick Battle offline 3 contra 3. La arena y los sprites/animaciones direccionales provienen de los recursos que sirve el juego web. La consola muestra la batalla y el HUD arriba, y el equipo y botones táctiles abajo. El equipo inicial de la adaptación es Pikachu, Steelix y Scizor contra Gyarados, Charizard y Blastoise.
 
-## Ruta técnica
+## Trabajo pendiente
 
-1. Implementar el bucle nativo en C con devkitARM/libctru, citro3d y citro2d. El primer prototipo está en [`native/`](native/).
-2. Completar la pelea offline: movimiento, ataques, HP, enfriamientos, cambios, esquiva, definitivo y suministros.
-3. Compilar `.3dsx` y empaquetar el mismo juego como `.cia`; GitHub Actions ya generó ambos formatos y los publicó como [artefactos descargables](https://github.com/poochygamer892/3DS-PokemonArena2D/actions/runs/41822110482).
-4. Probar ambos formatos en emulador o consola. Añadir Historia, editor de equipos, más Pokémon y arenas después del combate local.
+1. Validar la compilación y ajustar la textura atlas para que quepa y funcione en Old 2DS.
+2. Afinar el combate contra las reglas web: movimientos, tipos, estados, apuntado, CPU y cambios.
+3. Añadir más arenas y Pokémon, además de edición de equipos y modos locales.
+4. Evaluar el acceso a red y los servicios necesarios para Online. Story Mode y Arena Run también requieren contenido y reglas adicionales.
+5. Probar `.3dsx` y `.cia` en Citra/Lime3DS y en hardware Old 2DS/New 3DS XL.
 
-## Bloqueos de compilación
+## Port y controles
 
-El host local no tiene una toolchain 3DS ejecutable. Docker descargó imágenes de devkitPro, pero no pudo crear sus sistemas de archivos por falta de espacio; la compilación se trasladó a GitHub Actions. La CI ya produjo `.3dsx`, `.cia`, `.elf` y `.smdh`; los archivos están en los [artefactos de compilación](https://github.com/poochygamer892/3DS-PokemonArena2D/actions/runs/41822110482). La build no se ha ejecutado en un emulador ni en hardware 3DS. La primera versión contiene un equipo reducido y una arena dibujada en el código; usa sprites Pokémon dibujados para este proyecto, no los sprites o escenarios de Poke2D Arena.
+| Acción | Control |
+|---|---|
+| Movimiento | Circle Pad |
+| Ataque básico | A o botón táctil |
+| Movimientos | B, X, Y o botones táctiles |
+| Space Dash | L o botón táctil |
+| Definitivo | R o botón táctil al 100% |
+| Cambiar Pokémon | Cruceta izquierda/derecha o tarjeta táctil |
 
-## Referencia web: Poke2D Arena
+Online y 3 Player Brawl no forman parte de la primera entrega: dependen de coordinación entre varios clientes y servicios remotos. El objetivo inmediato es que una partida local en la 3DS se vea y se juegue como Quick Battle.
 
-La página y una batalla Quick Battle se inspeccionaron en navegador. La guía describe equipos de tres, un Pokémon activo por lado, seis arenas, 18 tipos, Quick Battle, Vs CPU, Story y Online. El cliente usa un lienzo observado de 648×408 píxeles; la documentación de reglas ofrece datos concretos de cooldowns, cambios, esquiva, estados, suministros y combate. La nota completa, con observaciones separadas de propuestas y puntos por confirmar, está en [`POKE2D_WEB_ANALYSIS.md`](POKE2D_WEB_ANALYSIS.md).
+## Análisis y límites
 
-Los modos online y 3 Player Brawl quedan fuera del primer objetivo: el juego web depende de servicios remotos y coordinación WebSocket/WebRTC, que no son necesarios para validar el combate nativo local.
+La web y una partida Quick Battle se revisaron en navegador; las guías públicas aportan reglas y controles. El bundle está minificado y no tiene source map visible. El análisis documentado separa lo observado de las reglas descritas por el sitio y de las decisiones propias del port.
 
-## Referencia: PokéSurvivor 3DS
-
-Se descargaron desde Drive y se inspeccionaron estáticamente los dos paquetes proporcionados:
-
-| Paquete | Tamaño | SHA-256 |
-|---|---:|---|
-| `pokesurvivor-3ds.3dsx` | 41,307,932 bytes | `f5625764b2c087d655174e1c19060cb5ec0973b19cb974b4762673f4e31687d3` |
-| `pokesurvivor-3ds.cia` | 40,809,408 bytes | `6d7f066fb4a12ed741ae604dd7450809b6e704a930f5303c4011b9ace059b523` |
-
-El `.3dsx` se reconoce como una aplicación homebrew de Nintendo 3DS. Los metadatos SMDH embebidos en ambos archivos muestran el título `PokéSurvivor 3DS` y el publicador `juanluismm520`. El CIA contiene el Title ID `000400000F5A3D00` y el código de producto `CTR-H-PSV3`.
-
-Las cadenas estáticas nombran `curl` y Mbed TLS de devkitPro, el servicio HTTP de 3DS, configuración en `sdmc:/3ds/pokesurvivor-3ds/` y un flujo de consulta/descarga de actualizaciones. Esto ofrece una referencia de empaquetado y actualización; no prueba que esas funciones se ejecuten en cada modo. No ejecuté los paquetes.
-
-El binario acredita a `juanluismm520` como autor del port y contiene un enlace a `juanluismm521/pokesurvivor3ds`, que no se pudo resolver en GitHub. El repositorio público relacionado que sí apareció, [`DanFranza/pokesurvivor3DS`](https://github.com/DanFranza/pokesurvivor3DS), es un fork del juego web original [`JPTER78/pokesurvivor`](https://github.com/JPTER78/pokesurvivor): su README describe HTML/CSS/JavaScript sobre Canvas 2D y no incluye el código nativo que produjo estos paquetes. La licencia del código web actual es PolyForm Noncommercial; sus recursos también tienen licencias propias. Por ahora se toma el paquete como referencia técnica, sin copiar código ni assets.
-
-REA no admite estos formatos para `inspect_artifact`; el reconocimiento de 3DSX, el encabezado CIA, SMDH, hashes y cadenas se obtuvieron mediante inspección estática local.
-
-La nota de análisis estático está en [`REVERSE_ENGINEERING_NOTES.md`](REVERSE_ENGINEERING_NOTES.md).
+La adaptación aún no equivale al juego web completo. La CPU, parte del cálculo de daño y algunos movimientos son aproximaciones nativas; todavía no hay paridad del catálogo, menús, historia, juego online ni contenido completo. La compilación anterior del prototipo usaba gráficos geométricos y sprites distintos; se está reemplazando por los recursos reales de Poke2D Arena.

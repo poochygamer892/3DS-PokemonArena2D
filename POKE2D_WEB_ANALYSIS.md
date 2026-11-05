@@ -1,10 +1,10 @@
 # Análisis de Poke2D Arena para una adaptación a 3DS
 
-Fecha de inspección: 4 de noviembre de 2026. Referencias: [sitio](https://poke2darena.com/), [juego web](https://poke2darena.com/play-online/) y sus guías de [controles](https://poke2darena.com/guides/how-to-play-controls/), [reglas de combate](https://poke2darena.com/guides/battle-rules/) y [modos](https://poke2darena.com/guides/story-mode/).
+Fecha de inspección: 4 y 5 de noviembre de 2026. Referencias: [sitio](https://poke2darena.com/), [juego web](https://poke2darena.com/play-online/) y sus guías de [controles](https://poke2darena.com/guides/how-to-play-controls/), [reglas de combate](https://poke2darena.com/guides/battle-rules/) y [modos](https://poke2darena.com/guides/story-mode/).
 
 ## Identidad y método
 
-Poke2D Arena es un juego web distinto de la build Unity de Empress Pokémon 2D Arena analizada en [`REVERSE_ENGINEERING_NOTES.md`](REVERSE_ENGINEERING_NOTES.md). Esta nota trata `poke2darena.com` como referencia adicional; no afirma que ambos juegos compartan código o autoría.
+Poke2D Arena es el juego web que se está adaptando a Nintendo 3DS. Es distinto de la build Unity de Empress Pokémon 2D Arena analizada anteriormente en [`REVERSE_ENGINEERING_NOTES.md`](REVERSE_ENGINEERING_NOTES.md); no se afirma que ambos compartan código o autoría.
 
 Se inspeccionaron la página y el bundle cliente JavaScript, se leyeron las guías públicas y se ejecutó Quick Battle en Chromium. Se observó una partida local contra CPU; el dominio del servidor online y los anuncios/analítica se bloquearon durante esa sesión. No se creó ni se unió a una sala online.
 
@@ -14,7 +14,7 @@ El sitio está hecho con Astro y carga el juego desde un bundle JavaScript minif
 
 El menú ofrece Quick Battle, Vs CPU, Story Mode, Your Teams, Online y Settings. La primera opción inicia una pelea de entrenamiento; en la sesión observada Pikachu luchó contra Gyarados en la arena volcánica. La pantalla tiene vista cenital pixel art, paneles de Pokémon y vida en la parte superior, retratos del equipo a la izquierda, reloj/round en el centro y acciones en una barra inferior. La pelea avanzó en tiempo real y la vida de Pikachu bajó durante el intercambio.
 
-Las imágenes, sprites, sonidos y efectos que aparecen en el sitio no se copiaron al repositorio. La página se identifica como un juego fan no oficial; sus recursos pueden tener licencias distintas del código.
+La sesión más reciente volvió a confirmar que Quick Battle usa la arena volcánica, muestra los equipos en retratos a la izquierda y coloca el HUD de ambos Pokémon en la parte superior. El menú del juego incluye Quick Battle (Training 3 vs 3), Vs CPU, Story Mode, Arena Run, Your Teams y Online. Los recursos artísticos y el código pueden tener permisos y licencias distintos.
 
 ## Reglas que describen las guías
 
@@ -29,9 +29,9 @@ Las imágenes, sprites, sonidos y efectos que aparecen en el sitio no se copiaro
 - La CPU tiene Easy, Normal y Hard. La guía publica tiempos de reacción de 0,22/0,13/0,08 s, error de apuntado de 22/12/5 px y tendencia de esquiva de 25/50/75%. Estos números describen la guía, no una medición independiente de cada decisión de la IA.
 - Las peleas offline avanzan sin límite de tiempo; Online usa 90 s. El brawl de tres jugadores termina por eliminación o compara la vida total restante al agotarse el reloj.
 
-## Propuesta de adaptación para 3DS
+## Adaptación para 3DS
 
-La consola tiene menos espacio y entradas distintas al navegador. Un primer prototipo compatible con Old 2DS podría usar:
+La consola tiene menos espacio y entradas distintas al navegador. La adaptación compatible con Old 2DS usa este mapeo de controles:
 
 | Acción | Control propuesto |
 |---|---|
@@ -41,12 +41,12 @@ La consola tiene menos espacio y entradas distintas al navegador. Un primer prot
 | Cambio de Pokémon | Cruceta o retratos táctiles |
 | Apuntado | Autoapuntado al rival más cercano; arrastre táctil para ajustar dirección |
 
-Propuesta de pantalla: arena y combatientes en la pantalla superior (400×240), HUD compacto arriba y controles, equipo, vida y enfriamientos en la inferior (320×240). Esto conserva la acción principal y usa la pantalla táctil para sustituir ratón/joystick. El layout es una decisión de port, no el diseño original.
+La adaptación actual muestra la arena y combatientes en la pantalla superior (400×240), con HUD compacto arriba. La inferior (320×240) muestra miembros del equipo, medidor definitivo y botones táctiles para reemplazar parte del ratón/joystick. Este layout es una decisión del port, no el diseño web original.
 
-La primera versión jugable debería limitarse a una pelea offline 3 contra 3 contra CPU, una arena y pocos Pokémon con movimientos de varios tipos. Después se pueden añadir equipos editables y Story. Online y 3 Player Brawl conviene dejarlos para una etapa posterior: dependen de servicios remotos y de coordinación de red, mientras que el objetivo inicial es validar el bucle de combate local en hardware modesto.
+La primera entrega jugable se limita a una pelea offline 3 contra 3 contra CPU, una arena y seis Pokémon. Story, Arena Run, equipos configurables, Online y 3 Player Brawl siguen pendientes.
 
 ## Límites pendientes
 
 - El bundle está minificado y no tiene source map visible. La cadena `/data/catalog.json` devolvió HTTP 410 durante la inspección; no se exportó el catálogo completo.
 - No se recorrieron todos los movimientos, arenas, etapas de Historia, opciones de Settings ni flujos online. Las cifras de las reglas provienen de las guías públicas.
-- No se incorporó al proyecto ningún bundle, sprite, efecto o sonido del sitio. La implementación 3DS requerirá código nativo y recursos propios o con permiso compatible con su redistribución.
+- El proyecto incluye una selección de la arena y las hojas de Idle/Walk/Shoot que descarga el propio juego web, con su procedencia anotada en [`native/assets/poke2d/ATTRIBUTION.md`](native/assets/poke2d/ATTRIBUTION.md). No incluye el bundle JavaScript, el código de combate web, sonidos, efectos ni el catálogo completo.

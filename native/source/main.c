@@ -3,7 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "pokemon_sprites.h"
+#include "poke2d_sprite_indices.h"
+#include "poke2d_sprite_meta.h"
 
 #define TEAM_SIZE 3
 #define TOP_W 400.0f
@@ -33,6 +34,9 @@ typedef struct {
     float speedBoost;
     float ultimate;
     float hurtFlash;
+    float attackAnim;
+    float animClock;
+    int animKind;
 } Combatant;
 
 typedef struct {
@@ -48,27 +52,35 @@ static const u32 kWhite = 0xFFF3D9FF;
 static Pokemon gTeam[2][TEAM_SIZE] = {
     {
         { "PIKACHU", "ELECTRIC", 0, 110, 110 },
-        { "BULBASAUR", "GRASS", 1, 105, 105 },
-        { "SQUIRTLE", "WATER", 2, 120, 120 }
+        { "STEELIX", "STEEL / GROUND", 1, 180, 180 },
+        { "SCIZOR", "BUG / STEEL", 2, 125, 125 }
     },
     {
-        { "GYARADOS", "WATER", 4, 170, 170 },
-        { "CHARIZARD", "FIRE", 3, 130, 130 },
-        { "EEVEE", "NORMAL", 5, 100, 100 }
+        { "GYARADOS", "WATER / FLYING", 3, 170, 170 },
+        { "CHARIZARD", "FIRE / FLYING", 4, 130, 130 },
+        { "BLASTOISE", "WATER", 5, 160, 160 }
     }
 };
 static const char *const kMoveLabel[6][3] = {
-    { "THUNDER", "QUICK", "IRON" },
-    { "VINE", "RAZOR", "SEED" },
-    { "WATER", "BUBBLE", "SHELL" },
-    { "FLAME", "WING", "BLAST" },
-    { "WATER", "BITE", "CRUNCH" },
-    { "QUICK", "BITE", "SWIFT" }
+    { "CHARGE BEAM", "THUNDER PUNCH", "THUNDER WAVE" },
+    { "IRON HEAD", "EARTHQUAKE", "DOUBLE-EDGE" },
+    { "X-SCISSOR", "IRON HEAD", "DOUBLE-EDGE" },
+    { "WATERFALL", "HURRICANE", "EARTHQUAKE" },
+    { "FLAMETHROWER", "AIR SLASH", "DRAGON CLAW" },
+    { "SURF", "ICE BEAM", "AURA SPHERE" }
 };
+static const char *const kUltimateLabel[6] = {
+    "THUNDERBOLT", "DRAGON DANCE", "SWORDS DANCE", "DRAGON DANCE", "WILL-O-WISP", "PROTECT"
+};
+
+enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
 
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
 static C2D_TextBuf gTextBuf;
+static C2D_SpriteSheet gPoke2dAtlas;
+static C2D_Image gVolcanicArena;
+static C2D_Image gGrassArena;
 static Scene gScene = SCENE_TITLE;
 static Combatant gFighter[2];
 static Shot gShots[8];
@@ -86,13 +98,25 @@ static int gSupplyCount = 0;
 static float gHitFlash = 0.0f;
 
 static const u32 C_BG = 0x142330FF;
-static const u32 C_PANEL = 0x202E4BFF;
-static const u32 C_PANEL2 = 0x344766FF;
 static const u32 C_TEXT = 0xF8F3D8FF;
 static const u32 C_MUTED = 0xA7B2CBFF;
 static const u32 C_GREEN = 0x57CB69FF;
 static const u32 C_RED = 0xE75157FF;
 static const u32 C_GOLD = 0xFFC53DFF;
+
+extern const unsigned char poke2d_atlas_start[];
+extern const unsigned char poke2d_atlas_end[];
+
+__asm__(
+    ".section .rodata\n"
+    ".balign 4\n"
+    ".global poke2d_atlas_start\n"
+    "poke2d_atlas_start:\n"
+    ".incbin \"../generated/poke2d/poke2d_atlas.t3x\"\n"
+    ".global poke2d_atlas_end\n"
+    "poke2d_atlas_end:\n"
+    ".text\n"
+);
 
 static float clampf(float v, float lo, float hi)
 {
@@ -147,39 +171,51 @@ static void drawBar(float x, float y, float w, float h, int hp, int maxHp)
         rect(x + 1.0f, y + 1.0f, (w - 2.0f) * ratio, h - 2.0f, ratio > 0.35f ? C_GREEN : C_RED);
 }
 
-static void drawSpriteRuns(const PokemonSpriteRun *runs, int count, int resolution,
-                           float x, float y, float size, int mirror)
+static C2D_Image pokemonFrame(int art, int animation, int direction, int frame)
 {
-    const float scale = size / (float)resolution;
-    for (int i = 0; i < count; ++i) {
-        const PokemonSpriteRun *run = &runs[i];
-        float sx = mirror ? (float)resolution - (float)run->x - (float)run->w : (float)run->x;
-        rect(x + sx * scale, y + (float)run->y * scale,
-             (float)run->w * scale + 0.2f, scale + 0.2f, run->rgba);
-    }
+    if (art < 0 || art >= P2D_SPECIES_COUNT) art = 0;
+    if (animation < 0 || animation >= P2D_ANIM_COUNT) animation = ANIM_IDLE;
+    if (direction < 0 || direction >= P2D_DIR_COUNT) direction = 0;
+    int count = p2dFrameCount[art][animation];
+    if (count < 1) count = 1;
+    if (frame < 0) frame = 0;
+    frame %= count;
+    return C2D_SpriteSheetGetImage(gPoke2dAtlas,
+        p2dSpriteIndex[art][animation][direction][frame]);
 }
 
-static void drawPokemonSprite(int art, int back, float x, float y, float size, int mirror)
+static void drawPokemonAt(int art, int animation, int direction, int frame,
+                          float pivotX, float pivotY)
 {
-    if (art < 0) art = 0;
-    art %= 6;
-    int side = back ? 1 : 0;
-    drawSpriteRuns(kPokemonSprites48[side][art], kPokemonSpriteRunCount48[side][art],
-                   48, x, y, size, mirror);
+    C2D_Image image = pokemonFrame(art, animation, direction, frame);
+    float scale = 2.0f * p2dSpeciesScale[art];
+    float originX = (float)p2dOriginX[art][animation] * scale;
+    float originY = (float)p2dOriginY[art][animation] * scale;
+    C2D_DrawImageAt(image, pivotX - originX, pivotY - originY, 0.36f,
+                    NULL, scale, scale);
 }
 
-static void drawPokemonIcon(int art, int back, float x, float y, float size)
+static void drawPokemonIcon(int art, float x, float y, float height)
 {
-    if (art < 0) art = 0;
-    art %= 6;
-    int side = back ? 1 : 0;
-    drawSpriteRuns(kPokemonSprites16[side][art], kPokemonSpriteRunCount16[side][art],
-                   16, x, y, size, 0);
+    C2D_Image image = pokemonFrame(art, ANIM_IDLE, 0, 0);
+    float sourceHeight = (float)p2dFrameHeight[art][ANIM_IDLE];
+    float scale = sourceHeight > 0.0f ? height / sourceHeight : 1.0f;
+    C2D_DrawImageAt(image, x, y, 0.18f, NULL, scale, scale);
 }
 
-static void drawCreature(int art, float x, float y, float pixel)
+static void drawStage(C2D_Image image)
 {
-    drawPokemonSprite(art, 0, x, y, pixel * 16.0f, 0);
+    C2D_DrawImageAt(image, 0.0f, 0.0f, 0.0f, NULL, 1.0f, 1.0f);
+}
+
+static int faceDirection(float dx, float dy)
+{
+    // The sprite rows are ordered down, down-left, left, up-left, up,
+    // up-right, right, down-right.
+    float angle = atan2f(dy, dx);
+    int sector = (int)floorf(angle / 0.78539816339f + 0.5f);
+    int row = (6 + sector) % 8;
+    return row < 0 ? row + 8 : row;
 }
 
 static void resetBattle(void)
@@ -269,8 +305,16 @@ static void damagePokemon(int side, int damage, float chargeRatio)
     }
 }
 
+static void playAttackAnimation(int side)
+{
+    gFighter[side].attackAnim = 0.44f;
+    gFighter[side].animClock = 0.0f;
+    gFighter[side].animKind = ANIM_SHOOT;
+}
+
 static void fireSkillShot(int side, int slot, int damage, float range)
 {
+    playAttackAnimation(side);
     int opponent = side == 0 ? 1 : 0;
     float dx = gFighter[opponent].x - gFighter[side].x;
     float dy = gFighter[opponent].y - gFighter[side].y;
@@ -330,6 +374,7 @@ static void useBasic(int side)
     c->basicCd = 0.5f;
     float d2 = distance2(c->x, c->y, gFighter[opponent].x, gFighter[opponent].y);
     if (d2 <= 70.0f * 70.0f) {
+        playAttackAnimation(side);
         int targetMax = gTeam[opponent][gActive[opponent]].maxHp;
         int dmg = targetMax > 0 ? (int)(targetMax * 0.032f) : 4;
         if (dmg < 4) dmg = 4;
@@ -443,6 +488,7 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
         gCpuBasicCd -= dt;
         if (gCpuBasicCd <= 0.0f) {
             gCpuBasicCd = 0.9f;
+            playAttackAnimation(1);
             damagePokemon(0, 7, 30.0f);
         }
     }
@@ -456,6 +502,14 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
         gCpuSkillCd = 3.4f + (float)slot * 0.5f;
     }
 
+    player->attackAnim = fmaxf(0.0f, player->attackAnim - dt);
+    cpu->attackAnim = fmaxf(0.0f, cpu->attackAnim - dt);
+    player->animKind = player->attackAnim > 0.0f ? ANIM_SHOOT :
+                       (mag > 0.15f ? ANIM_WALK : ANIM_IDLE);
+    cpu->animKind = cpu->attackAnim > 0.0f ? ANIM_SHOOT :
+                    (d > 58.0f ? ANIM_WALK : ANIM_IDLE);
+    player->animClock += dt;
+    cpu->animClock += dt;
     player->basicCd = fmaxf(0.0f, player->basicCd - dt);
     player->dashCd = fmaxf(0.0f, player->dashCd - dt);
     player->switchCd = fmaxf(0.0f, player->switchCd - dt);
@@ -486,49 +540,56 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
 static void drawArena(void)
 {
-    static const u32 crowd[5] = { 0xF16864FF, 0xF4C44EFF, 0x5BC5C6FF, 0x7889E8FF, 0xF2F0D8FF };
-    rect(0, 0, TOP_W, TOP_H, 0x182239FF);
-    rect(8, 42, 384, 39, 0x2A3451FF);
-    rect(8, 43, 384, 3, 0xE4B550FF);
-    for (int row = 0; row < 3; ++row) {
-        for (int col = 0; col < 36; ++col) {
-            if ((col + row * 2) % 5 != 0)
-                rect(13.0f + col * 10.4f, 49.0f + row * 8.0f, 6.0f, 4.0f,
-                     crowd[(col * 3 + row * 2) % 5]);
-        }
-    }
-    rect(8, 77, 384, 5, 0xD6A53EFF);
-    rect(10, 82, 380, 148, 0x357F51FF);
-    for (int col = 0; col < 10; ++col)
-        rect(12.0f + col * 38.0f, 84, 19.0f, 144, col % 2 ? 0x398655FF : 0x34794DFF);
-    rect(16, 86, 368, 140, 0x00000018);
-    rect(10, 82, 380, 2, 0xF1E8CFFF);
-    rect(10, 228, 380, 2, 0xF1E8CFFF);
-    rect(10, 82, 2, 148, 0xF1E8CFFF);
-    rect(388, 82, 2, 148, 0xF1E8CFFF);
-    rect(199, 82, 2, 148, 0xF1E8CFFF);
-    C2D_DrawCircleSolid(200, 156, 0.4f, 35, c2dColor(0xF1E8CFFF));
-    C2D_DrawCircleSolid(200, 156, 0.3f, 32, c2dColor(0x357F51FF));
-    rect(198, 153, 4, 6, 0xF1E8CFFF);
-    rect(108, 82, 2, 27, 0xF1E8CFFF);
-    rect(290, 82, 2, 27, 0xF1E8CFFF);
-    rect(108, 107, 36, 2, 0xF1E8CFFF);
-    rect(256, 107, 36, 2, 0xF1E8CFFF);
-    rect(108, 203, 36, 2, 0xF1E8CFFF);
-    rect(256, 203, 36, 2, 0xF1E8CFFF);
-    rect(108, 203, 2, 27, 0xF1E8CFFF);
-    rect(290, 203, 2, 27, 0xF1E8CFFF);
+    drawStage(gVolcanicArena);
 }
 
-static void drawTeamMini(int side, float x, float y)
+static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
+{
+    float ratio = maxHp > 0 ? clampf((float)hp / (float)maxHp, 0.0f, 1.0f) : 0.0f;
+    rect(x, y, w, h, 0x11151DFF);
+    const int segments = 16;
+    float gap = 1.0f;
+    float segmentWidth = (w - gap * (segments + 1)) / (float)segments;
+    int filled = (int)ceilf(ratio * (float)segments);
+    u32 color = ratio > 0.35f ? 0x52D15FFF : 0xF14E58FF;
+    for (int i = 0; i < segments; ++i)
+        rect(x + gap + i * (segmentWidth + gap), y + 1.0f,
+             segmentWidth, h - 2.0f, i < filled ? color : 0x293344FF);
+}
+
+static void drawRoster(int side, float x, float y)
 {
     for (int i = 0; i < TEAM_SIZE; ++i) {
-        float bx = x + i * 18.0f;
-        rect(bx, y, 15, 15, i == gActive[side] ? C_GOLD : C_PANEL2);
-        drawPokemonIcon(gTeam[side][i].speciesArt, side == 0, bx + 1, y + 1, 13);
+        float bx = x + i * 24.0f;
+        rect(bx, y, 21.0f, 19.0f, i == gActive[side] ? 0xF5C537FF : 0x172039FF);
+        drawPokemonIcon(gTeam[side][i].speciesArt, bx + 2.0f, y + 1.0f, 16.0f);
         if (gTeam[side][i].hp <= 0)
-            rect(bx, y + 13, 15, 2, C_RED);
+            rect(bx + 1.0f, y + 16.0f, 19.0f, 2.0f, C_RED);
     }
+}
+
+static void drawFighter(int side)
+{
+    Pokemon *pokemon = &gTeam[side][gActive[side]];
+    Combatant *fighter = &gFighter[side];
+    int opponent = side == 0 ? 1 : 0;
+    float bob = fighter->animKind == ANIM_IDLE ? sinf(fighter->animClock * 4.5f) * 1.5f : 0.0f;
+    int frameCount = p2dFrameCount[pokemon->speciesArt][fighter->animKind];
+    float fps = fighter->animKind == ANIM_SHOOT ? 14.0f :
+                (fighter->animKind == ANIM_WALK ? 10.0f : 5.0f);
+    int frame = (int)(fighter->animClock * fps) % frameCount;
+    int direction = faceDirection(gFighter[opponent].x - fighter->x,
+                                  gFighter[opponent].y - fighter->y);
+    float shadowW = pokemon->speciesArt == 1 || pokemon->speciesArt == 3 ? 30.0f : 22.0f;
+    rect(fighter->x - shadowW * 0.5f, fighter->y + 2.0f,
+         shadowW, 4.0f, 0x090D16AA);
+    drawPokemonAt(pokemon->speciesArt, fighter->animKind, direction, frame,
+                  fighter->x, fighter->y + bob);
+    if (fighter->hurtFlash > 0.0f)
+        rect(fighter->x - 10.0f, fighter->y - 31.0f, 20.0f, 2.0f, 0xFFF3D9FF);
+    if (side == 0 && fighter->dashIFrames > 0.0f)
+        C2D_DrawCircleSolid(fighter->x, fighter->y - 6.0f, 0.25f, 23.0f,
+                            c2dColor(0xE9F8FF55));
 }
 
 static void drawBattleTop(void)
@@ -536,134 +597,151 @@ static void drawBattleTop(void)
     drawArena();
     Pokemon *p = &gTeam[0][gActive[0]];
     Pokemon *e = &gTeam[1][gActive[1]];
-    rect(5, 4, 148, 36, C_PANEL);
-    rect(247, 4, 148, 36, C_PANEL);
-    textAt(11, 7, 0.38f, C_TEXT, p->name);
-    textAt(11, 20, 0.30f, C_MUTED, p->type);
-    drawBar(81, 21, 65, 8, p->hp, p->maxHp);
-    textAt(11, 30, 0.24f, C_TEXT, "PLAYER");
-    textAt(253, 7, 0.38f, C_TEXT, e->name);
-    textAt(253, 20, 0.30f, C_MUTED, e->type);
-    drawBar(323, 21, 65, 8, e->hp, e->maxHp);
-    textAt(253, 30, 0.24f, C_TEXT, "CPU");
-    drawTeamMini(0, 8, 43);
-    drawTeamMini(1, 343, 43);
+    rect(4, 4, 143, 35, 0x25365DFF);
+    rect(4, 4, 143, 2, 0x72A7F6FF);
+    rect(253, 4, 143, 35, 0x25365DFF);
+    rect(253, 4, 143, 2, 0xF06170FF);
+    rect(8, 9, 26, 25, 0x101626FF);
+    rect(359, 9, 26, 25, 0x101626FF);
+    drawPokemonIcon(p->speciesArt, 9.0f, 10.0f, 22.0f);
+    drawPokemonIcon(e->speciesArt, 360.0f, 10.0f, 22.0f);
+    textAt(40, 7, 0.34f, C_TEXT, p->name);
+    textAt(40, 18, 0.23f, C_MUTED, p->type);
+    drawSegmentedBar(40, 28, 101, 7, p->hp, p->maxHp);
+    textAt(268, 7, 0.34f, C_TEXT, e->name);
+    textAt(268, 18, 0.23f, C_MUTED, e->type);
+    drawSegmentedBar(268, 28, 86, 7, e->hp, e->maxHp);
+    drawRoster(0, 7, 44);
     char clockText[16];
     int seconds = (int)gBattleTime;
     snprintf(clockText, sizeof(clockText), "%02d:%02d", seconds / 60, seconds % 60);
-    rect(166, 3, 68, 35, C_PANEL);
-    centeredText(200, 8, 0.42f, C_TEXT, clockText);
-    centeredText(200, 22, 0.25f, C_MUTED, "ROUND 1");
+    rect(166, 4, 68, 34, 0x202C4AFF);
+    centeredText(200, 8, 0.39f, C_TEXT, clockText);
+    centeredText(200, 23, 0.23f, C_MUTED, "ROUND 1");
 
     if (gSupplyLife > 0.0f) {
-        u32 supplyColor = gSupplyKind == DROP_HEAL ? 0xF48CC8FF : (gSupplyKind == DROP_CHARGE ? 0xB884F4FF : C_GOLD);
-        C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.35f, 9, c2dColor(0x18243AFF));
-        C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.30f, 6, c2dColor(supplyColor));
+        u32 supplyColor = gSupplyKind == DROP_HEAL ? 0xF48CC8FF :
+                          (gSupplyKind == DROP_CHARGE ? 0xB884F4FF : C_GOLD);
+        C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.35f, 9.0f,
+                            c2dColor(0x18243AFF));
+        C2D_DrawCircleSolid(gSupplyX, gSupplyY, 0.30f, 6.0f,
+                            c2dColor(supplyColor));
     }
     for (int i = 0; i < 8; ++i) {
         Shot *shot = &gShots[i];
         if (!shot->active) continue;
         float trailX = shot->x - shot->vx * 0.035f;
         float trailY = shot->y - shot->vy * 0.035f;
-        rect(trailX - 3.0f, trailY - 2.0f, 9.0f, 4.0f, shot->color);
-        C2D_DrawCircleSolid(shot->x, shot->y, 0.38f, 7.0f, c2dColor(shot->color));
-        C2D_DrawCircleSolid(shot->x - 1.0f, shot->y - 1.0f, 0.42f, 2.5f, c2dColor(kWhite));
+        rect(trailX - 3.0f, trailY - 2.0f, 8.0f, 3.0f, shot->color);
+        C2D_DrawCircleSolid(shot->x, shot->y, 0.38f, 4.0f, c2dColor(shot->color));
+        C2D_DrawCircleSolid(shot->x - 1.0f, shot->y - 1.0f, 0.42f, 1.5f,
+                            c2dColor(kWhite));
     }
-    float bob = sinf(gBattleTime * 5.0f) * 2.0f;
-    rect(gFighter[0].x - 27.0f, gFighter[0].y + 29.0f, 54.0f, 7.0f, 0x17233866);
-    rect(gFighter[1].x - 27.0f, gFighter[1].y + 29.0f, 54.0f, 7.0f, 0x17233866);
-    drawPokemonSprite(p->speciesArt, 1, gFighter[0].x - 48.0f,
-                      gFighter[0].y - 48.0f + bob, 96.0f, 0);
-    drawPokemonSprite(e->speciesArt, 0, gFighter[1].x - 48.0f,
-                      gFighter[1].y - 48.0f - bob, 96.0f, 0);
-    if (gFighter[0].dashIFrames > 0.0f)
-        C2D_DrawCircleSolid(gFighter[0].x, gFighter[0].y, 0.25f, 30, c2dColor(0xFFFFFF66));
+    drawFighter(0);
+    drawFighter(1);
     if (gHitFlash > 0.0f)
-        centeredText(200, 48, 0.3f, C_GOLD, "HIT");
+        centeredText(200, 52, 0.31f, C_GOLD, "HIT!");
 }
 
-static void actionButton(float x, const char *key, const char *label, float cooldown, u32 tint)
+static void actionButton(float x, float y, const char *key, const char *label,
+                         float cooldown, u32 tint)
 {
-    rect(x, 129, 48, 58, C_PANEL2);
-    rect(x + 2, 131, 44, 54, C_BG);
-    rect(x + 2, 131, 44, 3, tint);
-    textAt(x + 4, 139, 0.30f, C_GOLD, key);
-    textAt(x + 4, 157, 0.21f, C_TEXT, label);
+    rect(x, y, 96.0f, 49.0f, 0x677083FF);
+    rect(x + 2.0f, y + 2.0f, 92.0f, 45.0f, 0xF1C735FF);
+    rect(x + 2.0f, y + 2.0f, 3.0f, 45.0f, tint);
+    rect(x + 9.0f, y + 7.0f, 16.0f, 13.0f, 0x252A35FF);
+    centeredText(x + 17.0f, y + 8.0f, 0.23f, C_TEXT, key);
+    centeredText(x + 51.0f, y + 27.0f, 0.19f, 0x202430FF, label);
     if (cooldown > 0.0f) {
         char cd[10];
-        snprintf(cd, sizeof(cd), "%.1f", cooldown);
-        textAt(x + 29, 139, 0.20f, C_MUTED, cd);
-    } else {
-        textAt(x + 30, 139, 0.20f, C_GREEN, "OK");
+        if (strcmp(key, "R") == 0)
+            snprintf(cd, sizeof(cd), "%d%%", (int)gFighter[0].ultimate);
+        else
+            snprintf(cd, sizeof(cd), "%.1f", cooldown);
+        textAt(x + 74.0f, y + 8.0f, 0.18f, 0x4A4E58FF, cd);
     }
 }
 
 static void drawBottomBattle(void)
 {
-    rect(0, 0, BOTTOM_W, BOTTOM_H, C_BG);
-    rect(0, 0, BOTTOM_W, 5, 0xF2B33AFF);
-    textAt(10, 12, 0.43f, C_TEXT, "YOUR TEAM");
-    textAt(222, 12, 0.31f, C_MUTED, "D-PAD SWITCH");
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x171B28FF);
+    rect(0, 0, BOTTOM_W, 4, 0xF2C637FF);
+    textAt(9, 7, 0.32f, C_TEXT, "QUICK BATTLE  /  VOLCANIC ARENA");
     for (int i = 0; i < TEAM_SIZE; ++i) {
-        float x = 9.0f + i * 103.0f;
-        Pokemon *p = &gTeam[0][i];
-        rect(x, 32, 96, 50, i == gActive[0] ? 0x6A5528FF : C_PANEL);
-        rect(x + 3, 35, 20, 20, 0x182239FF);
-        drawPokemonIcon(p->speciesArt, 1, x + 3, 35, 20);
-        textAt(x + 26, 37, 0.27f, C_TEXT, p->name);
-        drawBar(x + 26, 56, 65, 7, p->hp, p->maxHp);
-        char hp[16];
-        snprintf(hp, sizeof(hp), "%d/%d", p->hp, p->maxHp);
-        textAt(x + 26, 66, 0.21f, C_MUTED, hp);
+        float x = 8.0f + i * 103.0f;
+        Pokemon *member = &gTeam[0][i];
+        rect(x, 23, 97, 43, i == gActive[0] ? 0x4A4029FF : 0x29334AFF);
+        rect(x, 23, 97, 2, i == gActive[0] ? C_GOLD : 0x526180FF);
+        drawPokemonIcon(member->speciesArt, x + 4.0f, 28.0f, 27.0f);
+        textAt(x + 32.0f, 28.0f, 0.23f, C_TEXT, member->name);
+        drawSegmentedBar(x + 32.0f, 45.0f, 61.0f, 7.0f, member->hp, member->maxHp);
+        if (member->hp <= 0) rect(x + 1.0f, 62.0f, 95.0f, 2.0f, C_RED);
     }
-    char ult[24];
-    snprintf(ult, sizeof(ult), "ULTIMATE %d%%", (int)gFighter[0].ultimate);
-    textAt(10, 93, 0.34f, C_TEXT, ult);
-    drawBar(126, 96, 181, 9, (int)gFighter[0].ultimate, 100);
+    char ult[32];
     int species = gTeam[0][gActive[0]].speciesArt;
-    actionButton(8, "A", "TACKLE", gFighter[0].basicCd, 0x7FB9FFFF);
-    actionButton(60, "B", kMoveLabel[species][0], gFighter[0].skillCd[0], 0xE17E64FF);
-    actionButton(112, "X", kMoveLabel[species][1], gFighter[0].skillCd[1], 0xE9A95AFF);
-    actionButton(164, "Y", kMoveLabel[species][2], gFighter[0].skillCd[2], 0xAB87F2FF);
-    actionButton(216, "L", "DODGE", gFighter[0].dashCd, 0x68DAE5FF);
-    actionButton(268, "R", "ULT", fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xC587F2FF);
-    textAt(10, 199, 0.27f, C_MUTED, "CIRCLE PAD: MOVE   D-PAD: SWITCH");
-    textAt(10, 215, 0.24f, C_MUTED, "A BASIC   B/X/Y MOVES   L DODGE   R ULT");
+    snprintf(ult, sizeof(ult), "ULTIMATE  %d%%", (int)gFighter[0].ultimate);
+    textAt(9, 73, 0.25f, C_TEXT, ult);
+    drawBar(113, 76, 198, 8, (int)gFighter[0].ultimate, 100);
+    actionButton(8, 91, "A", "BASIC", gFighter[0].basicCd, 0x75A8F8FF);
+    actionButton(112, 91, "B", kMoveLabel[species][0], gFighter[0].skillCd[0], 0xF08C43FF);
+    actionButton(216, 91, "X", kMoveLabel[species][1], gFighter[0].skillCd[1], 0xF2B93AFF);
+    actionButton(8, 148, "Y", kMoveLabel[species][2], gFighter[0].skillCd[2], 0x9B85E9FF);
+    actionButton(112, 148, "L", "SPACE DASH", gFighter[0].dashCd, 0x5BD0D6FF);
+    actionButton(216, 148, "R", kUltimateLabel[species],
+                 fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xD28BEEFF);
+    textAt(9, 207, 0.22f, C_MUTED, "CIRCLE PAD: MOVE   D-PAD: SWITCH POKEMON");
+    textAt(9, 222, 0.20f, C_MUTED, "TAP A MOVE  |  L DODGE  |  R ULTIMATE");
 }
 
 static void drawTitle(void)
 {
-    rect(0, 0, TOP_W, TOP_H, C_BG);
-    rect(18, 18, 364, 204, 0x36593FFF);
-    for (int i = 0; i < 16; ++i)
-        rect(22 + i * 22, 22, 15, 3, 0x82C85BFF);
-    centeredText(200, 48, 0.85f, C_TEXT, "POKEMON ARENA 2D");
-    centeredText(200, 80, 0.43f, C_GOLD, "REAL-TIME 3V3 BATTLE");
-    drawCreature(0, 94, 105, 5.0f);
-    drawCreature(4, 226, 105, 5.0f);
-    centeredText(200, 205, 0.38f, C_TEXT, "PRESS A TO START");
-    rect(0, 0, 400, 3, C_GOLD);
+    drawStage(gGrassArena);
+    rect(24, 26, 352, 170, 0x14213BD8);
+    rect(24, 26, 352, 3, 0xF4C738FF);
+    centeredText(200, 48, 0.90f, C_TEXT, "POKE2D ARENA");
+    centeredText(200, 78, 0.33f, C_GOLD, "QUICK BATTLE  /  TRAINING 3 VS 3");
+    drawPokemonAt(0, ANIM_IDLE, 6, 0, 126.0f, 151.0f);
+    drawPokemonAt(3, ANIM_IDLE, 2, 0, 276.0f, 151.0f);
+    centeredText(200, 184, 0.31f, C_TEXT, "PRESS A TO PLAY");
 }
 
 static void drawTitleBottom(void)
 {
-    rect(0, 0, BOTTOM_W, BOTTOM_H, C_BG);
-    textAt(14, 14, 0.55f, C_TEXT, "QUICK BATTLE");
-    rect(10, 42, 300, 4, C_GOLD);
-    textAt(14, 63, 0.35f, C_MUTED, "3 POKEMON PER TEAM");
-    textAt(14, 88, 0.35f, C_MUTED, "MOVE WITH CIRCLE PAD");
-    textAt(14, 113, 0.35f, C_MUTED, "A BASIC  B/X/Y SKILLS");
-    textAt(14, 138, 0.35f, C_MUTED, "L DODGE  R ULTIMATE");
-    textAt(14, 187, 0.32f, C_GOLD, "LOCAL CPU TRAINING");
+    static const char *const modes[] = {
+        "QUICK BATTLE  (TRAINING 3 VS 3)",
+        "VS CPU  (PICK DIFFICULTY)",
+        "STORY MODE", "ARENA RUN", "YOUR TEAMS", "ONLINE"
+    };
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x171B28FF);
+    rect(0, 0, BOTTOM_W, 4, 0xF2C637FF);
+    textAt(12, 10, 0.42f, C_TEXT, "GAME MODES");
+    for (int i = 0; i < 6; ++i) {
+        float y = 36.0f + i * 27.0f;
+        rect(9, y, 302, 23, i == 0 ? 0x46412EFF : 0x252D42FF);
+        if (i == 0) rect(9, y, 3, 23, C_GOLD);
+        textAt(17, y + 6, 0.25f, i == 0 ? C_TEXT : C_MUTED, modes[i]);
+        if (i > 0) textAt(275, y + 6, 0.18f, 0x8791A7FF, "SOON");
+    }
+    textAt(12, 207, 0.24f, C_GOLD, "A / TAP QUICK BATTLE TO START");
+    textAt(12, 223, 0.19f, C_MUTED, "LOCAL CPU TRAINING");
 }
 
 static void drawResult(void)
 {
     drawArena();
-    rect(53, 72, 294, 92, C_PANEL);
-    centeredText(200, 89, 0.72f, gWinner == 0 ? C_GREEN : C_RED, gWinner == 0 ? "YOU WIN" : "YOU LOSE");
-    centeredText(200, 124, 0.38f, C_TEXT, "A: REMATCH   B: TITLE");
-    drawCreature(gTeam[gWinner == 0 ? 0 : 1][gActive[gWinner == 0 ? 0 : 1]].speciesArt, 168, 168, 4.0f);
+    rect(48, 70, 304, 94, 0x1C2743EE);
+    rect(48, 70, 304, 3, gWinner == 0 ? C_GREEN : C_RED);
+    centeredText(200, 86, 0.72f, gWinner == 0 ? C_GREEN : C_RED,
+                 gWinner == 0 ? "VICTORY" : "DEFEAT");
+    centeredText(200, 119, 0.32f, C_TEXT, "A: REMATCH   B: GAME MODES");
+}
+
+static void drawResultBottom(void)
+{
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x171B28FF);
+    textAt(12, 18, 0.45f, C_TEXT, "MATCH COMPLETE");
+    textAt(12, 57, 0.28f, C_MUTED, "A STARTS ANOTHER QUICK BATTLE");
+    textAt(12, 84, 0.28f, C_MUTED, "B RETURNS TO THE MODE MENU");
 }
 
 static void drawResultBottom(void)
@@ -677,22 +755,29 @@ static void drawResultBottom(void)
 static void handleTouch(const touchPosition *touch)
 {
     if (gScene == SCENE_TITLE) {
-        if (touch->py > 160) resetBattle();
+        if ((touch->py >= 36 && touch->py <= 62) || touch->py > 205)
+            resetBattle();
+        return;
+    }
+    if (gScene == SCENE_RESULT) {
+        if (touch->py < 110) resetBattle();
+        else gScene = SCENE_TITLE;
         return;
     }
     if (gScene != SCENE_BATTLE) return;
 
-    if (touch->py >= 32 && touch->py <= 82) {
+    if (touch->py >= 23 && touch->py <= 66) {
         int slot = touch->px / 103;
         if (slot >= 0 && slot < TEAM_SIZE) switchPokemon(0, slot);
         return;
     }
-    if (touch->py >= 129 && touch->py <= 189) {
-        if (touch->px < 60) useBasic(0);
-        else if (touch->px < 112) useSkill(0);
-        else if (touch->px < 164) useSkill(1);
-        else if (touch->px < 216) useSkill(2);
-        else if (touch->px < 268) useDash();
+    if (touch->py >= 91 && touch->py <= 140) {
+        if (touch->px < 108) useBasic(0);
+        else if (touch->px < 212) useSkill(0);
+        else useSkill(1);
+    } else if (touch->py >= 148 && touch->py <= 197) {
+        if (touch->px < 108) useSkill(2);
+        else if (touch->px < 212) useDash();
         else useUltimate();
     }
 }
@@ -712,11 +797,25 @@ int main(int argc, char **argv)
         return 1;
     }
     C2D_Prepare();
+    gPoke2dAtlas = C2D_SpriteSheetLoadFromMem(
+        poke2d_atlas_start, (size_t)(poke2d_atlas_end - poke2d_atlas_start));
+    if (!gPoke2dAtlas) {
+        C2D_Fini();
+        C3D_Fini();
+        gfxExit();
+        return 1;
+    }
+    gVolcanicArena = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_arena_volcanic_idx);
+    gGrassArena = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_arena_grass_idx);
+    C3D_TexSetFilter(gVolcanicArena.tex, GPU_NEAREST, GPU_NEAREST);
     gTextBuf = C2D_TextBufNew(2048);
     gTop = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     gBottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     if (!gTextBuf || !gTop || !gBottom) {
         if (gTextBuf) C2D_TextBufDelete(gTextBuf);
+        C2D_SpriteSheetFree(gPoke2dAtlas);
         C2D_Fini();
         C3D_Fini();
         gfxExit();
@@ -741,7 +840,7 @@ int main(int argc, char **argv)
             handleTouch(&touch);
         }
 
-        if (gScene == SCENE_TITLE && (down & KEY_A)) resetBattle();
+        if (gScene == SCENE_TITLE && (down & (KEY_A | KEY_START))) resetBattle();
         else if (gScene == SCENE_BATTLE) updateBattle(dt, held, down, &pad);
         else if (gScene == SCENE_RESULT) {
             if (down & KEY_A) resetBattle();
@@ -765,6 +864,7 @@ int main(int argc, char **argv)
     }
 
     C2D_TextBufDelete(gTextBuf);
+    C2D_SpriteSheetFree(gPoke2dAtlas);
     C2D_Fini();
     C3D_Fini();
     gfxExit();
