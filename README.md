@@ -2,7 +2,9 @@
 
 Adaptación homebrew no oficial del juego web [Poke2D Arena](https://poke2darena.com/) para Old 2DS y New 3DS XL. El juego original corre en navegador; este proyecto reimplementa el combate como una aplicación nativa de 3DS.
 
-La versión actual se centra en Quick Battle offline 3 contra 3. Ya usa la arena volcánica, los sprites direccionales y las animaciones de Pokémon que carga el juego web, con un HUD adaptado a las dos pantallas y controles táctiles/botones. Online, Story Mode, Arena Run, selección de equipos y el catálogo completo aún quedan pendientes.
+El menú de 3DS incluye Quick Battle, Vs CPU con tres dificultades, Story Mode de 16 capítulos, Arena Run de seis combates, editor de equipos, Online y Settings. La batalla usa los sprites animados y las arenas que carga la web; los textos del HUD se ampliaron para que se lean mejor en las pantallas pequeñas.
+
+Story Mode y Arena Run son adaptaciones locales iniciales. Story guarda el avance solo durante la sesión y reutiliza el grupo de seis Pokémon incluido. El editor permite formar un equipo con esos seis. La pantalla Online muestra su estado, pero el juego por red todavía no está implementado. Tampoco están incluidos el catálogo completo ni todos los modos y contenidos de la web.
 
 ## Compilar
 
