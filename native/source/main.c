@@ -16,7 +16,9 @@ typedef enum { SCENE_TITLE, SCENE_BATTLE, SCENE_PAUSE, SCENE_RESULT } Scene;
 typedef enum { DROP_HEAL, DROP_CHARGE, DROP_SPEED } DropKind;
 typedef enum { MODE_QUICK, MODE_CPU, MODE_STORY, MODE_RUN } GameMode;
 typedef enum {
-    PAGE_HOME, PAGE_CPU, PAGE_STORY, PAGE_RUN, PAGE_TEAMS, PAGE_ONLINE, PAGE_SETTINGS
+    PAGE_HOME, PAGE_PLAY, PAGE_CPU, PAGE_STORY, PAGE_RUN, PAGE_TEAMS,
+    PAGE_ONLINE, PAGE_SETTINGS, PAGE_DEX, PAGE_TUTORIAL, PAGE_CREDITS,
+    PAGE_2PLAY
 } MenuPage;
 
 typedef struct {
@@ -54,34 +56,36 @@ typedef struct {
 static const u32 kWhite = 0xFFF3D9FF;
 
 static const Pokemon kSpecies[6] = {
-    { "PIKACHU", "ELECTRIC", 0, 110, 110 },
-    { "STEELIX", "STEEL / GROUND", 1, 180, 180 },
-    { "SCIZOR", "BUG / STEEL", 2, 125, 125 },
-    { "GYARADOS", "WATER / FLYING", 3, 170, 170 },
-    { "CHARIZARD", "FIRE / FLYING", 4, 130, 130 },
+    { "BULBASAUR", "GRASS / POISON", 0, 126, 126 },
+    { "CHARMANDER", "FIRE", 1, 119, 119 },
+    { "SQUIRTLE", "WATER", 2, 125, 125 },
+    { "PIKACHU", "ELECTRIC", 3, 110, 110 },
+    { "CHARIZARD", "FIRE / FLYING", 4, 150, 150 },
     { "BLASTOISE", "WATER", 5, 160, 160 }
 };
 static Pokemon gTeam[2][TEAM_SIZE];
 static const char *const kMoveLabel[6][3] = {
-    { "CHARGE BEAM", "THUNDER PUNCH", "THUNDER WAVE" },
-    { "IRON HEAD", "EARTHQUAKE", "DOUBLE-EDGE" },
-    { "X-SCISSOR", "IRON HEAD", "DOUBLE-EDGE" },
-    { "WATERFALL", "HURRICANE", "EARTHQUAKE" },
-    { "FLAMETHROWER", "AIR SLASH", "DRAGON CLAW" },
-    { "SURF", "ICE BEAM", "AURA SPHERE" }
+    { "TACKLE", "VINE WHIP", "RAZOR LEAF" },
+    { "SCRATCH", "EMBER", "FLAME BURST" },
+    { "TACKLE", "WATER GUN", "BUBBLE BEAM" },
+    { "QUICK ATTACK", "THUNDER SHOCK", "THUNDERBOLT" },
+    { "WING ATTACK", "FLAMETHROWER", "DRAGON CLAW" },
+    { "BITE", "WATER PULSE", "HYDRO PUMP" }
 };
 static const char *const kUltimateLabel[6] = {
-    "THUNDERBOLT", "DRAGON DANCE", "SWORDS DANCE", "DRAGON DANCE", "WILL-O-WISP", "PROTECT"
+    "SOLAR BEAM", "FIRE BLAST", "HYDRO PUMP", "THUNDER", "BLAST BURN", "HYDRO CANNON"
 };
 
 enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
 
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
-static C2D_TextBuf gTextBuf;
 static C2D_SpriteSheet gPoke2dAtlas;
-static C2D_Image gVolcanicArena;
-static C2D_Image gGrassArena;
+static C2D_Image gArenaImage[4];
+static C2D_Image gMenuBackground;
+static C2D_Image gGameLogo;
+static C2D_Image gTextFill[P2D_TEXT_COUNT];
+static C2D_Image gTextEdge[P2D_TEXT_COUNT];
 static Scene gScene = SCENE_TITLE;
 static MenuPage gMenuPage = PAGE_HOME;
 static GameMode gGameMode = MODE_QUICK;
@@ -90,6 +94,8 @@ static Shot gShots[8];
 static int gActive[2] = { 0, 0 };
 static int gWinner = -1;
 static int gMenuSelection = 0;
+static MenuPage gMenuStack[4];
+static int gMenuDepth = 0;
 static int gStoryStage = 0;
 static int gStoryUnlocked = 0;
 static int gRunFloor = 1;
@@ -124,7 +130,7 @@ __asm__(
     ".balign 4\n"
     ".global poke2d_atlas_start\n"
     "poke2d_atlas_start:\n"
-    ".incbin \"../generated/poke2d/poke2d_atlas.t3x\"\n"
+    ".incbin \"../generated/pokearena2d/poke2d_atlas.t3x\"\n"
     ".global poke2d_atlas_end\n"
     "poke2d_atlas_end:\n"
     ".text\n"
@@ -155,48 +161,69 @@ static void rect(float x, float y, float w, float h, u32 color)
     C2D_DrawRectSolid(x, y, 0.5f, w, h, c2dColor(color));
 }
 
+static float bitmapTextWidth(const char *s, float scale)
+{
+    float width = 0.0f;
+    while (*s) {
+        unsigned char c = (unsigned char)*s++;
+        if (c == '\n') continue;
+        if (c < P2D_TEXT_FIRST || c > 126) c = '?';
+        width += (float)p2dTextAdvance[c - P2D_TEXT_FIRST] * scale;
+    }
+    return width;
+}
+
+static void drawBitmapText(float x, float y, float scale, u32 color, const char *s)
+{
+    float glyphScale = scale * 1.65f * gUiTextScale * 2.0f;
+    float startX = x;
+    C2D_ImageTint edgeTint;
+    C2D_ImageTint fillTint;
+    C2D_PlainImageTint(&edgeTint, c2dColor(0x101B32FF), 1.0f);
+    C2D_PlainImageTint(&fillTint, c2dColor(color), 1.0f);
+    while (*s) {
+        unsigned char c = (unsigned char)*s++;
+        if (c == '\n') {
+            x = startX;
+            y += 18.0f * glyphScale;
+            continue;
+        }
+        if (c < P2D_TEXT_FIRST || c > 126) c = '?';
+        int index = c - P2D_TEXT_FIRST;
+        if (c != ' ') {
+            C2D_DrawImageAt(gTextEdge[index], x - glyphScale, y - glyphScale,
+                            0.46f, &edgeTint, glyphScale, glyphScale);
+            C2D_DrawImageAt(gTextFill[index], x, y, 0.45f, &fillTint,
+                            glyphScale, glyphScale);
+        }
+        x += (float)p2dTextAdvance[index] * glyphScale;
+    }
+}
+
 static void textAt(float x, float y, float scale, u32 color, const char *s)
 {
-    C2D_Text text;
-    C2D_TextParse(&text, gTextBuf, s);
-    C2D_TextOptimize(&text);
-    float actualScale = scale * 1.65f * gUiTextScale;
-    C2D_DrawText(&text, C2D_WithColor, x, y, 0.45f,
-                 actualScale, actualScale, c2dColor(color));
+    drawBitmapText(x, y, scale, color, s);
 }
 
 static void centeredText(float x, float y, float scale, u32 color, const char *s)
 {
-    C2D_Text text;
-    C2D_TextParse(&text, gTextBuf, s);
-    C2D_TextOptimize(&text);
-    float actualScale = scale * 1.65f * gUiTextScale;
-    float width = 0.0f;
-    float height = 0.0f;
-    C2D_TextGetDimensions(&text, actualScale, actualScale, &width, &height);
-    (void)height;
-    C2D_DrawText(&text, C2D_WithColor, x - width * 0.5f, y, 0.45f,
-                 actualScale, actualScale, c2dColor(color));
+    float actualScale = scale * 1.65f * gUiTextScale * 2.0f;
+    drawBitmapText(x - bitmapTextWidth(s, actualScale) * 0.5f,
+                   y, scale, color, s);
 }
 
 static void fittedText(float x, float y, float maxWidth, float scale,
                        u32 color, const char *s, bool centered)
 {
-    C2D_Text text;
-    C2D_TextParse(&text, gTextBuf, s);
-    C2D_TextOptimize(&text);
-    float actualScale = scale * 1.65f * gUiTextScale;
-    float width = 0.0f;
-    float height = 0.0f;
-    C2D_TextGetDimensions(&text, actualScale, actualScale, &width, &height);
-    (void)height;
+    float actualScale = scale * 1.65f * gUiTextScale * 2.0f;
+    float width = bitmapTextWidth(s, actualScale);
     if (maxWidth > 0.0f && width > maxWidth) {
+        scale *= maxWidth / width;
         actualScale *= maxWidth / width;
         width = maxWidth;
     }
     if (centered) x -= width * 0.5f;
-    C2D_DrawText(&text, C2D_WithColor, x, y, 0.45f,
-                 actualScale, actualScale, c2dColor(color));
+    drawBitmapText(x, y, scale, color, s);
 }
 
 static void drawBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -246,11 +273,11 @@ static void drawStage(C2D_Image image)
 
 static int faceDirection(float dx, float dy)
 {
-    // The sprite rows are ordered down, down-left, left, up-left, up,
-    // up-right, right, down-right.
+    // Poké Arena 2D sheets use rows down, down-right, right, up-right, up,
+    // up-left, left, down-left.
     float angle = atan2f(dy, dx);
     int sector = (int)floorf(angle / 0.78539816339f + 0.5f);
-    int row = (6 + sector) % 8;
+    int row = (2 - sector) % 8;
     return row < 0 ? row + 8 : row;
 }
 
@@ -613,7 +640,9 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
 static void drawArena(void)
 {
-    drawStage(gArenaIndex == 0 ? gVolcanicArena : gGrassArena);
+    int arena = gArenaIndex;
+    if (arena < 0 || arena >= 4) arena = 0;
+    drawStage(gArenaImage[arena]);
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -678,11 +707,11 @@ static void drawBattleTop(void)
     rect(359, 9, 26, 25, 0x101626FF);
     drawPokemonIcon(p->speciesArt, 9.0f, 10.0f, 22.0f);
     drawPokemonIcon(e->speciesArt, 360.0f, 10.0f, 22.0f);
-    textAt(40, 7, 0.34f, C_TEXT, p->name);
-    textAt(40, 18, 0.23f, C_MUTED, p->type);
+    fittedText(40, 7, 98.0f, 0.34f, C_TEXT, p->name, false);
+    fittedText(40, 18, 98.0f, 0.23f, C_MUTED, p->type, false);
     drawSegmentedBar(40, 28, 101, 7, p->hp, p->maxHp);
-    textAt(268, 7, 0.34f, C_TEXT, e->name);
-    textAt(268, 18, 0.23f, C_MUTED, e->type);
+    fittedText(268, 7, 84.0f, 0.32f, C_TEXT, e->name, false);
+    fittedText(268, 18, 84.0f, 0.21f, C_MUTED, e->type, false);
     drawSegmentedBar(268, 28, 86, 7, e->hp, e->maxHp);
     drawRoster(0, 7, 44);
     char clockText[16];
@@ -719,13 +748,13 @@ static void drawBattleTop(void)
 static void actionButton(float x, float y, const char *key, const char *label,
                          float cooldown, u32 tint)
 {
-    rect(x, y, 96.0f, 49.0f, 0x677083FF);
-    rect(x + 2.0f, y + 2.0f, 92.0f, 45.0f, 0xF1C735FF);
+    rect(x, y, 96.0f, 49.0f, 0x0B2341FF);
+    rect(x + 2.0f, y + 2.0f, 92.0f, 45.0f, 0x4CC65FFF);
     rect(x + 2.0f, y + 2.0f, 3.0f, 45.0f, tint);
-    rect(x + 9.0f, y + 7.0f, 16.0f, 13.0f, 0x252A35FF);
+    rect(x + 9.0f, y + 7.0f, 16.0f, 13.0f, 0x17355DFF);
     fittedText(x + 17.0f, y + 8.0f, 15.0f, 0.27f, C_TEXT, key, true);
     fittedText(x + 51.0f, y + 27.0f, 81.0f, 0.29f,
-               0x202430FF, label, true);
+               0x17355DFF, label, true);
     if (cooldown > 0.0f) {
         char cd[10];
         if (strcmp(key, "R") == 0)
@@ -739,12 +768,13 @@ static void actionButton(float x, float y, const char *key, const char *label,
 
 static void drawBottomBattle(void)
 {
-    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x171B28FF);
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x13345AFF);
     rect(0, 0, BOTTOM_W, 4, 0xF2C637FF);
     char matchHeader[48];
     const char *modeName = gGameMode == MODE_CPU ? "VS CPU" :
-                           (gGameMode == MODE_STORY ? "STORY MODE" :
-                            (gGameMode == MODE_RUN ? "ARENA RUN" : "QUICK BATTLE"));
+                           (gGameMode == MODE_STORY ? "LEAGUE" :
+                            (gGameMode == MODE_RUN ? "ARENA" : "TRAINING"));
+    static const char *const arenaNames[] = { "STADIUM", "NEON", "CRATER", "RUINS" };
     if (gGameMode == MODE_STORY)
         snprintf(matchHeader, sizeof(matchHeader), "%s  /  CHAPTER %02d",
                  modeName, gStoryStage + 1);
@@ -752,16 +782,16 @@ static void drawBottomBattle(void)
         snprintf(matchHeader, sizeof(matchHeader), "%s  /  FLOOR %d OF 6",
                  modeName, gRunFloor);
     else
-        snprintf(matchHeader, sizeof(matchHeader), "%s  /  %s ARENA", modeName,
-                 gArenaIndex == 0 ? "VOLCANIC" : "GRASS");
+        snprintf(matchHeader, sizeof(matchHeader), "%s  /  %s", modeName,
+                 arenaNames[gArenaIndex]);
     fittedText(9, 7, 302.0f, 0.40f, C_TEXT, matchHeader, false);
     for (int i = 0; i < TEAM_SIZE; ++i) {
         float x = 8.0f + i * 103.0f;
         Pokemon *member = &gTeam[0][i];
-        rect(x, 23, 97, 43, i == gActive[0] ? 0x4A4029FF : 0x29334AFF);
-        rect(x, 23, 97, 2, i == gActive[0] ? C_GOLD : 0x526180FF);
+        rect(x, 23, 97, 43, i == gActive[0] ? 0x24507AFF : 0x1C3E67FF);
+        rect(x, 23, 97, 2, i == gActive[0] ? C_GOLD : 0x68A6DBFF);
         drawPokemonIcon(member->speciesArt, x + 4.0f, 28.0f, 27.0f);
-        textAt(x + 32.0f, 28.0f, 0.23f, C_TEXT, member->name);
+        fittedText(x + 32.0f, 28.0f, 61.0f, 0.21f, C_TEXT, member->name, false);
         drawSegmentedBar(x + 32.0f, 45.0f, 61.0f, 7.0f, member->hp, member->maxHp);
         if (member->hp <= 0) rect(x + 1.0f, 62.0f, 95.0f, 2.0f, C_RED);
     }
@@ -777,235 +807,292 @@ static void drawBottomBattle(void)
     actionButton(112, 148, "L", "SPACE DASH", gFighter[0].dashCd, 0x5BD0D6FF);
     actionButton(216, 148, "R", kUltimateLabel[species],
                  fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xD28BEEFF);
-    textAt(9, 207, 0.22f, C_MUTED, "CIRCLE PAD: MOVE   D-PAD: SWITCH POKEMON");
-    textAt(9, 222, 0.20f, C_MUTED, "TAP A MOVE  |  L DODGE  |  R ULTIMATE");
+    fittedText(9, 207, 302.0f, 0.22f, C_MUTED, "CIRCLE PAD: MOVE   D-PAD: SWITCH POKEMON", false);
+    fittedText(9, 222, 302.0f, 0.20f, C_MUTED, "TAP A MOVE  |  L DODGE  |  R ULTIMATE", false);
 }
 
-static void drawTopMenuCard(const char *title, const char *subtitle,
-                            const char *detail)
+static void drawMenuBackdrop(void)
 {
-    drawStage(gGrassArena);
-    rect(16, 16, 368, 208, 0x11182DEB);
-    rect(16, 16, 368, 3, 0xF4C738FF);
-    fittedText(30, 35, 340, 0.95f, C_TEXT, title, true);
-    fittedText(34, 75, 332, 0.56f, C_GOLD, subtitle, true);
-    fittedText(36, 104, 328, 0.43f, C_MUTED, detail, true);
-    drawPokemonAt(0, ANIM_IDLE, 6, 0, 111.0f, 174.0f);
-    drawPokemonAt(3, ANIM_IDLE, 2, 0, 289.0f, 174.0f);
-    rect(64, 207, 272, 2, 0x53617FFF);
-}
-
-static void drawTitle(void)
-{
-    static const char *const titles[] = {
-        "QUICK BATTLE", "VS CPU", "STORY MODE", "ARENA RUN",
-        "YOUR TEAMS", "ONLINE", "SETTINGS"
-    };
-    static const char *const details[] = {
-        "TRAINING MATCH  /  3 VS 3", "CHOOSE EASY, NORMAL OR HARD",
-        "16 CHAPTERS  /  1 VS 1", "CLIMB SIX FLOORS",
-        "EDIT YOUR THREE POKEMON", "LOCAL NETWORK BATTLES",
-        "ARENA, CPU AND TEXT SIZE"
-    };
-    if (gMenuPage == PAGE_HOME) {
-        drawTopMenuCard("POKE2D ARENA", "REAL-TIME POKEMON ARENA",
-                        "SELECT A MODE ON THE LOWER SCREEN");
-        fittedText(200, 126, 210, 0.63f, C_TEXT,
-                   titles[gMenuSelection], true);
-        fittedText(200, 151, 300, 0.39f, C_GOLD,
-                   details[gMenuSelection], true);
-        fittedText(200, 190, 280, 0.36f, C_TEXT,
-                   "A OR TOUCH TO OPEN", true);
-        return;
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x183F70FF);
+    for (int y = 0; y < 240; y += 16) {
+        for (int x = 0; x < 320; x += 16) {
+            if (((x / 16) + (y / 16)) % 2 == 0)
+                rect((float)x, (float)y, 16.0f, 16.0f, 0x1B477AFF);
+        }
     }
-
-    switch (gMenuPage) {
-    case PAGE_CPU:
-        drawTopMenuCard("VS CPU", "THREE POKEMON PER TEAM",
-                        "MOVE WITH THE CIRCLE PAD  /  START TO FIGHT");
-        fittedText(200, 134, 250, 0.70f, C_TEXT,
-                   gCpuDifficulty == 0 ? "EASY CPU" :
-                   (gCpuDifficulty == 1 ? "NORMAL CPU" : "HARD CPU"), true);
-        break;
-    case PAGE_STORY: {
-        char stage[40];
-        snprintf(stage, sizeof(stage), "CHAPTER %02d OF 16", gStoryStage + 1);
-        drawTopMenuCard("STORY MODE", "SINGLE POKEMON DUELS", stage);
-        fittedText(200, 134, 300, 0.58f, C_TEXT,
-                   gStoryStage <= gStoryUnlocked ? "CHAPTER READY" : "CHAPTER LOCKED", true);
-        break;
-    }
-    case PAGE_RUN: {
-        char floor[40];
-        snprintf(floor, sizeof(floor), "FLOOR %d OF 6", gRunFloor);
-        drawTopMenuCard("ARENA RUN", "KEEP YOUR TEAM ALIVE", floor);
-        fittedText(200, 134, 280, 0.56f, C_TEXT,
-                   "A WIN MOVES YOU TO THE NEXT FLOOR", true);
-        break;
-    }
-    case PAGE_TEAMS:
-        drawTopMenuCard("YOUR TEAMS", "BUILD YOUR THREE POKEMON",
-                        "SELECT A SLOT, THEN PICK FROM THE ROSTER");
-        fittedText(200, 131, 280, 0.53f, C_TEXT,
-                   kSpecies[gPlayerSpecies[gTeamSlot]].name, true);
-        fittedText(200, 153, 280, 0.37f, C_GOLD,
-                   "START OPENS A QUICK BATTLE", true);
-        break;
-    case PAGE_ONLINE:
-        drawTopMenuCard("ONLINE", "LOBBY MENU", "NETWORK MATCHES NEED A REMOTE CLIENT");
-        fittedText(200, 132, 320, 0.43f, C_TEXT,
-                   "THIS BUILD PLAYS OFFLINE AGAINST THE CPU", true);
-        break;
-    case PAGE_SETTINGS:
-        drawTopMenuCard("SETTINGS", "PERSONALIZE YOUR BATTLE", "LEFT / RIGHT CHANGES A VALUE");
-        fittedText(200, 132, 310, 0.42f, C_TEXT,
-                   "ARENA   CPU LEVEL   TEXT SIZE", true);
-        break;
-    case PAGE_HOME:
-        break;
-    }
+    rect(0, 0, BOTTOM_W, 4, 0xF6C64AFF);
 }
 
 static void drawMenuRow(float y, const char *title, const char *subtitle,
                         const char *status, bool selected, bool disabled)
 {
-    u32 fill = selected ? 0xF3A12EFF : 0x293452FF;
-    u32 edge = selected ? 0xFFE17AFF : 0x4B5B7EFF;
-    u32 mainColor = selected ? 0x17203AFF : (disabled ? 0x77829FFF : C_TEXT);
-    u32 subColor = selected ? 0x40351FFF : 0xABB5D0FF;
-    rect(8, y, 304, 23, fill);
+    u32 fill = selected ? 0xF5C54DFF : 0x214D82FF;
+    u32 edge = selected ? 0xFFF0A8FF : 0x78AEE2FF;
+    u32 mainColor = selected ? 0x102849FF : (disabled ? 0x879CBAFF : C_TEXT);
+    u32 subColor = selected ? 0x5D4A20FF : 0xB7D1EDFF;
+    rect(7, y, 306, 23, 0x0B2D55FF);
+    rect(8, y, 304, 21, fill);
     rect(8, y, 304, 1, edge);
-    if (selected) rect(8, y, 4, 23, 0xFFF0A8FF);
-    fittedText(17, y + 1, status ? 207.0f : 280.0f, 0.49f,
+    rect(8, y, 2, 21, edge);
+    if (selected) rect(8, y, 4, 21, 0xFFFFFFFF);
+    fittedText(17, y + 1.0f, status ? 207.0f : 280.0f, 0.31f,
                mainColor, title, false);
     if (subtitle && subtitle[0])
-        fittedText(17, y + 13, status ? 207.0f : 280.0f, 0.29f,
+        fittedText(17, y + 14.0f, status ? 207.0f : 280.0f, 0.18f,
                    subColor, subtitle, false);
     if (status)
-        fittedText(231, y + 6, 74.0f, 0.31f,
+        fittedText(231, y + 5, 74.0f, 0.28f,
                    selected ? 0x273047FF : C_GOLD, status, true);
+}
+
+static void drawMenuHeader(const char *title)
+{
+    drawMenuBackdrop();
+    fittedText(160, 6, 300, 0.48f, C_GOLD, title, true);
 }
 
 static void drawHomeMenuBottom(void)
 {
     static const char *const titles[] = {
-        "QUICK BATTLE", "VS CPU", "STORY MODE", "ARENA RUN",
-        "YOUR TEAMS", "ONLINE", "SETTINGS"
+        "PLAY", "ONLINE", "CUSTOMIZE", "POKEDEX", "TUTORIAL", "SETTINGS", "CREDITS"
     };
     static const char *const subtitles[] = {
-        "TRAINING 3 VS 3", "PICK THE CPU DIFFICULTY", "CHOOSE A CHAPTER",
-        "CLIMB SIX FLOORS", "BUILD YOUR TEAM", "OPEN THE LOBBY MENU",
-        "ARENA AND DISPLAY OPTIONS"
+        "CHOOSE A GAME MODE", "ONLINE BATTLES", "EDIT YOUR TEAM", "VIEW YOUR POKEMON",
+        "CONTROLS AND RULES", "ARENA AND TEXT SIZE", "PROJECT CREDITS"
     };
-    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x121827FF);
-    rect(0, 0, BOTTOM_W, 4, 0xF2C637FF);
-    textAt(12, 5, 0.55f, C_TEXT, "MAIN MENU");
+    drawMenuHeader("POKE ARENA 2D");
     for (int i = 0; i < 7; ++i)
         drawMenuRow(27.0f + (float)i * 25.0f, titles[i], subtitles[i],
                     NULL, gMenuSelection == i, false);
-    textAt(10, 211, 0.38f, C_GOLD, "A / TOUCH: SELECT");
-    textAt(10, 225, 0.30f, C_MUTED, "START: QUICK BATTLE");
+    textAt(10, 210, 0.33f, C_GOLD, "A / TOUCH: SELECT");
+    textAt(10, 224, 0.27f, C_MUTED, "B: BACK");
+}
+
+static void drawPlayMenuBottom(void)
+{
+    static const char *const titles[] = {
+        "LEAGUE", "VS CPU", "2 PLAYERS", "TRAINING", "ARENA", "BACK"
+    };
+    static const char *const subtitles[] = {
+        "PLAY A SERIES OF DUELS", "PICK YOUR CPU DIFFICULTY",
+        "LOCAL TWO PLAYER IS NOT READY", "QUICK PRACTICE BATTLE",
+        "SURVIVE SIX FIGHTS", "RETURN TO MAIN MENU"
+    };
+    drawMenuHeader("PLAY");
+    for (int i = 0; i < 6; ++i)
+        drawMenuRow(30.0f + (float)i * 27.0f, titles[i], subtitles[i],
+                    i == 2 ? "SOON" : NULL, gMenuSelection == i, i == 2);
+    fittedText(10, 211, 300.0f, 0.32f, C_GOLD, "A / TOUCH: SELECT  B: BACK", false);
+}
+
+static void drawTitle(void)
+{
+    static const char *const title[] = {
+        "CHOOSE A MODE", "ONLINE BATTLES", "CUSTOMIZE YOUR TEAM", "POKEDEX",
+        "HOW TO PLAY", "SETTINGS", "CREDITS"
+    };
+    static const char *const subtitle[] = {
+        "REAL TIME POKEMON DUELS", "NETWORK PLAY IS NOT AVAILABLE ON 3DS",
+        "CHOOSE YOUR POKEMON", "SIX POKEMON READY TO BATTLE",
+        "MOVE, ATTACK AND DODGE", "ARENA AND DISPLAY OPTIONS", "A FAN MADE 3DS PROJECT"
+    };
+    char modeDetail[48];
+    const char *heading = "POKE ARENA 2D";
+    const char *detail = "REAL TIME POKEMON BATTLES";
+    if (gMenuPage == PAGE_HOME) {
+        heading = title[gMenuSelection < 7 ? gMenuSelection : 0];
+        detail = subtitle[gMenuSelection < 7 ? gMenuSelection : 0];
+    } else if (gMenuPage == PAGE_PLAY) {
+        heading = "CHOOSE A PLAY MODE";
+        detail = "TRAINING, LEAGUE, CPU AND ARENA";
+    } else if (gMenuPage == PAGE_CPU) {
+        heading = "VS CPU";
+        detail = gCpuDifficulty == 0 ? "EASY BATTLE" :
+                 (gCpuDifficulty == 1 ? "NORMAL BATTLE" : "HARD BATTLE");
+    } else if (gMenuPage == PAGE_STORY) {
+        snprintf(modeDetail, sizeof(modeDetail), "DUEL %02d OF 16", gStoryStage + 1);
+        heading = "LEAGUE";
+        detail = modeDetail;
+    } else if (gMenuPage == PAGE_RUN) {
+        snprintf(modeDetail, sizeof(modeDetail), "FIGHT %d OF 6", gRunFloor);
+        heading = "ARENA CHALLENGE";
+        detail = modeDetail;
+    } else if (gMenuPage == PAGE_TEAMS) {
+        heading = "CUSTOMIZE YOUR TEAM";
+        detail = kSpecies[gPlayerSpecies[gTeamSlot]].name;
+    } else if (gMenuPage == PAGE_ONLINE) {
+        heading = "ONLINE";
+        detail = "NOT AVAILABLE IN THIS 3DS BUILD";
+    } else if (gMenuPage == PAGE_SETTINGS) {
+        heading = "SETTINGS";
+        detail = "CHOOSE AN ARENA AND TEXT SIZE";
+    } else if (gMenuPage == PAGE_DEX) {
+        heading = "POKEDEX";
+        detail = kSpecies[gMenuSelection % P2D_SPECIES_COUNT].name;
+    } else if (gMenuPage == PAGE_TUTORIAL) {
+        heading = "HOW TO PLAY";
+        detail = "MOVE, AIM, ATTACK AND DODGE";
+    } else if (gMenuPage == PAGE_CREDITS) {
+        heading = "CREDITS";
+        detail = "INSPIRED BY POKE ARENA 2D";
+    } else if (gMenuPage == PAGE_2PLAY) {
+        heading = "TWO PLAYER";
+        detail = "NOT AVAILABLE IN THIS VERSION";
+    }
+
+    drawStage(gMenuBackground);
+    C2D_DrawImageAt(gGameLogo, 53.0f, 4.0f, 0.12f, NULL, 1.0f, 1.0f);
+    fittedText(200.0f, 119.0f, 372.0f, 0.43f, C_TEXT, heading, true);
+    fittedText(200.0f, 142.0f, 372.0f, 0.28f, C_GOLD, detail, true);
+    drawPokemonAt(gPlayerSpecies[0], ANIM_IDLE, 6, 0, 62.0f, 216.0f);
+    drawPokemonAt(gPlayerSpecies[1], ANIM_IDLE, 2, 0, 338.0f, 216.0f);
 }
 
 static void drawTitleBottom(void)
 {
-    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x121827FF);
-    rect(0, 0, BOTTOM_W, 4, 0xF2C637FF);
     if (gMenuPage == PAGE_HOME) {
         drawHomeMenuBottom();
+        return;
+    }
+    if (gMenuPage == PAGE_PLAY) {
+        drawPlayMenuBottom();
         return;
     }
 
     switch (gMenuPage) {
     case PAGE_CPU:
-        textAt(12, 7, 0.54f, C_TEXT, "CPU DIFFICULTY");
+        drawMenuHeader("VS CPU");
         drawMenuRow(34, "EASY", "SLOWER MOVES AND ATTACKS", "", gCpuDifficulty == 0, false);
         drawMenuRow(61, "NORMAL", "BALANCED CPU", "", gCpuDifficulty == 1, false);
         drawMenuRow(88, "HARD", "FASTER AND STRONGER CPU", "", gCpuDifficulty == 2, false);
         drawMenuRow(125, "START BATTLE", "USE THE SELECTED DIFFICULTY", "A", false, false);
-        textAt(12, 164, 0.37f, C_MUTED, "TOUCH A LEVEL OR USE LEFT / RIGHT");
-        textAt(12, 211, 0.38f, C_GOLD, "A: START  /  B: BACK");
+        textAt(10, 211, 0.32f, C_GOLD, "A: START  /  B: BACK");
         break;
     case PAGE_STORY: {
         int first = (gStoryStage / 6) * 6;
-        textAt(12, 6, 0.53f, C_TEXT, "CHOOSE A CHAPTER");
+        drawMenuHeader("CHOOSE A LEAGUE DUEL");
         for (int row = 0; row < 6; ++row) {
             int stage = first + row;
             if (stage >= 16) break;
             char title[24], status[16];
-            snprintf(title, sizeof(title), "CHAPTER %02d", stage + 1);
+            snprintf(title, sizeof(title), "DUEL %02d", stage + 1);
             snprintf(status, sizeof(status), "%s", stage <= gStoryUnlocked ?
                      (stage < gStoryUnlocked ? "CLEARED" : "READY") : "LOCKED");
             drawMenuRow(29.0f + (float)row * 27.0f, title,
-                        "SINGLE DUEL", status, stage == gStoryStage,
+                        "SINGLE POKEMON MATCH", status, stage == gStoryStage,
                         stage > gStoryUnlocked);
         }
-        textAt(10, 196, 0.34f, C_MUTED, "LEFT / RIGHT: PREVIOUS / NEXT PAGE");
-        textAt(10, 216, 0.37f, C_GOLD, "A: PLAY  /  B: BACK");
+        fittedText(10, 196, 300.0f, 0.28f, C_MUTED, "LEFT / RIGHT: CHANGE PAGE", false);
+        textAt(10, 216, 0.31f, C_GOLD, "A: PLAY  /  B: BACK");
         break;
     }
     case PAGE_RUN:
-        textAt(12, 7, 0.54f, C_TEXT, "ARENA RUN");
+        drawMenuHeader("ARENA CHALLENGE");
         drawMenuRow(40, "START RUN", "SIX FIGHTS, ONE TEAM", "A", true, false);
-        drawMenuRow(72, "TEAM CARRYOVER", "CURRENT HP CARRIES BETWEEN FLOORS", "", false, false);
-        textAt(12, 119, 0.38f, C_MUTED, "WIN EACH FIGHT TO REACH THE NEXT FLOOR");
-        textAt(12, 211, 0.38f, C_GOLD, "A: START  /  B: BACK");
+        drawMenuRow(72, "TEAM CARRYOVER", "CURRENT HP CONTINUES", "", false, false);
+        fittedText(10, 120, 300.0f, 0.32f, C_MUTED, "WIN EACH FIGHT TO REACH THE NEXT", false);
+        textAt(10, 211, 0.32f, C_GOLD, "A: START  /  B: BACK");
         break;
     case PAGE_TEAMS: {
-        textAt(12, 5, 0.54f, C_TEXT, "TEAM EDITOR");
+        drawMenuHeader("CUSTOMIZE YOUR TEAM");
         for (int i = 0; i < TEAM_SIZE; ++i) {
             float y = 27.0f + (float)i * 26.0f;
             bool selected = i == gTeamSlot;
-            rect(8, y, 304, 23, selected ? 0xF3A12EFF : 0x293452FF);
-            if (selected) rect(8, y, 4, 23, 0xFFF0A8FF);
+            rect(7, y, 306, 23, 0x0B2D55FF);
+            rect(8, y, 304, 21, selected ? 0xF5C54DFF : 0x214D82FF);
+            if (selected) rect(8, y, 4, 21, 0xFFFFFFFF);
             char label[36];
             snprintf(label, sizeof(label), "SLOT %d   %s", i + 1,
                      kSpecies[gPlayerSpecies[i]].name);
-            fittedText(17, y + 3, 285, 0.48f,
-                       selected ? 0x17203AFF : C_TEXT, label, false);
+            fittedText(17, y, 285, 0.39f,
+                       selected ? 0x102849FF : C_TEXT, label, false);
         }
-        textAt(12, 108, 0.43f, C_GOLD, "ROSTER - TAP A POKEMON");
+        textAt(10, 108, 0.35f, C_GOLD, "ROSTER - TAP A POKEMON");
         for (int i = 0; i < 6; ++i) {
             int row = i / 2, col = i % 2;
             float x = col == 0 ? 8.0f : 164.0f;
             float y = 125.0f + (float)row * 25.0f;
             bool chosen = gPlayerSpecies[gTeamSlot] == i;
-            rect(x, y, 148, 22, chosen ? 0x3E614BFF : 0x263149FF);
+            rect(x, y, 148, 22, chosen ? 0x345F8CFF : 0x21416CFF);
             drawPokemonIcon(i, x + 2.0f, y + 2.0f, 18.0f);
-            fittedText(x + 29.0f, y + 3.0f, 112.0f, 0.40f,
+            fittedText(x + 29.0f, y + 3.0f, 112.0f, 0.34f,
                        chosen ? C_GOLD : C_TEXT, kSpecies[i].name, false);
         }
-        textAt(10, 205, 0.33f, C_MUTED, "UP / DOWN: SLOT   LEFT / RIGHT: POKEMON");
-        textAt(10, 222, 0.36f, C_GOLD, "START: FIGHT  /  B: BACK");
+        fittedText(10, 205, 300.0f, 0.27f, C_MUTED, "UP/DOWN: SLOT  LEFT/RIGHT: POKEMON", false);
+        fittedText(10, 222, 300.0f, 0.29f, C_GOLD, "START: FIGHT  /  B: BACK", false);
         break;
     }
     case PAGE_ONLINE:
-        textAt(12, 7, 0.54f, C_TEXT, "ONLINE LOBBY");
-        drawMenuRow(39, "HOST A ROOM", "CREATE A LINK BATTLE", "", false, true);
-        drawMenuRow(67, "JOIN A ROOM", "ENTER A ROOM CODE", "", false, true);
-        rect(9, 103, 302, 64, 0x252D42FF);
-        fittedText(20, 113, 280, 0.42f, C_GOLD, "NETWORK PLAY IS NOT ACTIVE", false);
-        fittedText(20, 135, 280, 0.31f, C_TEXT, "This build supports offline CPU battles.", false);
-        textAt(12, 211, 0.38f, C_GOLD, "B: BACK");
+        drawMenuHeader("ONLINE PLAY");
+        drawMenuRow(39, "RANKED", "CLIMB THE GLOBAL LADDER", "", false, true);
+        drawMenuRow(67, "CREATE ROOM", "PLAY WITH A FRIEND", "", false, true);
+        drawMenuRow(95, "FIND ROOM", "JOIN AN ONLINE MATCH", "", false, true);
+        rect(8, 136, 304, 48, 0x14375FFF);
+        fittedText(160, 141, 284, 0.34f, C_GOLD,
+                   "NETWORK PLAY IS NOT AVAILABLE", true);
+        fittedText(160, 158, 284, 0.29f, C_TEXT,
+                   "IN THIS 3DS VERSION", true);
+        textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
         break;
     case PAGE_SETTINGS: {
-        textAt(12, 7, 0.54f, C_TEXT, "SETTINGS");
+        drawMenuHeader("SETTINGS");
+        static const char *const arenas[] = { "STADIUM", "NEON", "CRATER", "RUINS" };
         char arena[32], cpu[32], size[32];
-        snprintf(arena, sizeof(arena), "ARENA: %s", gArenaIndex == 0 ? "VOLCANIC" : "GRASS");
+        snprintf(arena, sizeof(arena), "ARENA: %s", arenas[gArenaIndex]);
         snprintf(cpu, sizeof(cpu), "CPU: %s", gCpuDifficulty == 0 ? "EASY" :
                  (gCpuDifficulty == 1 ? "NORMAL" : "HARD"));
         snprintf(size, sizeof(size), "TEXT SIZE: %s", gUiTextScale > 1.05f ? "LARGE" : "NORMAL");
-        drawMenuRow(35, arena, "CHANGE BATTLE BACKGROUND", "LEFT / RIGHT", gMenuSelection == 0, false);
-        drawMenuRow(64, cpu, "DEFAULT CPU LEVEL", "LEFT / RIGHT", gMenuSelection == 1, false);
-        drawMenuRow(93, size, "MAKE LABELS LARGER", "LEFT / RIGHT", gMenuSelection == 2, false);
-        rect(9, 132, 302, 54, 0x252D42FF);
-        fittedText(18, 139, 284, 0.38f, C_GOLD, "CONTROLS", false);
-        fittedText(18, 158, 284, 0.29f, C_TEXT, "PAD MOVE   A ATTACK   B/X/Y MOVES", false);
-        fittedText(18, 173, 284, 0.29f, C_TEXT, "L DODGE   R ULTIMATE   START PAUSE", false);
-        textAt(12, 211, 0.38f, C_GOLD, "A / LEFT / RIGHT: CHANGE  /  B: BACK");
+        drawMenuRow(35, arena, "CHANGE BATTLE BACKGROUND", "LEFT/RIGHT", gMenuSelection == 0, false);
+        drawMenuRow(64, cpu, "DEFAULT CPU LEVEL", "LEFT/RIGHT", gMenuSelection == 1, false);
+        drawMenuRow(93, size, "MAKE LABELS LARGER", "LEFT/RIGHT", gMenuSelection == 2, false);
+        rect(8, 132, 304, 54, 0x14375FFF);
+        fittedText(160, 138, 284, 0.33f, C_GOLD, "CONTROLS", true);
+        fittedText(160, 157, 284, 0.27f, C_TEXT, "PAD MOVE   A ATTACK   B/X/Y MOVES", true);
+        fittedText(160, 172, 284, 0.27f, C_TEXT, "L DODGE   R ULTIMATE   START PAUSE", true);
+        fittedText(10, 211, 300.0f, 0.29f, C_GOLD, "A / LEFT / RIGHT: CHANGE  B: BACK", false);
         break;
     }
+    case PAGE_DEX:
+        drawMenuHeader("POKEDEX");
+        for (int i = 0; i < P2D_SPECIES_COUNT; ++i) {
+            float y = 29.0f + i * 27.0f;
+            bool selected = i == gMenuSelection;
+            drawMenuRow(y, kSpecies[i].name, kSpecies[i].type, NULL, selected, false);
+            drawPokemonIcon(i, 284.0f, y + 1.0f, 19.0f);
+        }
+        fittedText(10, 211, 300.0f, 0.32f, C_GOLD, "UP/DOWN: BROWSE  B: BACK", false);
+        break;
+    case PAGE_TUTORIAL:
+        drawMenuHeader("HOW TO PLAY");
+        drawMenuRow(34, "MOVE", "CIRCLE PAD MOVES YOUR POKEMON", NULL, false, false);
+        drawMenuRow(62, "ATTACK", "A IS A BASIC ATTACK", NULL, false, false);
+        drawMenuRow(90, "SPECIAL MOVES", "B / X / Y USE YOUR MOVES", NULL, false, false);
+        drawMenuRow(118, "DODGE", "L DASHES AND AVOIDS DAMAGE", NULL, false, false);
+        drawMenuRow(146, "ULTIMATE", "R USES A FULL CHARGE", NULL, false, false);
+        textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
+        break;
+    case PAGE_CREDITS:
+        drawMenuHeader("CREDITS");
+        drawMenuRow(36, "INSPIRED BY", "POKE ARENA 2D", NULL, false, false);
+        drawMenuRow(64, "POKEMON SPRITES", "PMDCOLLAB COMMUNITY", NULL, false, false);
+        drawMenuRow(92, "PIXEL FONT", "PIXELIFY SANS - GOOGLE FONTS", NULL, false, false);
+        drawMenuRow(120, "3DS HOMEBREW", "BUILT FOR OLD 2DS AND 3DS", NULL, false, false);
+        textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
+        break;
+    case PAGE_2PLAY:
+        drawMenuHeader("2 PLAYERS");
+        rect(8, 45, 304, 94, 0x14375FFF);
+        fittedText(160, 57, 280, 0.38f, C_GOLD,
+                   "LOCAL TWO PLAYER IS NOT READY", true);
+        fittedText(160, 82, 280, 0.32f, C_TEXT,
+                   "THIS BUILD SUPPORTS OFFLINE CPU", true);
+        fittedText(160, 101, 280, 0.32f, C_TEXT,
+                   "BATTLES AND TRAINING", true);
+        textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
+        break;
     case PAGE_HOME:
+    case PAGE_PLAY:
+        drawHomeMenuBottom();
         break;
     }
 }
@@ -1035,9 +1122,9 @@ static void drawResultBottom(void)
                  gWinner == 0 ? "CLEAR" : "FAILED");
         textAt(12, 56, 0.42f, C_MUTED, floor);
     } else {
-        textAt(12, 56, 0.42f, C_MUTED, "A STARTS ANOTHER BATTLE");
+        fittedText(12, 56, 296.0f, 0.42f, C_MUTED, "A STARTS ANOTHER BATTLE", false);
     }
-    textAt(12, 82, 0.42f, C_MUTED, "B RETURNS TO THE MAIN MENU");
+    fittedText(12, 82, 296.0f, 0.42f, C_MUTED, "B RETURNS TO THE MAIN MENU", false);
 }
 
 static void setMenuPage(MenuPage page)
@@ -1045,6 +1132,19 @@ static void setMenuPage(MenuPage page)
     gMenuPage = page;
     gMenuSelection = 0;
     if (page == PAGE_TEAMS) gTeamSlot = 0;
+    if (page == PAGE_HOME) gMenuDepth = 0;
+}
+
+static void pushMenuPage(MenuPage page)
+{
+    if (gMenuDepth < 4) gMenuStack[gMenuDepth++] = gMenuPage;
+    setMenuPage(page);
+}
+
+static void goBackMenu(void)
+{
+    MenuPage page = gMenuDepth > 0 ? gMenuStack[--gMenuDepth] : PAGE_HOME;
+    setMenuPage(page);
 }
 
 static void startMode(GameMode mode)
@@ -1057,14 +1157,27 @@ static void startMode(GameMode mode)
 static void activateHomeSelection(void)
 {
     switch (gMenuSelection) {
-    case 0: startMode(MODE_QUICK); break;
-    case 1: setMenuPage(PAGE_CPU); break;
-    case 2: setMenuPage(PAGE_STORY); gStoryStage = gStoryUnlocked; break;
-    case 3: setMenuPage(PAGE_RUN); gRunFloor = 1; break;
-    case 4: setMenuPage(PAGE_TEAMS); break;
-    case 5: setMenuPage(PAGE_ONLINE); break;
-    case 6: setMenuPage(PAGE_SETTINGS); break;
+    case 0: pushMenuPage(PAGE_PLAY); break;
+    case 1: pushMenuPage(PAGE_ONLINE); break;
+    case 2: pushMenuPage(PAGE_TEAMS); break;
+    case 3: pushMenuPage(PAGE_DEX); break;
+    case 4: pushMenuPage(PAGE_TUTORIAL); break;
+    case 5: pushMenuPage(PAGE_SETTINGS); break;
+    case 6: pushMenuPage(PAGE_CREDITS); break;
     default: setMenuPage(PAGE_HOME); break;
+    }
+}
+
+static void activatePlaySelection(void)
+{
+    switch (gMenuSelection) {
+    case 0: pushMenuPage(PAGE_STORY); gStoryStage = gStoryUnlocked; break;
+    case 1: pushMenuPage(PAGE_CPU); break;
+    case 2: pushMenuPage(PAGE_2PLAY); break;
+    case 3: startMode(MODE_QUICK); break;
+    case 4: pushMenuPage(PAGE_RUN); gRunFloor = 1; break;
+    case 5: goBackMenu(); break;
+    default: break;
     }
 }
 
@@ -1092,7 +1205,7 @@ static void changePlayerSpecies(int slot, int delta)
 
 static void adjustSetting(int delta)
 {
-    if (gMenuSelection == 0) gArenaIndex = (gArenaIndex + delta + 2) % 2;
+    if (gMenuSelection == 0) gArenaIndex = (gArenaIndex + delta + 4) % 4;
     else if (gMenuSelection == 1)
         gCpuDifficulty = (gCpuDifficulty + delta + 3) % 3;
     else if (gMenuSelection == 2)
@@ -1110,7 +1223,15 @@ static void handleMenuInput(u32 down)
         return;
     }
 
-    if (down & KEY_B) { setMenuPage(PAGE_HOME); return; }
+    if (gMenuPage == PAGE_PLAY) {
+        if (down & KEY_UP) gMenuSelection = (gMenuSelection + 5) % 6;
+        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % 6;
+        if (down & (KEY_A | KEY_START)) activatePlaySelection();
+        if (down & KEY_B) goBackMenu();
+        return;
+    }
+
+    if (down & KEY_B) { goBackMenu(); return; }
     switch (gMenuPage) {
     case PAGE_CPU:
         if (down & KEY_LEFT) gCpuDifficulty = (gCpuDifficulty + 2) % 3;
@@ -1143,8 +1264,16 @@ static void handleMenuInput(u32 down)
         if (down & (KEY_RIGHT | KEY_A)) adjustSetting(1);
         break;
     case PAGE_ONLINE:
+    case PAGE_2PLAY:
+    case PAGE_TUTORIAL:
+    case PAGE_CREDITS:
+        break;
+    case PAGE_DEX:
+        if (down & KEY_UP) gMenuSelection = (gMenuSelection + P2D_SPECIES_COUNT - 1) % P2D_SPECIES_COUNT;
+        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % P2D_SPECIES_COUNT;
         break;
     case PAGE_HOME:
+    case PAGE_PLAY:
         break;
     }
 }
@@ -1209,9 +1338,19 @@ static void handleResultInput(u32 down)
 static void handleTouch(const touchPosition *touch)
 {
     if (gScene == SCENE_TITLE) {
+        if (gMenuPage != PAGE_HOME && touch->py >= 209) {
+            if (gMenuPage == PAGE_TEAMS && touch->px < 160)
+                startMode(MODE_QUICK);
+            else
+                goBackMenu();
+            return;
+        }
         if (gMenuPage == PAGE_HOME && touch->py >= 27 && touch->py < 202) {
             gMenuSelection = (touch->py - 27) / 25;
             if (gMenuSelection >= 0 && gMenuSelection < 7) activateHomeSelection();
+        } else if (gMenuPage == PAGE_PLAY && touch->py >= 30 && touch->py < 192) {
+            gMenuSelection = (touch->py - 30) / 27;
+            if (gMenuSelection >= 0 && gMenuSelection < 6) activatePlaySelection();
         } else if (gMenuPage == PAGE_CPU) {
             if (touch->py >= 34 && touch->py < 111) {
                 gCpuDifficulty = (touch->py - 34) / 27;
@@ -1239,6 +1378,9 @@ static void handleTouch(const touchPosition *touch)
             gMenuSelection = (touch->py - 35) / 29;
             if (gMenuSelection > 2) gMenuSelection = 2;
             adjustSetting(1);
+        } else if (gMenuPage == PAGE_DEX && touch->py >= 29 && touch->py < 191) {
+            gMenuSelection = (touch->py - 29) / 27;
+            if (gMenuSelection >= P2D_SPECIES_COUNT) gMenuSelection = P2D_SPECIES_COUNT - 1;
         }
         return;
     }
@@ -1297,17 +1439,29 @@ int main(int argc, char **argv)
         gfxExit();
         return 1;
     }
-    gVolcanicArena = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_arena_volcanic_idx);
-    gGrassArena = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_arena_grass_idx);
-    C3D_TexSetFilter(gVolcanicArena.tex, GPU_NEAREST, GPU_NEAREST);
-    C3D_TexSetFilter(gGrassArena.tex, GPU_NEAREST, GPU_NEAREST);
-    gTextBuf = C2D_TextBufNew(8192);
+    gArenaImage[0] = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_arena_stadium_idx);
+    gArenaImage[1] = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_arena_neon_idx);
+    gArenaImage[2] = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_arena_crater_idx);
+    gArenaImage[3] = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_arena_ruins_idx);
+    gMenuBackground = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_menu_background_idx);
+    gGameLogo = C2D_SpriteSheetGetImage(
+        gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
+    for (int i = 0; i < 4; ++i)
+        C3D_TexSetFilter(gArenaImage[i].tex, GPU_NEAREST, GPU_NEAREST);
+    C3D_TexSetFilter(gMenuBackground.tex, GPU_NEAREST, GPU_NEAREST);
+    C3D_TexSetFilter(gGameLogo.tex, GPU_NEAREST, GPU_NEAREST);
+    for (int i = 0; i < P2D_TEXT_COUNT; ++i) {
+        gTextFill[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextFillIndex[i]);
+        gTextEdge[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextEdgeIndex[i]);
+    }
     gTop = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     gBottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-    if (!gTextBuf || !gTop || !gBottom) {
-        if (gTextBuf) C2D_TextBufDelete(gTextBuf);
+    if (!gTop || !gBottom) {
         C2D_SpriteSheetFree(gPoke2dAtlas);
         C2D_Fini();
         C3D_Fini();
@@ -1338,7 +1492,6 @@ int main(int argc, char **argv)
         else if (gScene == SCENE_PAUSE) handlePauseInput(down);
         else if (gScene == SCENE_RESULT) handleResultInput(down);
 
-        C2D_TextBufClear(gTextBuf);
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(gTop, c2dColor(C_BG));
         C2D_SceneBegin(gTop);
@@ -1356,7 +1509,6 @@ int main(int argc, char **argv)
         C3D_FrameEnd(0);
     }
 
-    C2D_TextBufDelete(gTextBuf);
     C2D_SpriteSheetFree(gPoke2dAtlas);
     C2D_Fini();
     C3D_Fini();

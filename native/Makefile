@@ -13,7 +13,7 @@ DATA         :=
 INCLUDES     := include
 TEX3DS       ?= tex3ds
 APP_TITLE    := Pokemon Arena 2D
-APP_DESCRIPTION := Poke2D Arena Quick Battle
+APP_DESCRIPTION := Poke Arena 2D homebrew adaptation
 APP_AUTHOR   := poochygamer892
 ICON         := icon.png
 
@@ -54,18 +54,18 @@ export LD := $(CC)
 
 all: assets $(BUILD)
 
-# The web version's arena and directional animation sheets are converted to one
-# compact RGBA4 atlas before compiling the 3DS executable.
+# The reference game's arenas, directional sprites and bitmap font are packed
+# into one compact RGBA4 atlas before compiling the 3DS executable.
 assets:
-	@mkdir -p generated/poke2d include
+	@mkdir -p generated/pokearena2d include
 	@python3 scripts/prepare_poke2d_assets.py \
-		--source assets/poke2d/source \
-		--output generated/poke2d \
+		--source assets/pokearena2d/source \
+		--output generated/pokearena2d \
 		--include include/poke2d_sprite_meta.h
 	@$(TEX3DS) --atlas -f rgba4 -z lz11 \
 		-H include/poke2d_sprite_indices.h \
-		-o generated/poke2d/poke2d_atlas.t3x \
-		$$(find generated/poke2d/atlas_input -maxdepth 1 -name '*.png' -type f | sort)
+		-o generated/pokearena2d/poke2d_atlas.t3x \
+		$$(find generated/pokearena2d/atlas_input -maxdepth 1 -name '*.png' -type f | sort)
 
 $(BUILD): assets
 	@mkdir -p $@

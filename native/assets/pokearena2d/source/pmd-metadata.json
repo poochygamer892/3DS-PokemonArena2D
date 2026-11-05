@@ -1,0 +1,140 @@
+{
+  "0001": {
+    "feet": 7,
+    "anims": {
+      "Idle": {
+        "file": "0001/Idle-Anim.png",
+        "fw": 32,
+        "fh": 40,
+        "frames": 3
+      },
+      "Walk": {
+        "file": "0001/Walk-Anim.png",
+        "fw": 40,
+        "fh": 40,
+        "frames": 6
+      },
+      "Attack": {
+        "file": "0001/Attack-Anim.png",
+        "fw": 64,
+        "fh": 72,
+        "frames": 11
+      }
+    }
+  },
+  "0004": {
+    "feet": 6,
+    "anims": {
+      "Idle": {
+        "file": "0004/Idle-Anim.png",
+        "fw": 32,
+        "fh": 40,
+        "frames": 4
+      },
+      "Walk": {
+        "file": "0004/Walk-Anim.png",
+        "fw": 32,
+        "fh": 32,
+        "frames": 4
+      },
+      "Attack": {
+        "file": "0004/Attack-Anim.png",
+        "fw": 64,
+        "fh": 64,
+        "frames": 11
+      }
+    }
+  },
+  "0007": {
+    "feet": 5,
+    "anims": {
+      "Idle": {
+        "file": "0007/Idle-Anim.png",
+        "fw": 32,
+        "fh": 32,
+        "frames": 8
+      },
+      "Walk": {
+        "file": "0007/Walk-Anim.png",
+        "fw": 32,
+        "fh": 32,
+        "frames": 4
+      },
+      "Attack": {
+        "file": "0007/Attack-Anim.png",
+        "fw": 64,
+        "fh": 72,
+        "frames": 10
+      }
+    }
+  },
+  "0025": {
+    "feet": 5,
+    "anims": {
+      "Idle": {
+        "file": "0025/Idle-Anim.png",
+        "fw": 40,
+        "fh": 56,
+        "frames": 6
+      },
+      "Walk": {
+        "file": "0025/Walk-Anim.png",
+        "fw": 32,
+        "fh": 40,
+        "frames": 4
+      },
+      "Attack": {
+        "file": "0025/Attack-Anim.png",
+        "fw": 80,
+        "fh": 80,
+        "frames": 10
+      }
+    }
+  },
+  "0006": {
+    "feet": 6,
+    "anims": {
+      "Idle": {
+        "file": "0006/Idle-Anim.png",
+        "fw": 40,
+        "fh": 48,
+        "frames": 4
+      },
+      "Walk": {
+        "file": "0006/Walk-Anim.png",
+        "fw": 40,
+        "fh": 48,
+        "frames": 4
+      },
+      "Attack": {
+        "file": "0006/Attack-Anim.png",
+        "fw": 80,
+        "fh": 88,
+        "frames": 14
+      }
+    }
+  },
+  "0009": {
+    "feet": 5,
+    "anims": {
+      "Idle": {
+        "file": "0009/Idle-Anim.png",
+        "fw": 40,
+        "fh": 40,
+        "frames": 8
+      },
+      "Walk": {
+        "file": "0009/Walk-Anim.png",
+        "fw": 32,
+        "fh": 40,
+        "frames": 4
+      },
+      "Attack": {
+        "file": "0009/Attack-Anim.png",
+        "fw": 64,
+        "fh": 72,
+        "frames": 13
+      }
+    }
+  }
+}
