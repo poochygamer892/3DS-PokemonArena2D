@@ -167,9 +167,10 @@ def main() -> None:
                 raise ValueError(f"Unexpected {dex}/{animation} sheet: {source.size}, expected {expected}")
             keep = min(frame_count, MAX_FRAMES)
             for direction in range(DIRECTIONS):
-                for frame in range(keep):
-                    cell = source.crop((frame * frame_w, direction * frame_h,
-                                        (frame + 1) * frame_w, (direction + 1) * frame_h))
+                for frame in range(MAX_FRAMES):
+                    source_frame = min(frame, keep - 1)
+                    cell = source.crop((source_frame * frame_w, direction * frame_h,
+                                        (source_frame + 1) * frame_w, (direction + 1) * frame_h))
                     resized = (max(1, cell.width // 2), max(1, cell.height // 2))
                     cell = cell.resize(resized, Image.Resampling.NEAREST)
                     cell.save(atlas_dir / f"{prefix}_{animation.lower()}_d{direction}_f{frame}.png",
