@@ -116,6 +116,8 @@ static float gSupplyLife = 0.0f;
 static int gSupplyKind = DROP_HEAL;
 static int gSupplyCount = 0;
 static float gHitFlash = 0.0f;
+static u32 gMenuStickDirection = 0;
+static float gMenuStickRepeat = 0.0f;
 
 static const u32 C_BG = 0x142330FF;
 static const u32 C_TEXT = 0xF8F3D8FF;
@@ -584,6 +586,14 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     Combatant *cpu = &gFighter[1];
     float moveX = (float)pad->dx / 156.0f;
     float moveY = -(float)pad->dy / 156.0f;
+    /* The D-pad is a second movement option. It is only used when the Circle
+       Pad is centred, so the two inputs cannot fight each other. */
+    if (fabsf(moveX) < 0.18f && fabsf(moveY) < 0.18f) {
+        if (held & KEY_LEFT) moveX = -1.0f;
+        else if (held & KEY_RIGHT) moveX = 1.0f;
+        if (held & KEY_UP) moveY = -1.0f;
+        else if (held & KEY_DOWN) moveY = 1.0f;
+    }
     float mag = sqrtf(moveX * moveX + moveY * moveY);
     if (mag > 1.0f) { moveX /= mag; moveY /= mag; }
     player->moveX = moveX;
@@ -647,8 +657,8 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     if (down & KEY_Y) useSkill(2);
     if (down & KEY_L) useDash();
     if (down & KEY_R) useUltimate();
-    if (down & KEY_LEFT) switchPokemon(0, (gActive[0] + TEAM_SIZE - 1) % TEAM_SIZE);
-    if (down & KEY_RIGHT) switchPokemon(0, (gActive[0] + 1) % TEAM_SIZE);
+    if (down & KEY_SELECT)
+        switchPokemon(0, (gActive[0] + 1) % TEAM_SIZE);
 
     updateSupply(dt);
     if (livingCount(0) == 0 || livingCount(1) == 0) {
@@ -823,11 +833,11 @@ static void drawBottomBattle(void)
     actionButton(112, 91, "B", kMoveLabel[species][0], gFighter[0].skillCd[0], 0xF08C43FF);
     actionButton(216, 91, "X", kMoveLabel[species][1], gFighter[0].skillCd[1], 0xF2B93AFF);
     actionButton(8, 148, "Y", kMoveLabel[species][2], gFighter[0].skillCd[2], 0x9B85E9FF);
-    actionButton(112, 148, "L", "SPACE DASH", gFighter[0].dashCd, 0x5BD0D6FF);
+    actionButton(112, 148, "L", "DODGE", gFighter[0].dashCd, 0x5BD0D6FF);
     actionButton(216, 148, "R", kUltimateLabel[species],
                  fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xD28BEEFF);
-    fittedText(9, 207, 302.0f, 0.22f, C_MUTED, "CIRCLE PAD: MOVE   D-PAD: SWITCH POKEMON", false);
-    fittedText(9, 222, 302.0f, 0.20f, C_MUTED, "TAP A MOVE  |  L DODGE  |  R ULTIMATE", false);
+    fittedText(9, 207, 302.0f, 0.22f, C_MUTED, "CIRCLE PAD / D-PAD: MOVE   SELECT: SWITCH", false);
+    fittedText(9, 222, 302.0f, 0.20f, C_MUTED, "A BASIC  B/X/Y MOVES  L DODGE  R ULTIMATE", false);
 }
 
 static void drawMenuBackdrop(void)
@@ -981,10 +991,10 @@ static void drawTitleBottom(void)
     switch (gMenuPage) {
     case PAGE_CPU:
         drawMenuHeader("VS CPU");
-        drawMenuRow(34, "EASY", "SLOWER MOVES AND ATTACKS", "", gCpuDifficulty == 0, false);
-        drawMenuRow(61, "NORMAL", "BALANCED CPU", "", gCpuDifficulty == 1, false);
-        drawMenuRow(88, "HARD", "FASTER AND STRONGER CPU", "", gCpuDifficulty == 2, false);
-        drawMenuRow(125, "START BATTLE", "USE THE SELECTED DIFFICULTY", "A", false, false);
+        drawMenuRow(34, "EASY", "SLOWER MOVES AND ATTACKS", "", gMenuSelection == 0, false);
+        drawMenuRow(61, "NORMAL", "BALANCED CPU", "", gMenuSelection == 1, false);
+        drawMenuRow(88, "HARD", "FASTER AND STRONGER CPU", "", gMenuSelection == 2, false);
+        drawMenuRow(125, "START BATTLE", "USE THE SELECTED DIFFICULTY", "A", gMenuSelection == 3, false);
         textAt(10, 211, 0.32f, C_GOLD, "A: START  /  B: BACK");
         break;
     case PAGE_STORY: {
@@ -1066,7 +1076,7 @@ static void drawTitleBottom(void)
         drawMenuRow(93, size, "MAKE LABELS LARGER", "LEFT/RIGHT", gMenuSelection == 2, false);
         rect(8, 132, 304, 54, 0x14375FFF);
         fittedText(160, 138, 284, 0.33f, C_GOLD, "CONTROLS", true);
-        fittedText(160, 157, 284, 0.27f, C_TEXT, "PAD MOVE   A ATTACK   B/X/Y MOVES", true);
+        fittedText(160, 157, 284, 0.27f, C_TEXT, "PAD/D-PAD MOVE   A ATTACK   B/X/Y MOVES", true);
         fittedText(160, 172, 284, 0.27f, C_TEXT, "L DODGE   R ULTIMATE   START PAUSE", true);
         fittedText(10, 211, 300.0f, 0.29f, C_GOLD, "A / LEFT / RIGHT: CHANGE  B: BACK", false);
         break;
@@ -1083,7 +1093,7 @@ static void drawTitleBottom(void)
         break;
     case PAGE_TUTORIAL:
         drawMenuHeader("HOW TO PLAY");
-        drawMenuRow(34, "MOVE", "CIRCLE PAD MOVES YOUR POKEMON", NULL, false, false);
+        drawMenuRow(34, "MOVE", "CIRCLE PAD OR D-PAD MOVES YOU", NULL, false, false);
         drawMenuRow(62, "ATTACK", "A IS A BASIC ATTACK", NULL, false, false);
         drawMenuRow(90, "SPECIAL MOVES", "B / X / Y USE YOUR MOVES", NULL, false, false);
         drawMenuRow(118, "DODGE", "L DASHES AND AVOIDS DAMAGE", NULL, false, false);
@@ -1231,6 +1241,41 @@ static void adjustSetting(int delta)
         gUiTextScale = gUiTextScale > 1.05f ? 1.0f : 1.15f;
 }
 
+/* Menus accept both the D-pad and Circle Pad. A positive Circle Pad Y value
+   means physical up on a 3DS; screen lists therefore map negative Y to down. */
+static u32 menuInputFromStick(u32 down, const circlePosition *pad, float dt)
+{
+    u32 input = down;
+    if (down & KEY_CPAD_UP) input |= KEY_UP;
+    if (down & KEY_CPAD_DOWN) input |= KEY_DOWN;
+    if (down & KEY_CPAD_LEFT) input |= KEY_LEFT;
+    if (down & KEY_CPAD_RIGHT) input |= KEY_RIGHT;
+
+    int absX = pad->dx < 0 ? -pad->dx : pad->dx;
+    int absY = pad->dy < 0 ? -pad->dy : pad->dy;
+    u32 direction = 0;
+    if (absX >= 35 || absY >= 35) {
+        if (absX > absY) direction = pad->dx < 0 ? KEY_LEFT : KEY_RIGHT;
+        else direction = pad->dy < 0 ? KEY_DOWN : KEY_UP;
+    }
+
+    if (!direction) {
+        gMenuStickDirection = 0;
+        gMenuStickRepeat = 0.0f;
+    } else if (direction != gMenuStickDirection) {
+        gMenuStickDirection = direction;
+        gMenuStickRepeat = 0.30f;
+        input |= direction;
+    } else {
+        gMenuStickRepeat -= dt;
+        if (gMenuStickRepeat <= 0.0f) {
+            gMenuStickRepeat = 0.12f;
+            input |= direction;
+        }
+    }
+    return input;
+}
+
 static void handleMenuInput(u32 down)
 {
     if (gScene != SCENE_TITLE) return;
@@ -1253,9 +1298,19 @@ static void handleMenuInput(u32 down)
     if (down & KEY_B) { goBackMenu(); return; }
     switch (gMenuPage) {
     case PAGE_CPU:
-        if (down & KEY_LEFT) gCpuDifficulty = (gCpuDifficulty + 2) % 3;
-        if (down & KEY_RIGHT) gCpuDifficulty = (gCpuDifficulty + 1) % 3;
-        if (down & (KEY_A | KEY_START)) startMode(MODE_CPU);
+        if (down & KEY_UP) gMenuSelection = (gMenuSelection + 3) % 4;
+        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % 4;
+        if (gMenuSelection < 3) gCpuDifficulty = gMenuSelection;
+        if (down & KEY_LEFT) {
+            gCpuDifficulty = (gCpuDifficulty + 2) % 3;
+            gMenuSelection = gCpuDifficulty;
+        }
+        if (down & KEY_RIGHT) {
+            gCpuDifficulty = (gCpuDifficulty + 1) % 3;
+            gMenuSelection = gCpuDifficulty;
+        }
+        if ((down & (KEY_A | KEY_START)) && gMenuSelection == 3)
+            startMode(MODE_CPU);
         break;
     case PAGE_STORY:
         if (down & KEY_UP) gStoryStage = (gStoryStage + 15) % 16;
@@ -1373,8 +1428,11 @@ static void handleTouch(const touchPosition *touch)
         } else if (gMenuPage == PAGE_CPU) {
             if (touch->py >= 34 && touch->py < 111) {
                 gCpuDifficulty = (touch->py - 34) / 27;
+                gMenuSelection = gCpuDifficulty;
+            } else if (touch->py >= 125 && touch->py < 150) {
+                gMenuSelection = 3;
                 startMode(MODE_CPU);
-            } else if (touch->py >= 125 && touch->py < 150) startMode(MODE_CPU);
+            }
         } else if (gMenuPage == PAGE_STORY && touch->py >= 29 && touch->py < 191) {
             int first = (gStoryStage / 6) * 6;
             int stage = first + (touch->py - 29) / 27;
@@ -1512,10 +1570,16 @@ int main(int argc, char **argv)
             handleTouch(&touch);
         }
 
-        if (gScene == SCENE_TITLE) handleMenuInput(down);
-        else if (gScene == SCENE_BATTLE) updateBattle(dt, held, down, &pad);
-        else if (gScene == SCENE_PAUSE) handlePauseInput(down);
-        else if (gScene == SCENE_RESULT) handleResultInput(down);
+        if (gScene == SCENE_TITLE)
+            handleMenuInput(menuInputFromStick(down, &pad, dt));
+        else if (gScene == SCENE_BATTLE) {
+            gMenuStickDirection = 0;
+            gMenuStickRepeat = 0.0f;
+            updateBattle(dt, held, down, &pad);
+        } else if (gScene == SCENE_PAUSE)
+            handlePauseInput(menuInputFromStick(down, &pad, dt));
+        else if (gScene == SCENE_RESULT)
+            handleResultInput(menuInputFromStick(down, &pad, dt));
 
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(gTop, c2dColor(C_BG));

@@ -17,15 +17,15 @@ recursos está en `assets/pokearena2d/ATTRIBUTION.md`.
 
 ## Controles
 
-- Circle Pad: movimiento y apuntado automático al rival.
+- Circle Pad o cruceta: movimiento; el apuntado sigue automáticamente al rival.
 - A: ataque básico.
 - B, X, Y: movimientos especiales.
 - L: esquiva.
 - R: definitivo cuando el medidor llega al 100%.
-- Cruceta izquierda/derecha: cambiar de Pokémon.
+- SELECT: cambiar al siguiente Pokémon; también se puede tocar su retrato.
 - Pantalla táctil: seleccionar menús y acciones.
 - START durante el combate: pausa, reinicio o regreso al menú.
-- Menús: cruceta para navegar, A para elegir y B para volver.
+- Menús: Circle Pad o cruceta para navegar, A para elegir y B para volver.
 - Ajustes: cambia entre Stadium, Neon, Crater y Ruins, el nivel de CPU y el
 tamaño del texto.
 
