@@ -274,7 +274,7 @@ static void drawBitmapText(float x, float y, float scale, u32 color, const char 
 {
     /* Open Sans glyphs are rasterized at 40 px and filtered from a separate
        RGBA8 atlas so their thinner strokes remain smooth on the 3DS. */
-    float glyphScale = scale * 0.80f * gUiTextScale;
+    float glyphScale = scale * 0.90f * gUiTextScale;
     float startX = x;
     C2D_ImageTint fillTint;
     C2D_PlainImageTint(&fillTint, c2dColor(color), 1.0f);
@@ -302,7 +302,7 @@ static void textAt(float x, float y, float scale, u32 color, const char *s)
 
 static void centeredText(float x, float y, float scale, u32 color, const char *s)
 {
-    float actualScale = scale * 0.80f * gUiTextScale;
+    float actualScale = scale * 0.90f * gUiTextScale;
     drawBitmapText(x - bitmapTextWidth(s, actualScale) * 0.5f,
                    y, scale, color, s);
 }
@@ -310,7 +310,7 @@ static void centeredText(float x, float y, float scale, u32 color, const char *s
 static void fittedText(float x, float y, float maxWidth, float scale,
                        u32 color, const char *s, bool centered)
 {
-    float actualScale = scale * 0.80f * gUiTextScale;
+    float actualScale = scale * 0.90f * gUiTextScale;
     float width = bitmapTextWidth(s, actualScale);
     if (maxWidth > 0.0f && width > maxWidth) {
         scale *= maxWidth / width;
@@ -570,7 +570,8 @@ static void combatHit(int attacker, int rawDamage, AttackType attackType,
     int attackerSpecies = gTeam[attacker][gActive[attacker]].speciesArt;
     int targetSpecies = gTeam[target][gActive[target]].speciesArt;
     AttackType defenderType = speciesType(targetSpecies);
-    float multiplier = typeMultiplier(attackType, defenderType);
+    float effectiveness = typeMultiplier(attackType, defenderType);
+    float multiplier = effectiveness;
     if (attackType != TYPE_NEUTRAL && attackType == speciesType(attackerSpecies))
         multiplier *= 1.2f;
     int damage = (int)ceilf((float)rawDamage * multiplier);
@@ -599,9 +600,9 @@ static void combatHit(int attacker, int rawDamage, AttackType attackType,
     }
     spawnEffect(FX_BURST, gFighter[target].x, gFighter[target].y,
                 gFighter[target].x, gFighter[target].y, 0.24f, color);
-    if (multiplier > 1.01f)
+    if (effectiveness > 1.01f)
         snprintf(gHitLabel, sizeof(gHitLabel), "SUPER EFFECTIVE!");
-    else if (multiplier < 0.99f)
+    else if (effectiveness < 0.99f)
         snprintf(gHitLabel, sizeof(gHitLabel), "RESISTED");
     else
         snprintf(gHitLabel, sizeof(gHitLabel), "HIT!");
