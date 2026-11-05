@@ -738,14 +738,6 @@ static void drawResult(void)
 
 static void drawResultBottom(void)
 {
-    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x171B28FF);
-    textAt(12, 18, 0.45f, C_TEXT, "MATCH COMPLETE");
-    textAt(12, 57, 0.28f, C_MUTED, "A STARTS ANOTHER QUICK BATTLE");
-    textAt(12, 84, 0.28f, C_MUTED, "B RETURNS TO THE MODE MENU");
-}
-
-static void drawResultBottom(void)
-{
     rect(0, 0, BOTTOM_W, BOTTOM_H, C_BG);
     textAt(12, 18, 0.50f, C_TEXT, "MATCH COMPLETE");
     textAt(12, 56, 0.34f, C_MUTED, "A STARTS ANOTHER BATTLE");
