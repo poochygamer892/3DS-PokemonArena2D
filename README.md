@@ -5,13 +5,15 @@ como inspiración inicial [Empress Pokémon 2D Arena](https://omniscye.itch.io/e
 y ahora usa [Poké Arena 2D](https://www.pokearena2d.com/) como referencia
 principal para los menús, el arte y el combate.
 
-Versión actual: **v0.3.0** (registrada en [`VERSION`](VERSION)). Los paquetes
+Versión actual: **v0.4.0** (registrada en [`VERSION`](VERSION)). Los paquetes
 generados llevan la versión en el nombre del archivo.
 
 La interfaz incluye Play, Online, Customize, Pokédex, Tutorial, Settings y
 Credits. Play abre League, VS CPU, 2 Players, Training y Arena. La build local
 tiene combate contra CPU, selección de equipos, seis Pokémon y cuatro arenas,
-con el logo, el fondo y la tipografía pixelada de la referencia.
+con el logo, fondos de color mejorado y Pokémon animados. Esta versión corrige
+las etiquetas ocultas por el orden de profundidad, usa la fuente del sistema
+para que los textos se lean y conserva más detalle en los sprites de combate.
 
 Esta es una reimplementación nativa en C para 3DS; no empaqueta el juego web ni
 incluye su catálogo completo. La red y el modo de dos jugadores siguen sin
@@ -36,3 +38,6 @@ GitHub Actions compila `.3dsx` y `.cia`; consulta los artefactos en
 - [Plan de adaptación a 3DS](PORTING_PLAN_3DS.md)
 - [Port nativo y controles](native/README.md)
 - [Procedencia y licencias de los recursos](native/assets/pokearena2d/ATTRIBUTION.md)
+
+La pantalla de 3DS tiene una resolución nativa de 400 × 240; esta adaptación
+mantiene el estilo pixel art del juego web y ajusta sus recursos a esa pantalla.

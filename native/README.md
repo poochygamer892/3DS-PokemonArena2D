@@ -2,8 +2,9 @@
 
 Port nativo en progreso del juego web [Poké Arena 2D](https://www.pokearena2d.com/).
 La interfaz adapta los menús del sitio y usa su logo, fondos, cuatro arenas y
-seis Pokémon animados. El texto se dibuja con glyphs pixelados incluidos en el
-atlas para que no dependa de la fuente instalada en la consola.
+seis Pokémon animados. El texto usa la fuente del sistema con el ajuste de
+filtro de Citro2D. Las etiquetas se dibujan delante de los paneles del menú; la
+versión anterior las dejaba detrás debido al orden de profundidad.
 
 La versión local incluye combate contra CPU, Training, una progresión League,
 Arena Challenge de seis peleas, selección de equipos, Pokédex, Tutorial y
@@ -35,6 +36,7 @@ Con devkitARM, libctru, citro3d, citro2d, `tex3ds` y Pillow:
 make -C native
 ```
 
-El proceso convierte los fondos, las hojas de animación y los glyphs en un
-atlas RGBA4 para reducir el uso de memoria en Old 2DS. GitHub Actions genera
+El proceso convierte las hojas de animación a 75% del tamaño original en un
+atlas RGBA4, y mantiene los fondos en RGB565 filtrado para preservar el color
+sin aumentar el uso de VRAM. GitHub Actions genera
 `.3dsx`, `.cia`, `.elf` y `.smdh`.

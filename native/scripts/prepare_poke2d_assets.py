@@ -12,6 +12,9 @@ from PIL import Image
 
 # PMDCollab animation sheets use eight directional rows. Only four frames of
 # each animation are retained to keep the atlas within Old 2DS memory limits.
+# Keep sprites at 75% of the source sheet so four-frame animations fit in one
+# 1024x1024 3DS atlas while preserving more detail than the previous half-size
+# conversion. drawPokemonAt scales them back to their intended screen size.
 POKEMON = [
     ("p1", "Bulbasaur", "0001", 0.92, [
         ("Idle", 32, 40, 3, 16, 27),
@@ -75,7 +78,7 @@ def write_metadata_header(path: Path, font_dir: Path) -> None:
                                 ("p2dOriginY", 5, "unsigned short")):
         out.append(f"static const {ctype} {name}[P2D_SPECIES_COUNT][P2D_ANIM_COUNT] = {{")
         for species in POKEMON:
-            values = [str(species[4][i][column] // 2) for i in range(len(ANIMATIONS))]
+            values = [str(species[4][i][column] * 3 // 4) for i in range(len(ANIMATIONS))]
             out.append("    { " + ", ".join(values) + " },")
         out.append("};")
 
@@ -152,11 +155,16 @@ def main() -> None:
     args = parser.parse_args()
 
     atlas_dir = args.output / "atlas_input"
+    background_dir = args.output / "background_input"
     atlas_dir.mkdir(parents=True, exist_ok=True)
-    make_stage(args.source / "menu-background.jpg", atlas_dir / "menu_background.png")
+    background_dir.mkdir(parents=True, exist_ok=True)
+    for directory in (atlas_dir, background_dir):
+        for stale in directory.glob("*.png"):
+            stale.unlink()
+    make_stage(args.source / "menu-background.jpg", background_dir / "bg_menu_background.png")
     for arena, source_name in (("stadium", "stadium"), ("neon", "neon"),
                                ("crater", "crater"), ("ruins", "ruinas")):
-        make_stage(args.source / f"arena-{source_name}.jpg", atlas_dir / f"arena_{arena}.png")
+        make_stage(args.source / f"arena-{source_name}.jpg", background_dir / f"bg_arena_{arena}.png")
     prepare_logo(args.source / "logo.png", atlas_dir / "game_logo.png")
 
     for prefix, _display, dex, _scale, clips in POKEMON:
@@ -171,7 +179,7 @@ def main() -> None:
                     source_frame = min(frame, keep - 1)
                     cell = source.crop((source_frame * frame_w, direction * frame_h,
                                         (source_frame + 1) * frame_w, (direction + 1) * frame_h))
-                    resized = (max(1, cell.width // 2), max(1, cell.height // 2))
+                    resized = (max(1, cell.width * 3 // 4), max(1, cell.height * 3 // 4))
                     cell = cell.resize(resized, Image.Resampling.NEAREST)
                     cell.save(atlas_dir / f"{prefix}_{animation.lower()}_d{direction}_f{frame}.png",
                               optimize=True)
@@ -179,7 +187,8 @@ def main() -> None:
     for glyph in (args.source / "font").glob("font_*.png"):
         Image.open(glyph).save(atlas_dir / glyph.name, optimize=True)
     write_metadata_header(args.include, args.source / "font")
-    print(f"Prepared {len(list(atlas_dir.glob('*.png')))} atlas images in {atlas_dir}")
+    print(f"Prepared {len(list(atlas_dir.glob('*.png')))} sprite images and "
+          f"{len(list(background_dir.glob('*.png')))} backgrounds")
 
 
 if __name__ == "__main__":

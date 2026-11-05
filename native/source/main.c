@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "poke2d_background_indices.h"
 #include "poke2d_sprite_indices.h"
 #include "poke2d_sprite_meta.h"
 
@@ -81,6 +82,9 @@ enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
 static C2D_SpriteSheet gPoke2dAtlas;
+static C2D_SpriteSheet gEnvironmentAtlas;
+static C2D_Font gUiFont;
+static C2D_TextBuf gUiTextBuffer;
 static C2D_Image gArenaImage[4];
 static C2D_Image gMenuBackground;
 static C2D_Image gGameLogo;
@@ -124,6 +128,8 @@ static const u32 C_GOLD = 0xFFC53DFF;
 
 extern const unsigned char poke2d_atlas_start[];
 extern const unsigned char poke2d_atlas_end[];
+extern const unsigned char poke2d_background_atlas_start[];
+extern const unsigned char poke2d_background_atlas_end[];
 
 __asm__(
     ".section .rodata\n"
@@ -133,6 +139,17 @@ __asm__(
     ".incbin \"../generated/pokearena2d/poke2d_atlas.t3x\"\n"
     ".global poke2d_atlas_end\n"
     "poke2d_atlas_end:\n"
+    ".text\n"
+);
+
+__asm__(
+    ".section .rodata\n"
+    ".balign 4\n"
+    ".global poke2d_background_atlas_start\n"
+    "poke2d_background_atlas_start:\n"
+    ".incbin \"../generated/pokearena2d/poke2d_background_atlas.t3x\"\n"
+    ".global poke2d_background_atlas_end\n"
+    "poke2d_background_atlas_end:\n"
     ".text\n"
 );
 
@@ -192,21 +209,59 @@ static void drawBitmapText(float x, float y, float scale, u32 color, const char 
         int index = c - P2D_TEXT_FIRST;
         if (c != ' ') {
             C2D_DrawImageAt(gTextEdge[index], x - glyphScale, y - glyphScale,
-                            0.46f, &edgeTint, glyphScale, glyphScale);
-            C2D_DrawImageAt(gTextFill[index], x, y, 0.45f, &fillTint,
+                            0.60f, &edgeTint, glyphScale, glyphScale);
+            C2D_DrawImageAt(gTextFill[index], x, y, 0.61f, &fillTint,
                             glyphScale, glyphScale);
         }
         x += (float)p2dTextAdvance[index] * glyphScale;
     }
 }
 
+static bool parseSystemText(const char *s, C2D_Text *text)
+{
+    if (!gUiFont || !gUiTextBuffer) return false;
+    C2D_TextBufClear(gUiTextBuffer);
+    return C2D_TextFontParse(text, gUiFont, gUiTextBuffer, s) != NULL;
+}
+
+static float systemTextWidth(const char *s, float scaleX, float scaleY)
+{
+    C2D_Text text;
+    float width = 0.0f;
+    if (parseSystemText(s, &text))
+        C2D_TextGetDimensions(&text, scaleX, scaleY, &width, NULL);
+    return width;
+}
+
+static void drawSystemText(float x, float y, float scaleX, float scaleY,
+                           u32 color, const char *s)
+{
+    C2D_Text text;
+    if (!parseSystemText(s, &text)) return;
+    C2D_DrawText(&text, C2D_WithColor, x + 0.7f, y + 0.8f, 0.60f,
+                 scaleX, scaleY, c2dColor(0x101B32FF));
+    C2D_DrawText(&text, C2D_WithColor, x, y, 0.61f,
+                 scaleX, scaleY, c2dColor(color));
+}
+
 static void textAt(float x, float y, float scale, u32 color, const char *s)
 {
-    drawBitmapText(x, y, scale, color, s);
+    if (gUiFont && gUiTextBuffer)
+        drawSystemText(x, y, scale * 1.75f * gUiTextScale,
+                       scale * gUiTextScale, color, s);
+    else
+        drawBitmapText(x, y, scale, color, s);
 }
 
 static void centeredText(float x, float y, float scale, u32 color, const char *s)
 {
+    if (gUiFont && gUiTextBuffer) {
+        float scaleX = scale * 1.75f * gUiTextScale;
+        float scaleY = scale * gUiTextScale;
+        x -= systemTextWidth(s, scaleX, scaleY) * 0.5f;
+        drawSystemText(x, y, scaleX, scaleY, color, s);
+        return;
+    }
     float actualScale = scale * 1.65f * gUiTextScale * 2.0f;
     drawBitmapText(x - bitmapTextWidth(s, actualScale) * 0.5f,
                    y, scale, color, s);
@@ -215,6 +270,20 @@ static void centeredText(float x, float y, float scale, u32 color, const char *s
 static void fittedText(float x, float y, float maxWidth, float scale,
                        u32 color, const char *s, bool centered)
 {
+    if (gUiFont && gUiTextBuffer) {
+        float scaleX = scale * 1.75f * gUiTextScale;
+        float scaleY = scale * gUiTextScale;
+        float width = systemTextWidth(s, scaleX, scaleY);
+        if (maxWidth > 0.0f && width > maxWidth) {
+            float fit = maxWidth / width;
+            scaleX *= fit;
+            scaleY *= fit;
+            width = maxWidth;
+        }
+        if (centered) x -= width * 0.5f;
+        drawSystemText(x, y, scaleX, scaleY, color, s);
+        return;
+    }
     float actualScale = scale * 1.65f * gUiTextScale * 2.0f;
     float width = bitmapTextWidth(s, actualScale);
     if (maxWidth > 0.0f && width > maxWidth) {
@@ -251,7 +320,7 @@ static void drawPokemonAt(int art, int animation, int direction, int frame,
                           float pivotX, float pivotY)
 {
     C2D_Image image = pokemonFrame(art, animation, direction, frame);
-    float scale = 2.0f * p2dSpeciesScale[art];
+    float scale = (4.0f / 3.0f) * p2dSpeciesScale[art];
     float originX = (float)p2dOriginX[art][animation] * scale;
     float originY = (float)p2dOriginY[art][animation] * scale;
     C2D_DrawImageAt(image, pivotX - originX, pivotY - originY, 0.36f,
@@ -1431,38 +1500,49 @@ int main(int argc, char **argv)
         return 1;
     }
     C2D_Prepare();
+    gEnvironmentAtlas = C2D_SpriteSheetLoadFromMem(
+        poke2d_background_atlas_start,
+        (size_t)(poke2d_background_atlas_end - poke2d_background_atlas_start));
     gPoke2dAtlas = C2D_SpriteSheetLoadFromMem(
         poke2d_atlas_start, (size_t)(poke2d_atlas_end - poke2d_atlas_start));
-    if (!gPoke2dAtlas) {
+    if (!gEnvironmentAtlas || !gPoke2dAtlas) {
+        if (gEnvironmentAtlas) C2D_SpriteSheetFree(gEnvironmentAtlas);
+        if (gPoke2dAtlas) C2D_SpriteSheetFree(gPoke2dAtlas);
         C2D_Fini();
         C3D_Fini();
         gfxExit();
         return 1;
     }
     gArenaImage[0] = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_arena_stadium_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_stadium_idx);
     gArenaImage[1] = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_arena_neon_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_neon_idx);
     gArenaImage[2] = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_arena_crater_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_crater_idx);
     gArenaImage[3] = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_arena_ruins_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_ruins_idx);
     gMenuBackground = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_menu_background_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_menu_background_idx);
     gGameLogo = C2D_SpriteSheetGetImage(
         gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
     for (int i = 0; i < 4; ++i)
-        C3D_TexSetFilter(gArenaImage[i].tex, GPU_NEAREST, GPU_NEAREST);
-    C3D_TexSetFilter(gMenuBackground.tex, GPU_NEAREST, GPU_NEAREST);
+        C3D_TexSetFilter(gArenaImage[i].tex, GPU_LINEAR, GPU_LINEAR);
+    C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gGameLogo.tex, GPU_NEAREST, GPU_NEAREST);
     for (int i = 0; i < P2D_TEXT_COUNT; ++i) {
         gTextFill[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextFillIndex[i]);
         gTextEdge[i] = C2D_SpriteSheetGetImage(gPoke2dAtlas, p2dTextEdgeIndex[i]);
     }
+    gUiFont = C2D_FontLoadSystem(CFG_REGION_USA);
+    if (gUiFont) C2D_FontSetFilter(gUiFont, GPU_LINEAR, GPU_LINEAR);
+    gUiTextBuffer = C2D_TextBufNew(512);
     gTop = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     gBottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     if (!gTop || !gBottom) {
         C2D_SpriteSheetFree(gPoke2dAtlas);
+        C2D_SpriteSheetFree(gEnvironmentAtlas);
+        if (gUiTextBuffer) C2D_TextBufDelete(gUiTextBuffer);
+        if (gUiFont) C2D_FontFree(gUiFont);
         C2D_Fini();
         C3D_Fini();
         gfxExit();
@@ -1510,6 +1590,9 @@ int main(int argc, char **argv)
     }
 
     C2D_SpriteSheetFree(gPoke2dAtlas);
+    C2D_SpriteSheetFree(gEnvironmentAtlas);
+    if (gUiTextBuffer) C2D_TextBufDelete(gUiTextBuffer);
+    if (gUiFont) C2D_FontFree(gUiFont);
     C2D_Fini();
     C3D_Fini();
     gfxExit();

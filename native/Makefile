@@ -54,14 +54,18 @@ export LD := $(CC)
 
 all: assets $(BUILD)
 
-# The reference game's arenas, directional sprites and bitmap font are packed
-# into one compact RGBA4 atlas before compiling the 3DS executable.
+# Battle sprites retain 75% of source detail in a nearest-filtered RGBA4 atlas.
+# Opaque arena images use RGB565 to preserve gradients without extra VRAM.
 assets:
 	@mkdir -p generated/pokearena2d include
 	@python3 scripts/prepare_poke2d_assets.py \
 		--source assets/pokearena2d/source \
 		--output generated/pokearena2d \
 		--include include/poke2d_sprite_meta.h
+	@$(TEX3DS) --atlas -f rgb565 -z lz11 \
+		-H include/poke2d_background_indices.h \
+		-o generated/pokearena2d/poke2d_background_atlas.t3x \
+		$$(find generated/pokearena2d/background_input -maxdepth 1 -name '*.png' -type f | sort)
 	@$(TEX3DS) --atlas -f rgba4 -z lz11 \
 		-H include/poke2d_sprite_indices.h \
 		-o generated/pokearena2d/poke2d_atlas.t3x \
