@@ -80,7 +80,9 @@ assets:
 			-o "generated/pokearena2d/$$atlas_id.t3x" \
 			$$(find "$$atlas_dir" -maxdepth 1 -name '*.png' -type f | sort) || exit $$?; \
 	done
-	@$(TEX3DS) --atlas -f rgba8 -z lz11 \
+	# A 5551 atlas halves font texture pressure while retaining the authorised
+	# regular font's thin strokes.  This matters on Old 2DS and Azahar software.
+	@$(TEX3DS) --atlas -f rgba5551 -z lz11 \
 		-H include/poke2d_font_indices.h \
 		-o generated/pokearena2d/poke2d_font_atlas.t3x \
 		$$(find generated/pokearena2d/font_input -maxdepth 1 -name '*.png' -type f | sort)

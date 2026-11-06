@@ -115,9 +115,13 @@ static int gLoadedFighterSpecies[2] = { -1, -1 };
 static C2D_SpriteSheet gFontAtlas;
 static C2D_SpriteSheet gMenuSheet;
 static C2D_SpriteSheet gTitleSheet;
-static C2D_SpriteSheet gArenaSheets[ARENA_COUNT];
+/* The Old 2DS has a small texture cache.  Keeping four 400x240 RGB arenas
+ * resident made Azahar's software renderer thrash and dropped battles to
+ * roughly 11 FPS.  Only the selected web arena needs to be in VRAM. */
+static C2D_SpriteSheet gArenaSheet;
 static C2D_Image gMenuBackground;
-static C2D_Image gArenaImages[ARENA_COUNT];
+static C2D_Image gArenaImage;
+static int gLoadedArenaIndex = -1;
 static C2D_Image gWebTitle;
 static C2D_Image gGameLogo;
 static C2D_Image gTextFill[P2D_TEXT_COUNT];
@@ -141,7 +145,7 @@ static int gCpuDifficulty = 1;
 static int gArenaIndex = 0;
 static int gPlayerSpecies[TEAM_SIZE] = { 0 };
 static int gOpponentSpecies = 1;
-static float gUiTextScale = 1.15f;
+static float gUiTextScale = 1.0f;
 static float gBattleTime = 0.0f;
 static float gCpuBasicCd = 0.0f;
 static float gCpuSkillCd = 2.0f;
@@ -340,6 +344,33 @@ static void centeredText(float x, float y, float scale, u32 color, const char *s
     float actualScale = scale * 0.90f * gUiTextScale;
     drawBitmapText(x - bitmapTextWidth(s, actualScale) * 0.5f,
                    y, scale, color, s);
+}
+
+static bool loadArenaTexture(int arena)
+{
+    if (arena < 0 || arena >= ARENA_COUNT) arena = 0;
+    if (gArenaSheet && gLoadedArenaIndex == arena) return true;
+    if (gArenaSheet) {
+        C2D_SpriteSheetFree(gArenaSheet);
+        gArenaSheet = NULL;
+    }
+    const unsigned char *start = arena_stadium_t3x_start;
+    const unsigned char *end = arena_stadium_t3x_end;
+    switch (arena) {
+    case 1: start = arena_neon_t3x_start; end = arena_neon_t3x_end; break;
+    case 2: start = arena_crater_t3x_start; end = arena_crater_t3x_end; break;
+    case 3: start = arena_ruinas_t3x_start; end = arena_ruinas_t3x_end; break;
+    default: break;
+    }
+    gArenaSheet = C2D_SpriteSheetLoadFromMem(start, (size_t)(end - start));
+    if (!gArenaSheet) {
+        gLoadedArenaIndex = -1;
+        return false;
+    }
+    gArenaImage = C2D_SpriteSheetGetImage(gArenaSheet, 0);
+    C3D_TexSetFilter(gArenaImage.tex, GPU_LINEAR, GPU_LINEAR);
+    gLoadedArenaIndex = arena;
+    return true;
 }
 
 static void fittedText(float x, float y, float maxWidth, float scale,
@@ -1281,9 +1312,8 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
 static void drawArena(void)
 {
-    int arena = gArenaIndex;
-    if (arena < 0 || arena >= ARENA_COUNT) arena = 0;
-    C2D_DrawImageAt(gArenaImages[arena], 0.0f, 0.0f, 0.0f, NULL, 1.0f, 1.0f);
+    if (!loadArenaTexture(gArenaIndex)) return;
+    C2D_DrawImageAt(gArenaImage, 0.0f, 0.0f, 0.0f, NULL, 1.0f, 1.0f);
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -1867,9 +1897,10 @@ static void selectPlayerSpecies(int slot, int species)
 
 static void adjustSetting(int delta)
 {
-    if (gMenuSelection == 0)
+    if (gMenuSelection == 0) {
         gArenaIndex = (gArenaIndex + delta + ARENA_COUNT) % ARENA_COUNT;
-    else if (gMenuSelection == 1)
+        (void)loadArenaTexture(gArenaIndex);
+    } else if (gMenuSelection == 1)
         gCpuDifficulty = (gCpuDifficulty + delta + 3) % 3;
     else if (gMenuSelection == 2)
         gUiTextScale = gUiTextScale > 1.05f ? 1.0f : 1.15f;
@@ -2187,28 +2218,13 @@ int main(int argc, char **argv)
     gFontAtlas = C2D_SpriteSheetLoadFromMem(
         poke2d_font_atlas_start,
         (size_t)(poke2d_font_atlas_end - poke2d_font_atlas_start));
-    gArenaSheets[0] = C2D_SpriteSheetLoadFromMem(
-        arena_stadium_t3x_start,
-        (size_t)(arena_stadium_t3x_end - arena_stadium_t3x_start));
-    gArenaSheets[1] = C2D_SpriteSheetLoadFromMem(
-        arena_neon_t3x_start,
-        (size_t)(arena_neon_t3x_end - arena_neon_t3x_start));
-    gArenaSheets[2] = C2D_SpriteSheetLoadFromMem(
-        arena_crater_t3x_start,
-        (size_t)(arena_crater_t3x_end - arena_crater_t3x_start));
-    gArenaSheets[3] = C2D_SpriteSheetLoadFromMem(
-        arena_ruinas_t3x_start,
-        (size_t)(arena_ruinas_t3x_end - arena_ruinas_t3x_start));
-    bool arenaLoadFailed = false;
-    for (int i = 0; i < ARENA_COUNT; ++i)
-        if (!gArenaSheets[i]) arenaLoadFailed = true;
-    if (!gMenuSheet || !gTitleSheet || !gIconAtlas || !gFontAtlas || arenaLoadFailed) {
+    if (!gMenuSheet || !gTitleSheet || !gIconAtlas || !gFontAtlas ||
+        !loadArenaTexture(gArenaIndex)) {
         if (gMenuSheet) C2D_SpriteSheetFree(gMenuSheet);
         if (gTitleSheet) C2D_SpriteSheetFree(gTitleSheet);
         if (gIconAtlas) C2D_SpriteSheetFree(gIconAtlas);
         if (gFontAtlas) C2D_SpriteSheetFree(gFontAtlas);
-        for (int i = 0; i < ARENA_COUNT; ++i)
-            if (gArenaSheets[i]) C2D_SpriteSheetFree(gArenaSheets[i]);
+        if (gArenaSheet) C2D_SpriteSheetFree(gArenaSheet);
         sfxExit();
         C2D_Fini();
         C3D_Fini();
@@ -2216,15 +2232,11 @@ int main(int argc, char **argv)
         return 1;
     }
     gMenuBackground = C2D_SpriteSheetGetImage(gMenuSheet, 0);
-    for (int i = 0; i < ARENA_COUNT; ++i)
-        gArenaImages[i] = C2D_SpriteSheetGetImage(gArenaSheets[i], 0);
     gWebTitle = C2D_SpriteSheetGetImage(gTitleSheet, 0);
     gGameLogo = C2D_SpriteSheetGetImage(
         gIconAtlas, poke2d_icon_indices_game_logo_idx);
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gWebTitle.tex, GPU_LINEAR, GPU_LINEAR);
-    for (int i = 0; i < ARENA_COUNT; ++i)
-        C3D_TexSetFilter(gArenaImages[i].tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gGameLogo.tex, GPU_NEAREST, GPU_NEAREST);
     for (int i = 0; i < P2D_TEXT_COUNT; ++i) {
         gTextFill[i] = C2D_SpriteSheetGetImage(gFontAtlas, p2dTextIndex[i]);
@@ -2237,8 +2249,7 @@ int main(int argc, char **argv)
         C2D_SpriteSheetFree(gMenuSheet);
         C2D_SpriteSheetFree(gTitleSheet);
         C2D_SpriteSheetFree(gFontAtlas);
-        for (int i = 0; i < ARENA_COUNT; ++i)
-            C2D_SpriteSheetFree(gArenaSheets[i]);
+        if (gArenaSheet) C2D_SpriteSheetFree(gArenaSheet);
         sfxExit();
         C2D_Fini();
         C3D_Fini();
@@ -2297,8 +2308,7 @@ int main(int argc, char **argv)
     C2D_SpriteSheetFree(gMenuSheet);
     C2D_SpriteSheetFree(gTitleSheet);
     C2D_SpriteSheetFree(gFontAtlas);
-    for (int i = 0; i < ARENA_COUNT; ++i)
-        C2D_SpriteSheetFree(gArenaSheets[i]);
+    if (gArenaSheet) C2D_SpriteSheetFree(gArenaSheet);
     sfxExit();
     C2D_Fini();
     C3D_Fini();
