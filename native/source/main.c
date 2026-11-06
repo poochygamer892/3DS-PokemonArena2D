@@ -5,8 +5,8 @@
 #include <string.h>
 #include "arena_sfx.h"
 #include "web_arena_data.h"
+#include "poke2d_asset_archive.h"
 #include "poke2d_font_indices.h"
-#include "poke2d_sprite_indices.h"
 #include "poke2d_sprite_meta.h"
 
 #define TEAM_SIZE 1
@@ -107,7 +107,9 @@ enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
 
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
-static C2D_SpriteSheet gPoke2dAtlas;
+static C2D_SpriteSheet gIconAtlas;
+static C2D_SpriteSheet gFighterAtlases[2];
+static int gLoadedFighterSpecies[2] = { -1, -1 };
 static C2D_SpriteSheet gFontAtlas;
 static C2D_SpriteSheet gMenuSheet;
 static C2D_SpriteSheet gTitleSheet;
@@ -159,8 +161,8 @@ static const u32 C_GREEN = 0x57CB69FF;
 static const u32 C_RED = 0xE75157FF;
 static const u32 C_GOLD = 0xFFC53DFF;
 
-extern const unsigned char poke2d_atlas_start[];
-extern const unsigned char poke2d_atlas_end[];
+extern const unsigned char poke2d_icon_atlas_start[];
+extern const unsigned char poke2d_icon_atlas_end[];
 extern const unsigned char poke2d_font_atlas_start[];
 extern const unsigned char poke2d_font_atlas_end[];
 extern const unsigned char menu_background_t3x_start[];
@@ -179,11 +181,11 @@ extern const unsigned char arena_ruinas_t3x_end[];
 __asm__(
     ".section .rodata\n"
     ".balign 4\n"
-    ".global poke2d_atlas_start\n"
-    "poke2d_atlas_start:\n"
-    ".incbin \"../generated/pokearena2d/poke2d_atlas.t3x\"\n"
-    ".global poke2d_atlas_end\n"
-    "poke2d_atlas_end:\n"
+    ".global poke2d_icon_atlas_start\n"
+    "poke2d_icon_atlas_start:\n"
+    ".incbin \"../generated/pokearena2d/poke2d_icon_atlas.t3x\"\n"
+    ".global poke2d_icon_atlas_end\n"
+    "poke2d_icon_atlas_end:\n"
     ".text\n"
 );
 
@@ -360,23 +362,59 @@ static void drawBar(float x, float y, float w, float h, int hp, int maxHp)
         rect(x + 1.0f, y + 1.0f, (w - 2.0f) * ratio, h - 2.0f, ratio > 0.35f ? C_GREEN : C_RED);
 }
 
-static C2D_Image pokemonFrame(int art, int animation, int direction, int frame)
+static bool ensureFighterAtlas(int side, int rosterIndex)
 {
+    if (side < 0 || side > 1 || rosterIndex < 0 ||
+        rosterIndex >= ARENA2D_ROSTER_COUNT) return false;
+    if (gFighterAtlases[side] && gLoadedFighterSpecies[side] == rosterIndex)
+        return true;
+    if (gFighterAtlases[side]) C2D_SpriteSheetFree(gFighterAtlases[side]);
+    gFighterAtlases[side] = NULL;
+    gLoadedFighterSpecies[side] = -1;
+    const P2dEmbeddedAtlas *asset = &p2dFighterAtlasData[rosterIndex];
+    size_t size = (size_t)(asset->end - asset->start);
+    if (size == 0) return false;
+    gFighterAtlases[side] = C2D_SpriteSheetLoadFromMem(asset->start, size);
+    if (!gFighterAtlases[side]) return false;
+    gLoadedFighterSpecies[side] = rosterIndex;
+    return true;
+}
+
+static void freeFighterAtlases(void)
+{
+    for (int side = 0; side < 2; ++side) {
+        if (gFighterAtlases[side]) C2D_SpriteSheetFree(gFighterAtlases[side]);
+        gFighterAtlases[side] = NULL;
+        gLoadedFighterSpecies[side] = -1;
+    }
+}
+
+static C2D_Image pokemonFrame(int side, int rosterIndex, int formIndex,
+                              int animation, int direction, int frame)
+{
+    if (formIndex < 0 || formIndex >= ARENA2D_FORM_COUNT) formIndex = 0;
+    int art = kArena2dForms[formIndex].spriteArt;
     if (art < 0 || art >= P2D_SPECIES_COUNT) art = 0;
     if (animation < 0 || animation >= P2D_ANIM_COUNT) animation = ANIM_IDLE;
     if (direction < 0 || direction >= P2D_DIR_COUNT) direction = 0;
+    if (!ensureFighterAtlas(side, rosterIndex)) return (C2D_Image){ 0 };
     int count = p2dFrameCount[art][animation];
     if (count < 1) count = 1;
     if (frame < 0) frame = 0;
     frame %= count;
-    return C2D_SpriteSheetGetImage(gPoke2dAtlas,
-        p2dSpriteIndex[art][animation][direction][frame]);
+    C2D_Image image = C2D_SpriteSheetGetImage(gFighterAtlases[side],
+        p2dSpriteIndex[formIndex][animation][direction][frame]);
+    C3D_TexSetFilter(image.tex, GPU_NEAREST, GPU_NEAREST);
+    return image;
 }
 
-static void drawPokemonAt(int art, int animation, int direction, int frame,
+static void drawPokemonAt(int side, int rosterIndex, int art, int formIndex,
+                          int animation, int direction, int frame,
                           float pivotX, float pivotY, float formScale)
 {
-    C2D_Image image = pokemonFrame(art, animation, direction, frame);
+    C2D_Image image = pokemonFrame(side, rosterIndex, formIndex,
+                                   animation, direction, frame);
+    if (!image.tex) return;
     float scale = (4.0f / 3.0f) * p2dSpeciesScale[art] * formScale;
     float originX = (float)p2dOriginX[art][animation] * scale;
     float originY = (float)p2dOriginY[art][animation] * scale;
@@ -384,9 +422,12 @@ static void drawPokemonAt(int art, int animation, int direction, int frame,
                     NULL, scale, scale);
 }
 
-static void drawPokemonIcon(int art, float x, float y, float height)
+static void drawPokemonIcon(int rosterIndex, float x, float y, float height)
 {
-    C2D_Image image = pokemonFrame(art, ANIM_IDLE, 0, 0);
+    if (rosterIndex < 0 || rosterIndex >= ARENA2D_ROSTER_COUNT) rosterIndex = 0;
+    int art = kArena2dRoster[rosterIndex].fallbackArt;
+    C2D_Image image = C2D_SpriteSheetGetImage(gIconAtlas, p2dIconIndex[rosterIndex]);
+    C3D_TexSetFilter(image.tex, GPU_NEAREST, GPU_NEAREST);
     float sourceHeight = (float)p2dFrameHeight[art][ANIM_IDLE];
     float scale = sourceHeight > 0.0f ? height / sourceHeight : 1.0f;
     C2D_DrawImageAt(image, x, y, 0.18f, NULL, scale, scale);
@@ -1262,7 +1303,7 @@ static void drawRoster(int side, float x, float y)
     for (int i = 0; i < TEAM_SIZE; ++i) {
         float bx = x + i * 24.0f;
         rect(bx, y, 21.0f, 19.0f, i == gActive[side] ? 0xF5C537FF : 0x172039FF);
-        drawPokemonIcon(gTeam[side][i].speciesArt, bx + 2.0f, y + 1.0f, 16.0f);
+        drawPokemonIcon(gTeam[side][i].rosterIndex, bx + 2.0f, y + 1.0f, 16.0f);
         if (gTeam[side][i].hp <= 0)
             rect(bx + 1.0f, y + 16.0f, 19.0f, 2.0f, C_RED);
     }
@@ -1283,7 +1324,8 @@ static void drawFighter(int side)
     float shadowW = p2dFrameHeight[pokemon->speciesArt][ANIM_IDLE] > 40 ? 30.0f : 22.0f;
     rect(fighter->x - shadowW * 0.5f, fighter->y + 2.0f,
          shadowW, 4.0f, 0x090D16AA);
-    drawPokemonAt(pokemon->speciesArt, fighter->animKind, direction, frame,
+    drawPokemonAt(side, pokemon->rosterIndex, pokemon->speciesArt,
+                  pokemon->formIndex, fighter->animKind, direction, frame,
                   fighter->x, fighter->y + bob,
                   kArena2dForms[pokemon->formIndex].scale);
     if (fighter->hurtFlash > 0.0f)
@@ -1349,14 +1391,14 @@ static void drawBattleTop(void)
     rect(5, 4, 153, 39, 0x111A29F5);
     rect(5, 4, 153, 2, 0x00E676FF);
     rect(8, 9, 29, 29, 0x0A101AFF);
-    drawPokemonIcon(p->speciesArt, 9.0f, 10.0f, 25.0f);
+    drawPokemonIcon(p->rosterIndex, 9.0f, 10.0f, 25.0f);
     fittedText(42, 8, 108.0f, 0.31f, 0xFFFFFFFF, p->name, false);
     fittedText(42, 19, 108.0f, 0.19f, 0xB7C7DCFF, p->type, false);
     drawSegmentedBar(42, 30, 108, 7, p->hp, p->maxHp);
     rect(242, 4, 153, 39, 0x111A29F5);
     rect(242, 4, 153, 2, 0xFF1744FF);
     rect(362, 9, 29, 29, 0x0A101AFF);
-    drawPokemonIcon(e->speciesArt, 363.0f, 10.0f, 25.0f);
+    drawPokemonIcon(e->rosterIndex, 363.0f, 10.0f, 25.0f);
     fittedText(250, 8, 107.0f, 0.31f, 0xFFFFFFFF, e->name, false);
     fittedText(250, 19, 107.0f, 0.19f, 0xB7C7DCFF, e->type, false);
     drawSegmentedBar(250, 30, 107, 7, e->hp, e->maxHp);
@@ -1425,7 +1467,7 @@ static void drawBottomBattle(void)
     Pokemon *activePokemon = &gTeam[0][gActive[0]];
     rect(0, 0, BOTTOM_W, BOTTOM_H, 0x090E18FF);
     rect(0, 0, BOTTOM_W, 3, 0xE8B940FF);
-    drawPokemonIcon(activePokemon->speciesArt, 8, 7, 28);
+    drawPokemonIcon(activePokemon->rosterIndex, 8, 7, 28);
     fittedText(42, 8, 263, 0.31f, 0xFFFFFFFF, activePokemon->name, false);
     fittedText(42, 22, 263, 0.18f, 0xAFC3D8FF, activePokemon->type, false);
     drawSegmentedBar(42, 36, 263, 8, activePokemon->hp, activePokemon->maxHp);
@@ -1549,9 +1591,11 @@ static void drawTitle(void)
     C2D_DrawImageAt(gGameLogo, 53.0f, 7.0f, 0.10f, NULL, 1.0f, 1.0f);
     int playerForm = kArena2dRoster[gPlayerSpecies[0]].baseForm;
     int opponentForm = kArena2dRoster[gOpponentSpecies].baseForm;
-    drawPokemonAt(kArena2dForms[playerForm].spriteArt, ANIM_IDLE, 2, 0,
+    drawPokemonAt(0, gPlayerSpecies[0], kArena2dForms[playerForm].spriteArt,
+                  playerForm, ANIM_IDLE, 2, 0,
                   88.0f, 218.0f, kArena2dForms[playerForm].scale);
-    drawPokemonAt(kArena2dForms[opponentForm].spriteArt, ANIM_IDLE, 6, 0,
+    drawPokemonAt(1, gOpponentSpecies, kArena2dForms[opponentForm].spriteArt,
+                  opponentForm, ANIM_IDLE, 6, 0,
                   312.0f, 216.0f, kArena2dForms[opponentForm].scale);
 }
 
@@ -1616,7 +1660,7 @@ static void drawTitleBottom(void)
             bool chosen = i == gPlayerSpecies[0];
             rect(x, y, 43.0f, 32.0f,
                  focused ? 0xF5C54DFF : (chosen ? 0x345F8CFF : 0x21416CFF));
-            drawPokemonIcon(entry->fallbackArt, x + 12.0f, y + 1.0f, 19.0f);
+            drawPokemonIcon(i, x + 12.0f, y + 1.0f, 19.0f);
             fittedText(x + 1.0f, y + 21.0f, 41.0f, 0.17f,
                        focused ? 0x102849FF : C_TEXT, entry->name, true);
         }
@@ -1666,7 +1710,7 @@ static void drawTitleBottom(void)
                 bool selected = i == gMenuSelection;
                 drawMenuRow(y, entry->name,
                             kArena2dForms[entry->baseForm].type1, NULL, selected, false);
-                drawPokemonIcon(entry->fallbackArt, 284.0f, y + 1.0f, 19.0f);
+                drawPokemonIcon(i, 284.0f, y + 1.0f, 19.0f);
             }
         }
         fittedText(10, 211, 300.0f, 0.32f, C_GOLD, "33 POKEMON  UP/DOWN: BROWSE  B: BACK", false);
@@ -2135,8 +2179,9 @@ int main(int argc, char **argv)
     gTitleSheet = C2D_SpriteSheetLoadFromMem(
         web_title_t3x_start,
         (size_t)(web_title_t3x_end - web_title_t3x_start));
-    gPoke2dAtlas = C2D_SpriteSheetLoadFromMem(
-        poke2d_atlas_start, (size_t)(poke2d_atlas_end - poke2d_atlas_start));
+    gIconAtlas = C2D_SpriteSheetLoadFromMem(
+        poke2d_icon_atlas_start,
+        (size_t)(poke2d_icon_atlas_end - poke2d_icon_atlas_start));
     gFontAtlas = C2D_SpriteSheetLoadFromMem(
         poke2d_font_atlas_start,
         (size_t)(poke2d_font_atlas_end - poke2d_font_atlas_start));
@@ -2155,10 +2200,10 @@ int main(int argc, char **argv)
     bool arenaLoadFailed = false;
     for (int i = 0; i < ARENA_COUNT; ++i)
         if (!gArenaSheets[i]) arenaLoadFailed = true;
-    if (!gMenuSheet || !gTitleSheet || !gPoke2dAtlas || !gFontAtlas || arenaLoadFailed) {
+    if (!gMenuSheet || !gTitleSheet || !gIconAtlas || !gFontAtlas || arenaLoadFailed) {
         if (gMenuSheet) C2D_SpriteSheetFree(gMenuSheet);
         if (gTitleSheet) C2D_SpriteSheetFree(gTitleSheet);
-        if (gPoke2dAtlas) C2D_SpriteSheetFree(gPoke2dAtlas);
+        if (gIconAtlas) C2D_SpriteSheetFree(gIconAtlas);
         if (gFontAtlas) C2D_SpriteSheetFree(gFontAtlas);
         for (int i = 0; i < ARENA_COUNT; ++i)
             if (gArenaSheets[i]) C2D_SpriteSheetFree(gArenaSheets[i]);
@@ -2173,7 +2218,7 @@ int main(int argc, char **argv)
         gArenaImages[i] = C2D_SpriteSheetGetImage(gArenaSheets[i], 0);
     gWebTitle = C2D_SpriteSheetGetImage(gTitleSheet, 0);
     gGameLogo = C2D_SpriteSheetGetImage(
-        gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
+        gIconAtlas, poke2d_icon_indices_game_logo_idx);
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gWebTitle.tex, GPU_LINEAR, GPU_LINEAR);
     for (int i = 0; i < ARENA_COUNT; ++i)
@@ -2186,7 +2231,7 @@ int main(int argc, char **argv)
     gTop = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     gBottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     if (!gTop || !gBottom) {
-        C2D_SpriteSheetFree(gPoke2dAtlas);
+        C2D_SpriteSheetFree(gIconAtlas);
         C2D_SpriteSheetFree(gMenuSheet);
         C2D_SpriteSheetFree(gTitleSheet);
         C2D_SpriteSheetFree(gFontAtlas);
@@ -2245,7 +2290,8 @@ int main(int argc, char **argv)
         C3D_FrameEnd(0);
     }
 
-    C2D_SpriteSheetFree(gPoke2dAtlas);
+    freeFighterAtlases();
+    C2D_SpriteSheetFree(gIconAtlas);
     C2D_SpriteSheetFree(gMenuSheet);
     C2D_SpriteSheetFree(gTitleSheet);
     C2D_SpriteSheetFree(gFontAtlas);
