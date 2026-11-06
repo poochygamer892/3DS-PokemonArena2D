@@ -1,18 +1,16 @@
 # Asset attribution
 
-## Authorized Pokemon Arena source
+## Authorized PokeArena2D.com source
 
-This port follows the code, interaction design and local Scyther/Lucario walk
-sheets from [sunsunyul2014-ai/pokemon-arena](https://github.com/sunsunyul2014-ai/pokemon-arena),
-revision `8826a92`. The repository author granted permission to use those files
-and sprites for this 3DS adaptation. The granted scope excludes music, and this
-project contains no music tracks.
+The PokeArena2D.com project holder granted permission to use its web project
+for this 3DS adaptation. `source/web-estadio-amplia.jpg` is the official
+`assets/arenas/ovaladas/estadio-amplia.jpg` asset from that source, converted
+only to the 3DS top-screen dimensions. Its code, HUD geometry, game rules and
+asset structure are the primary reference for subsequent native work.
 
-`../korean_arena_authorized/scyther_walk.png` and
-`../korean_arena_authorized/lucario_walk.png` are the two local sheets supplied
-by that source. `source/pmd/` contains the pre-existing PMD SpriteCollab sheets
-for Charmander, Squirtle, Bulbasaur and Pikachu; their upstream attribution and
-terms continue to apply.
+The grant excludes music. This project bundles no music tracks. Sound effects
+remain synthesized by the native port.
 
-The stadium is rendered with native geometry. Sound effects are synthesized at
-runtime; no sound recording from another project is bundled.
+`source/pmd/` contains PMD SpriteCollab sheets; PokeArena2D.com identifies
+them as CC BY-NC 4.0 and their upstream attribution and terms continue to
+apply.

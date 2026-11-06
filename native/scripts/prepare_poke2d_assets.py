@@ -189,8 +189,10 @@ def main() -> None:
         for stale in directory.glob("*.png"):
             stale.unlink()
     make_stage(args.source / "menu-background.jpg", background_dir / "bg_menu_background.png")
-    # The Korean source renders its stadium procedurally.  The native renderer
-    # follows that approach, so no previous project's arena art is packaged.
+    # Official stadium art supplied under permission for the PokeArena2D.com
+    # 3DS adaptation. It is resized once for the top screen, preserving its
+    # high-quality source pixels instead of recreating it from primitives.
+    make_stage(args.source / "web-estadio-amplia.jpg", background_dir / "bg_web_stadium.png")
     prepare_logo(args.source / "logo.png", atlas_dir / "game_logo.png")
 
     for prefix, _display, dex, _scale, clips in POKEMON:

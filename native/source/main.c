@@ -157,6 +157,7 @@ static C2D_SpriteSheet gPoke2dAtlas;
 static C2D_SpriteSheet gEnvironmentAtlas;
 static C2D_SpriteSheet gFontAtlas;
 static C2D_Image gMenuBackground;
+static C2D_Image gWebStadium;
 static C2D_Image gGameLogo;
 static C2D_Image gTextFill[P2D_TEXT_COUNT];
 static Scene gScene = SCENE_TITLE;
@@ -1120,34 +1121,7 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
 static void drawArena(void)
 {
-    /* 3DS rendering of the source project's cached 3000x1900 stadium.
-       The play field is deliberately below its crowd and stone surround. */
-    C2D_DrawRectSolid(0, 0, 0.0f, TOP_W, TOP_H, c2dColor(0x080D15FF));
-    for (int row = 0; row < 4; ++row) {
-        static const u32 seats[] = { 0x0F1624FF, 0x162134FF, 0x1E2C45FF, 0x273856FF };
-        C2D_DrawRectSolid(0, 28 + row * 9, 0.0f, TOP_W, 9, c2dColor(seats[row]));
-        for (int x = 5 + (row & 1) * 4; x < 396; x += 12) {
-            static const u32 crowd[] = { 0xFF5252FF, 0x448AFFFF, 0xFFD740FF, 0x69F0AEFF,
-                                         0xE040FBFF, 0xFFFFFFFF, 0xFFAB40FF, 0x00E5FFFF };
-            C2D_DrawRectSolid((float)x, 30 + row * 9, 0.0f, 4, 3,
-                              c2dColor(crowd[(x / 12 + row * 3) & 7]));
-        }
-    }
-    C2D_DrawRectSolid(8, 63, 0.0f, 384, 151, c2dColor(0x222C3DFF));
-    C2D_DrawRectSolid(11, 66, 0.0f, 378, 145, c2dColor(0x41526DFF));
-    C2D_DrawRectSolid(14, 69, 0.0f, 372, 139, c2dColor(0xB3823EFF));
-    C2D_DrawRectSolid(19, 74, 0.0f, 362, 129, c2dColor(0x1B5E20FF));
-    for (int x = 19; x < 381; x += 40)
-        C2D_DrawRectSolid((float)x, 74, 0.0f, 20, 129,
-                          c2dColor(((x / 40) & 1) ? 0x2E7D32FF : 0x388E3CFF));
-    C2D_DrawRectSolid(27, 82, 0.0f, 346, 2, c2dColor(0xDCE9D5CC));
-    C2D_DrawRectSolid(27, 193, 0.0f, 346, 2, c2dColor(0xDCE9D5CC));
-    C2D_DrawRectSolid(199, 82, 0.0f, 2, 113, c2dColor(0xDCE9D5CC));
-    C2D_DrawCircleSolid(200, 138, 0.03f, 24, c2dColor(0xDCE9D5CC));
-    C2D_DrawCircleSolid(200, 138, 0.04f, 22, c2dColor(0x348336FF));
-    C2D_DrawCircleSolid(200, 138, 0.05f, 4, c2dColor(0xF3F7EFFF));
-    C2D_DrawRectSolid(8, 63, 0.0f, 384, 6, c2dColor(0x18212FFF));
-    centeredText(200, 64, 0.17f, 0xFBC02DFF, "POKEMON LEAGUE ARENA");
+    C2D_DrawImageAt(gWebStadium, 0.0f, 0.0f, 0.0f, NULL, 1.0f, 1.0f);
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -2097,6 +2071,8 @@ int main(int argc, char **argv)
     }
     gMenuBackground = C2D_SpriteSheetGetImage(
         gEnvironmentAtlas, poke2d_background_indices_bg_menu_background_idx);
+    gWebStadium = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_web_stadium_idx);
     gGameLogo = C2D_SpriteSheetGetImage(
         gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);

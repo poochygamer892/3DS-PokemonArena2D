@@ -1,17 +1,14 @@
 # Pokemon Arena 3DS
 
-Port nativo en progreso del proyecto autorizado
-[sunsunyul2014-ai/pokemon-arena](https://github.com/sunsunyul2014-ai/pokemon-arena),
-revisión `8826a92`.
+Port nativo en progreso de [PokeArena2D.com](https://www.pokearena2d.com/),
+con permiso directo de su titular para esta adaptación.
 
-El port reproduce su estadio procedural y sus seis luchadores: Charmander,
-Squirtle, Bulbasaur, Pikachu, Scyther y Lucario. Cada luchador conserva ataque
-normal y cuatro habilidades: A ataca; B, X, Y y R activan habilidades; L esquiva;
+El port adapta la arena, interfaz, luchadores y reglas de la web a la pantalla
+superior e inferior de 3DS. A ataca; B, X, Y y R activan habilidades; L esquiva;
 SELECT cambia de luchador.
 
-Las hojas de Scyther y Lucario provienen de ese repositorio bajo el permiso del
-autor. Los efectos se sintetizan nativamente a partir del enfoque WebAudio del
-proyecto. No se empaqueta música.
+La música se excluye. Los efectos se sintetizan nativamente; las hojas PMD
+conservan los créditos y términos indicados por PokeArena2D.com.
 
 ```sh
 make -C native
