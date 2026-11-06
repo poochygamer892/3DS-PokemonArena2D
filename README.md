@@ -3,7 +3,7 @@
 Adaptación homebrew no oficial para Old 2DS y New 3DS XL basada en el proyecto
 autorizado [Pokemon Arena](https://github.com/sunsunyul2014-ai/pokemon-arena).
 
-Versión actual: **v0.9.0** (registrada en [`VERSION`](VERSION)).
+Versión actual: **v0.10.0** (registrada en [`VERSION`](VERSION)).
 
 Esta línea de desarrollo porta el estadio procedural y los seis luchadores del
 proyecto coreano: Charmander, Squirtle, Bulbasaur, Pikachu, Scyther y Lucario.

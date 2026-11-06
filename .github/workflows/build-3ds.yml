@@ -79,19 +79,19 @@ jobs:
         run: |
           VERSION="$(cat VERSION)"
           mkdir -p dist
-          cp native/pokemonarena2d.3dsx "dist/Poke-Arena-2D-3DS-v${VERSION}.3dsx"
-          cp native/pokemonarena2d.cia "dist/Poke-Arena-2D-3DS-v${VERSION}.cia"
-          cp native/pokemonarena2d.elf "dist/Poke-Arena-2D-3DS-v${VERSION}.elf"
-          cp native/pokemonarena2d.smdh "dist/Poke-Arena-2D-3DS-v${VERSION}.smdh"
+          cp native/pokemonarena2d.3dsx "dist/Pokemon-Arena-3DS-v${VERSION}.3dsx"
+          cp native/pokemonarena2d.cia "dist/Pokemon-Arena-3DS-v${VERSION}.cia"
+          cp native/pokemonarena2d.elf "dist/Pokemon-Arena-3DS-v${VERSION}.elf"
+          cp native/pokemonarena2d.smdh "dist/Pokemon-Arena-3DS-v${VERSION}.smdh"
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 
       - name: Upload 3DS packages
         uses: actions/upload-artifact@v4
         with:
-          name: Poke-Arena-2D-3DS-v${{ env.VERSION }}
+          name: Pokemon-Arena-3DS-v${{ env.VERSION }}
           path: |
-            dist/Poke-Arena-2D-3DS-v${{ env.VERSION }}.3dsx
-            dist/Poke-Arena-2D-3DS-v${{ env.VERSION }}.cia
-            dist/Poke-Arena-2D-3DS-v${{ env.VERSION }}.elf
-            dist/Poke-Arena-2D-3DS-v${{ env.VERSION }}.smdh
+            dist/Pokemon-Arena-3DS-v${{ env.VERSION }}.3dsx
+            dist/Pokemon-Arena-3DS-v${{ env.VERSION }}.cia
+            dist/Pokemon-Arena-3DS-v${{ env.VERSION }}.elf
+            dist/Pokemon-Arena-3DS-v${{ env.VERSION }}.smdh
           if-no-files-found: error

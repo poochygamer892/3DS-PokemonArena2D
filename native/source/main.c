@@ -1120,23 +1120,34 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
 static void drawArena(void)
 {
-    /* Native version of the large procedural retro stadium from the Korean
-       source project.  It deliberately uses geometry instead of a borrowed
-       arena texture. */
-    C2D_DrawRectSolid(0, 0, 0.0f, TOP_W, TOP_H, c2dColor(0x171C2BFF));
-    C2D_DrawRectSolid(0, 31, 0.0f, TOP_W, 178, c2dColor(0x31445BFF));
-    C2D_DrawRectSolid(12, 42, 0.0f, 376, 156, c2dColor(0x183C2AFF));
-    for (int x = 16; x < 388; x += 31)
-        C2D_DrawRectSolid((float)x, 42, 0.0f, 14, 156,
-                          c2dColor(((x / 31) & 1) ? 0x215333FF : 0x1E4B30FF));
-    C2D_DrawRectSolid(12, 42, 0.0f, 376, 2, c2dColor(0xD6E8C5FF));
-    C2D_DrawRectSolid(12, 196, 0.0f, 376, 2, c2dColor(0xD6E8C5FF));
-    C2D_DrawRectSolid(199, 42, 0.0f, 2, 156, c2dColor(0xD6E8C5FF));
-    C2D_DrawCircleSolid(200, 120, 0.03f, 31, c2dColor(0xD6E8C5FF));
-    C2D_DrawCircleSolid(200, 120, 0.04f, 28, c2dColor(0x1F4F32FF));
-    C2D_DrawCircleSolid(200, 120, 0.05f, 5, c2dColor(0xEDE6CFFF));
-    C2D_DrawRectSolid(0, 25, 0.0f, TOP_W, 8, c2dColor(0x303B4DFF));
-    C2D_DrawRectSolid(0, 207, 0.0f, TOP_W, 8, c2dColor(0x303B4DFF));
+    /* 3DS rendering of the source project's cached 3000x1900 stadium.
+       The play field is deliberately below its crowd and stone surround. */
+    C2D_DrawRectSolid(0, 0, 0.0f, TOP_W, TOP_H, c2dColor(0x080D15FF));
+    for (int row = 0; row < 4; ++row) {
+        static const u32 seats[] = { 0x0F1624FF, 0x162134FF, 0x1E2C45FF, 0x273856FF };
+        C2D_DrawRectSolid(0, 28 + row * 9, 0.0f, TOP_W, 9, c2dColor(seats[row]));
+        for (int x = 5 + (row & 1) * 4; x < 396; x += 12) {
+            static const u32 crowd[] = { 0xFF5252FF, 0x448AFFFF, 0xFFD740FF, 0x69F0AEFF,
+                                         0xE040FBFF, 0xFFFFFFFF, 0xFFAB40FF, 0x00E5FFFF };
+            C2D_DrawRectSolid((float)x, 30 + row * 9, 0.0f, 4, 3,
+                              c2dColor(crowd[(x / 12 + row * 3) & 7]));
+        }
+    }
+    C2D_DrawRectSolid(8, 63, 0.0f, 384, 151, c2dColor(0x222C3DFF));
+    C2D_DrawRectSolid(11, 66, 0.0f, 378, 145, c2dColor(0x41526DFF));
+    C2D_DrawRectSolid(14, 69, 0.0f, 372, 139, c2dColor(0xB3823EFF));
+    C2D_DrawRectSolid(19, 74, 0.0f, 362, 129, c2dColor(0x1B5E20FF));
+    for (int x = 19; x < 381; x += 40)
+        C2D_DrawRectSolid((float)x, 74, 0.0f, 20, 129,
+                          c2dColor(((x / 40) & 1) ? 0x2E7D32FF : 0x388E3CFF));
+    C2D_DrawRectSolid(27, 82, 0.0f, 346, 2, c2dColor(0xDCE9D5CC));
+    C2D_DrawRectSolid(27, 193, 0.0f, 346, 2, c2dColor(0xDCE9D5CC));
+    C2D_DrawRectSolid(199, 82, 0.0f, 2, 113, c2dColor(0xDCE9D5CC));
+    C2D_DrawCircleSolid(200, 138, 0.03f, 24, c2dColor(0xDCE9D5CC));
+    C2D_DrawCircleSolid(200, 138, 0.04f, 22, c2dColor(0x348336FF));
+    C2D_DrawCircleSolid(200, 138, 0.05f, 4, c2dColor(0xF3F7EFFF));
+    C2D_DrawRectSolid(8, 63, 0.0f, 384, 6, c2dColor(0x18212FFF));
+    centeredText(200, 64, 0.17f, 0xFBC02DFF, "POKEMON LEAGUE ARENA");
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -1239,27 +1250,28 @@ static void drawBattleTop(void)
     drawArena();
     Pokemon *p = &gTeam[0][gActive[0]];
     Pokemon *e = &gTeam[1][gActive[1]];
-    rect(4, 4, 143, 35, 0x25365DFF);
-    rect(4, 4, 143, 2, 0x72A7F6FF);
-    rect(253, 4, 143, 35, 0x25365DFF);
-    rect(253, 4, 143, 2, 0xF06170FF);
-    rect(8, 9, 26, 25, 0x101626FF);
-    rect(359, 9, 26, 25, 0x101626FF);
-    drawPokemonIcon(p->speciesArt, 9.0f, 10.0f, 22.0f);
-    drawPokemonIcon(e->speciesArt, 360.0f, 10.0f, 22.0f);
-    fittedText(40, 7, 98.0f, 0.34f, C_TEXT, p->name, false);
-    fittedText(40, 18, 98.0f, 0.23f, C_MUTED, p->type, false);
-    drawSegmentedBar(40, 28, 101, 7, p->hp, p->maxHp);
-    fittedText(268, 7, 84.0f, 0.32f, C_TEXT, e->name, false);
-    fittedText(268, 18, 84.0f, 0.21f, C_MUTED, e->type, false);
-    drawSegmentedBar(268, 28, 86, 7, e->hp, e->maxHp);
-    drawRoster(0, 7, 44);
+    /* Two compact cards reproduce the source HUD rather than the prior
+       console-game panels.  The cards float above the arena crowd. */
+    rect(5, 4, 153, 39, 0x111A29F5);
+    rect(5, 4, 153, 2, 0x00E676FF);
+    rect(8, 9, 29, 29, 0x0A101AFF);
+    drawPokemonIcon(p->speciesArt, 9.0f, 10.0f, 25.0f);
+    fittedText(42, 8, 108.0f, 0.31f, 0xFFFFFFFF, p->name, false);
+    fittedText(42, 19, 108.0f, 0.19f, 0xB7C7DCFF, p->type, false);
+    drawSegmentedBar(42, 30, 108, 7, p->hp, p->maxHp);
+    rect(242, 4, 153, 39, 0x111A29F5);
+    rect(242, 4, 153, 2, 0xFF1744FF);
+    rect(362, 9, 29, 29, 0x0A101AFF);
+    drawPokemonIcon(e->speciesArt, 363.0f, 10.0f, 25.0f);
+    fittedText(250, 8, 107.0f, 0.31f, 0xFFFFFFFF, e->name, false);
+    fittedText(250, 19, 107.0f, 0.19f, 0xB7C7DCFF, e->type, false);
+    drawSegmentedBar(250, 30, 107, 7, e->hp, e->maxHp);
     char clockText[16];
     int seconds = (int)gBattleTime;
     snprintf(clockText, sizeof(clockText), "%02d:%02d", seconds / 60, seconds % 60);
-    rect(166, 4, 68, 34, 0x202C4AFF);
-    centeredText(200, 8, 0.39f, C_TEXT, clockText);
-    centeredText(200, 23, 0.23f, C_MUTED, "ROUND 1");
+    rect(165, 4, 70, 34, 0x0B101BF5);
+    centeredText(200, 8, 0.37f, 0xFFFFFFFF, clockText);
+    centeredText(200, 24, 0.18f, 0xFFD740FF, "ROUND 1");
 
     if (gSupplyLife > 0.0f) {
         u32 supplyColor = gSupplyKind == DROP_HEAL ? 0xF48CC8FF :
@@ -1309,49 +1321,25 @@ static void actionButton(float x, float y, const char *key, const char *label,
 
 static void drawBottomBattle(void)
 {
-    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x13345AFF);
-    rect(0, 0, BOTTOM_W, 4, 0xF2C637FF);
-    char matchHeader[48];
-    const char *modeName = gGameMode == MODE_CPU ? "VS CPU" :
-                           (gGameMode == MODE_STORY ? "LEAGUE" :
-                            (gGameMode == MODE_RUN ? "ARENA" : "TRAINING"));
-    if (gGameMode == MODE_STORY)
-        snprintf(matchHeader, sizeof(matchHeader), "%s  /  CHAPTER %02d",
-                 modeName, gStoryStage + 1);
-    else if (gGameMode == MODE_RUN)
-        snprintf(matchHeader, sizeof(matchHeader), "%s  /  FLOOR %d OF 6",
-                 modeName, gRunFloor);
-    else
-        snprintf(matchHeader, sizeof(matchHeader), "%s  /  %s", modeName,
-                 kArenaNames[gArenaIndex]);
-    fittedText(9, 7, 302.0f, 0.40f, C_TEXT, matchHeader, false);
-    for (int i = 0; i < TEAM_SIZE; ++i) {
-        float x = 8.0f + i * 103.0f;
-        Pokemon *member = &gTeam[0][i];
-        rect(x, 23, 97, 43, i == gActive[0] ? 0x24507AFF : 0x1C3E67FF);
-        rect(x, 23, 97, 2, i == gActive[0] ? C_GOLD : 0x68A6DBFF);
-        drawPokemonIcon(member->speciesArt, x + 4.0f, 28.0f, 27.0f);
-        fittedText(x + 32.0f, 28.0f, 61.0f, 0.21f, C_TEXT, member->name, false);
-        drawSegmentedBar(x + 32.0f, 45.0f, 61.0f, 7.0f, member->hp, member->maxHp);
-        if (member->hp <= 0) rect(x + 1.0f, 62.0f, 95.0f, 2.0f, C_RED);
-    }
-    char ult[32];
     Pokemon *activePokemon = &gTeam[0][gActive[0]];
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x0C1726FF);
+    for (int x = 0; x < 320; x += 16)
+        for (int y = 0; y < 240; y += 16)
+            if (((x / 16) + (y / 16)) & 1) rect((float)x, (float)y, 16, 16, 0x10223AFF);
+    rect(7, 7, 306, 24, 0x132C4BFF);
+    fittedText(16, 12, 285, 0.28f, 0xFFD740FF, "SKILL MOVES   1P", false);
     char basicLabel[16];
-    snprintf(basicLabel, sizeof(basicLabel), "BASIC %d/3",
-             (gFighter[0].comboCount % 3) + 1);
-    snprintf(ult, sizeof(ult), "KOREAN ARENA MOVESET");
-    textAt(9, 73, 0.25f, C_TEXT, ult);
-    rect(9, 76, 302, 8, 0x315B86FF);
-    actionButton(8, 91, "A", basicLabel, gFighter[0].basicCd, 0x75A8F8FF);
-    actionButton(112, 91, "B", rosterMoveName(activePokemon, 0), gFighter[0].skillCd[0], 0xF08C43FF);
-    actionButton(216, 91, "X", rosterMoveName(activePokemon, 1), gFighter[0].skillCd[1], 0xF2B93AFF);
-    actionButton(8, 148, "Y", rosterMoveName(activePokemon, 2), gFighter[0].skillCd[2], 0x9B85E9FF);
-    actionButton(112, 148, "L", "DODGE", gFighter[0].dashCd, 0x5BD0D6FF);
-    actionButton(216, 148, "R", rosterMoveName(activePokemon, 3),
-                 gFighter[0].skillCd[3], 0xD28BEEFF);
-    fittedText(9, 207, 302.0f, 0.22f, C_MUTED, "CIRCLE PAD / D-PAD: MOVE   SELECT: SWITCH", false);
-    fittedText(9, 222, 302.0f, 0.20f, C_MUTED, "A BASIC  B/X/Y/R SKILLS  L DODGE", false);
+    snprintf(basicLabel, sizeof(basicLabel), "%s", kArena2dRoster[activePokemon->rosterIndex].basic);
+    actionButton(7, 40, "A", basicLabel, gFighter[0].basicCd, 0x64DFF4FF);
+    actionButton(112, 40, "B", rosterMoveName(activePokemon, 0), gFighter[0].skillCd[0], 0xFF754CFF);
+    actionButton(217, 40, "X", rosterMoveName(activePokemon, 1), gFighter[0].skillCd[1], 0xFFD740FF);
+    actionButton(59, 98, "Y", rosterMoveName(activePokemon, 2), gFighter[0].skillCd[2], 0xAA7CFFFF);
+    actionButton(164, 98, "R", rosterMoveName(activePokemon, 3), gFighter[0].skillCd[3], 0x63D7FFFF);
+    rect(7, 163, 306, 30, 0x111D30FF);
+    fittedText(15, 169, 290, 0.20f, C_TEXT, "CIRCLE PAD: MOVE     L: SPRINT / DODGE", false);
+    fittedText(15, 181, 290, 0.20f, C_MUTED, "SELECT: CHANGE 1P     START: PAUSE", false);
+    rect(7, 204, 306, 25, 0x132C4BFF);
+    fittedText(15, 211, 290, 0.20f, 0x9BC5EFFF, "KOREAN ARENA  |  CPU BATTLE", false);
 }
 
 static void drawMenuBackdrop(void)
@@ -1430,6 +1418,20 @@ static void drawPlayMenuBottom(void)
 
 static void drawTitle(void)
 {
+    /* The source game opens straight into a battle setup, rather than the
+       old multi-mode console menu. */
+    drawArena();
+    rect(51, 78, 298, 52, 0x0B1423E8);
+    rect(51, 78, 298, 3, 0xFBC02DFF);
+    centeredText(200, 87, 0.54f, 0xFFFFFFFF, "POKEMON ARENA");
+    centeredText(200, 111, 0.22f, 0xAFC8E2FF, "RETRO STADIUM BATTLE");
+    drawPokemonAt(kArena2dRoster[gPlayerSpecies[0]].fallbackArt, ANIM_IDLE, 2, 0,
+                  112.0f, 183.0f);
+    drawPokemonAt(kArena2dRoster[3].fallbackArt, ANIM_IDLE, 6, 0,
+                  288.0f, 158.0f);
+    centeredText(200, 188, 0.26f, 0xFFD740FF, "VS CPU");
+    return;
+
     static const char *const title[] = {
         "CHOOSE A MODE", "ONLINE BATTLES", "CUSTOMIZE YOUR TEAM", "POKEDEX",
         "HOW TO PLAY", "SETTINGS", "CREDITS"
@@ -1493,6 +1495,33 @@ static void drawTitle(void)
 
 static void drawTitleBottom(void)
 {
+    const Arena2dRosterEntry *selected = &kArena2dRoster[gPlayerSpecies[0]];
+    static const char *const diff[] = { "EASY", "NORMAL", "HARD" };
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x0C1726FF);
+    for (int x = 0; x < 320; x += 16)
+        for (int y = 0; y < 240; y += 16)
+            if (((x / 16) + (y / 16)) & 1) rect((float)x, (float)y, 16, 16, 0x10223AFF);
+    centeredText(160, 16, 0.38f, 0xFFD740FF, "BATTLE SETUP");
+    for (int i = 0; i < 3; ++i) {
+        float y = 39.0f + i * 48.0f;
+        bool active = gMenuSelection == i;
+        rect(15, y, 290, 40, active ? 0x2D5A8BFF : 0x132C4BFF);
+        rect(15, y, 4, 40, active ? 0xFBC02DFF : 0x496A8EFF);
+        if (i == 0) {
+            drawPokemonIcon(selected->fallbackArt, 27, y + 7, 25);
+            fittedText(62, y + 8, 220, 0.30f, C_TEXT, selected->name, false);
+            fittedText(62, y + 23, 220, 0.18f, C_MUTED, "LEFT / RIGHT: CHANGE POKEMON", false);
+        } else if (i == 1) {
+            fittedText(28, y + 8, 250, 0.30f, C_TEXT, diff[gCpuDifficulty], false);
+            fittedText(28, y + 23, 250, 0.18f, C_MUTED, "CPU DIFFICULTY", false);
+        } else {
+            fittedText(28, y + 11, 250, 0.33f, 0xFFD740FF, "START BATTLE", false);
+            fittedText(28, y + 25, 250, 0.17f, C_MUTED, "A / START", false);
+        }
+    }
+    fittedText(16, 204, 288, 0.21f, C_MUTED, "UP/DOWN: SELECT   B: BACK", false);
+    return;
+
     if (gMenuPage == PAGE_HOME) {
         drawHomeMenuBottom();
         return;
@@ -1808,10 +1837,18 @@ static void handleMenuInput(u32 down)
 {
     if (gScene != SCENE_TITLE) return;
     if (gMenuPage == PAGE_HOME) {
-        if (down & KEY_UP) gMenuSelection = (gMenuSelection + 6) % 7;
-        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % 7;
-        if (down & KEY_START) { startMode(MODE_QUICK); return; }
-        if (down & KEY_A) activateHomeSelection();
+        if (down & KEY_UP) gMenuSelection = (gMenuSelection + 2) % 3;
+        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % 3;
+        if (gMenuSelection == 0 && (down & KEY_LEFT))
+            gPlayerSpecies[0] = (gPlayerSpecies[0] + ARENA2D_ROSTER_COUNT - 1) % ARENA2D_ROSTER_COUNT;
+        if (gMenuSelection == 0 && (down & KEY_RIGHT))
+            gPlayerSpecies[0] = (gPlayerSpecies[0] + 1) % ARENA2D_ROSTER_COUNT;
+        if (gMenuSelection == 1 && (down & KEY_LEFT))
+            gCpuDifficulty = (gCpuDifficulty + 2) % 3;
+        if (gMenuSelection == 1 && (down & KEY_RIGHT))
+            gCpuDifficulty = (gCpuDifficulty + 1) % 3;
+        if (down & KEY_START) { startMode(MODE_CPU); return; }
+        if ((down & KEY_A) && gMenuSelection == 2) startMode(MODE_CPU);
         return;
     }
 
