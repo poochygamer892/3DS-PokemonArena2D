@@ -98,6 +98,8 @@ typedef struct {
     u32 color;
 } AttackEffect;
 
+static u32 moveColorForType(AttackType type);
+
 static Pokemon gTeam[2][TEAM_SIZE];
 static const char *const kArenaNames[ARENA_COUNT] = {
     "STADIUM", "NEON", "CRATER", "RUINS"
