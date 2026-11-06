@@ -280,7 +280,7 @@ def write_asset_archive_header(roster: list[dict], output: Path) -> None:
                           f'    "{prefix}_end:\\n"',
                           '    ".text\\n"',
                           ");"))
-    lines.append("static const P2dEmbeddedAtlas p2dFighterAtlasData[ARENA2D_ROSTER_COUNT][P2D_ANIM_COUNT] = {")
+    lines.append(f"static const P2dEmbeddedAtlas p2dFighterAtlasData[ARENA2D_ROSTER_COUNT][{len(ANIMATIONS)}] = {{")
     for index, pokemon in enumerate(roster):
         entries = []
         for animation in ANIMATIONS:
