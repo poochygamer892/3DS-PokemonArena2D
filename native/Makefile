@@ -62,7 +62,7 @@ assets:
 		--source assets/pokearena2d/source \
 		--output generated/pokearena2d \
 		--include include/poke2d_sprite_meta.h
-	@$(TEX3DS) --atlas -f rgb8 -z lz11 \
+	@$(TEX3DS) --atlas -f rgb565 -z lz11 \
 		-H include/poke2d_background_indices.h \
 		-o generated/pokearena2d/poke2d_background_atlas.t3x \
 		$$(find generated/pokearena2d/background_input -maxdepth 1 -name '*.png' -type f | sort)

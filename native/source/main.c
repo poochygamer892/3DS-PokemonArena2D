@@ -4,14 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "arena_sfx.h"
-#include "korean_arena_data.h"
+#include "web_arena_data.h"
 #include "poke2d_background_indices.h"
 #include "poke2d_font_indices.h"
 #include "poke2d_sprite_indices.h"
 #include "poke2d_sprite_meta.h"
 
-#define TEAM_SIZE 3
-#define ARENA_COUNT 1
+#define TEAM_SIZE 1
+#define ARENA_COUNT 4
 #define TOP_W 400.0f
 #define TOP_H 240.0f
 #define BOTTOM_W 320.0f
@@ -19,7 +19,7 @@
 
 typedef enum { SCENE_TITLE, SCENE_BATTLE, SCENE_PAUSE, SCENE_RESULT } Scene;
 typedef enum { DROP_HEAL, DROP_CHARGE, DROP_SPEED } DropKind;
-typedef enum { MODE_QUICK, MODE_CPU, MODE_STORY, MODE_RUN } GameMode;
+typedef enum { MODE_QUICK, MODE_CPU, MODE_STORY, MODE_RUN, MODE_TRAINING } GameMode;
 typedef enum {
     PAGE_HOME, PAGE_PLAY, PAGE_CPU, PAGE_STORY, PAGE_RUN, PAGE_TEAMS,
     PAGE_ONLINE, PAGE_SETTINGS, PAGE_DEX, PAGE_TUTORIAL, PAGE_CREDITS,
@@ -28,9 +28,13 @@ typedef enum {
 
 typedef struct {
     const char *name;
-    const char *type;
+    char type[24];
     int speciesArt;
     int rosterIndex;
+    int formIndex;
+    int evolutionStage;
+    float experience;
+    int isMega;
     int maxHp;
     int hp;
 } Pokemon;
@@ -45,6 +49,7 @@ typedef struct {
     float dashIFrames;
     float switchCd;
     float speedBoost;
+    float energy;
     float ultimate;
     float hurtFlash;
     float hitStun;
@@ -71,8 +76,8 @@ typedef struct {
 
 typedef enum { MOVE_MELEE, MOVE_LINE, MOVE_BURST, MOVE_SPREAD, MOVE_DASH } MoveStyle;
 typedef enum { TYPE_NEUTRAL, TYPE_GRASS, TYPE_FIRE, TYPE_WATER, TYPE_ELECTRIC } AttackType;
-typedef enum { STATUS_NONE, STATUS_BURN, STATUS_SLOW, STATUS_STUN } StatusKind;
-typedef enum { FX_SLASH, FX_BURST, FX_DODGE } EffectKind;
+typedef enum { STATUS_NONE, STATUS_BURN, STATUS_SLOW, STATUS_STUN, STATUS_DRAIN } StatusKind;
+typedef enum { FX_SLASH, FX_BURST, FX_DODGE, FX_BEAM } EffectKind;
 
 typedef struct {
     MoveStyle style;
@@ -82,6 +87,8 @@ typedef struct {
     AttackType type;
     StatusKind status;
     float statusTime;
+    float energy;
+    float velocity;
     u32 color;
 } MoveDefinition;
 
@@ -92,61 +99,9 @@ typedef struct {
     u32 color;
 } AttackEffect;
 
-static const Pokemon kSpecies[6] = {
-    { "BULBASAUR", "GRASS / POISON", 0, -1, 126, 126 },
-    { "CHARMANDER", "FIRE", 1, -1, 119, 119 },
-    { "SQUIRTLE", "WATER", 2, -1, 125, 125 },
-    { "PIKACHU", "ELECTRIC", 3, -1, 110, 110 },
-    { "CHARIZARD", "FIRE / FLYING", 4, -1, 150, 150 },
-    { "BLASTOISE", "WATER", 5, -1, 160, 160 }
-};
 static Pokemon gTeam[2][TEAM_SIZE];
-static const char *const kMoveLabel[6][3] = {
-    { "TACKLE", "VINE WHIP", "RAZOR LEAF" },
-    { "SCRATCH", "EMBER", "FLAME BURST" },
-    { "TACKLE", "WATER GUN", "BUBBLE BEAM" },
-    { "QUICK ATTACK", "THUNDER SHOCK", "THUNDERBOLT" },
-    { "WING ATTACK", "FLAMETHROWER", "DRAGON CLAW" },
-    { "BITE", "WATER PULSE", "HYDRO PUMP" }
-};
-static const char *const kUltimateLabel[6] = {
-    "SOLAR BEAM", "FIRE BLAST", "HYDRO PUMP", "THUNDER", "BLAST BURN", "HYDRO CANNON"
-};
 static const char *const kArenaNames[ARENA_COUNT] = {
-    "KOREAN ARENA STADIUM"
-};
-
-static const MoveDefinition kMoves[6][3] = {
-    {
-        { MOVE_MELEE, 13, 3.2f, 72.0f, TYPE_GRASS, STATUS_NONE, 0.0f, 0x75D448FF },
-        { MOVE_LINE, 15, 4.0f, 230.0f, TYPE_GRASS, STATUS_SLOW, 1.8f, 0x73D56EFF },
-        { MOVE_SPREAD, 20, 5.0f, 250.0f, TYPE_GRASS, STATUS_NONE, 0.0f, 0xA6E34FFF }
-    },
-    {
-        { MOVE_MELEE, 13, 3.2f, 70.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0xF4C44AFF },
-        { MOVE_SPREAD, 15, 4.0f, 230.0f, TYPE_FIRE, STATUS_BURN, 4.0f, 0xFF9B43FF },
-        { MOVE_BURST, 21, 5.0f, 200.0f, TYPE_FIRE, STATUS_BURN, 4.5f, 0xF35E3EFF }
-    },
-    {
-        { MOVE_MELEE, 13, 3.2f, 72.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0x75D9EFFF },
-        { MOVE_LINE, 15, 4.0f, 245.0f, TYPE_WATER, STATUS_NONE, 0.0f, 0x60BDF2FF },
-        { MOVE_SPREAD, 19, 5.0f, 235.0f, TYPE_WATER, STATUS_SLOW, 2.0f, 0x88DDF2FF }
-    },
-    {
-        { MOVE_DASH, 15, 3.2f, 104.0f, TYPE_ELECTRIC, STATUS_NONE, 0.0f, 0xFFE34CFF },
-        { MOVE_LINE, 14, 4.0f, 250.0f, TYPE_ELECTRIC, STATUS_STUN, 0.48f, 0xFFDA58FF },
-        { MOVE_BURST, 22, 5.0f, 270.0f, TYPE_ELECTRIC, STATUS_STUN, 0.62f, 0xFFEE8AFF }
-    },
-    {
-        { MOVE_DASH, 17, 3.2f, 110.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0x78C8FFFF },
-        { MOVE_LINE, 18, 4.0f, 260.0f, TYPE_FIRE, STATUS_BURN, 4.0f, 0xFF743CFF },
-        { MOVE_MELEE, 23, 5.0f, 78.0f, TYPE_NEUTRAL, STATUS_STUN, 0.3f, 0xE85E89FF }
-    },
-    {
-        { MOVE_MELEE, 15, 3.2f, 75.0f, TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0xE1C6A0FF },
-        { MOVE_BURST, 19, 4.0f, 205.0f, TYPE_WATER, STATUS_SLOW, 2.0f, 0x58BDF2FF },
-        { MOVE_LINE, 23, 5.0f, 275.0f, TYPE_WATER, STATUS_NONE, 0.0f, 0x81E0FFFF }
-    }
+    "STADIUM", "NEON", "CRATER", "RUINS"
 };
 
 enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
@@ -157,7 +112,8 @@ static C2D_SpriteSheet gPoke2dAtlas;
 static C2D_SpriteSheet gEnvironmentAtlas;
 static C2D_SpriteSheet gFontAtlas;
 static C2D_Image gMenuBackground;
-static C2D_Image gWebStadium;
+static C2D_Image gArenaImages[ARENA_COUNT];
+static C2D_Image gWebTitle;
 static C2D_Image gGameLogo;
 static C2D_Image gTextFill[P2D_TEXT_COUNT];
 static Scene gScene = SCENE_TITLE;
@@ -167,6 +123,8 @@ static Combatant gFighter[2];
 static Shot gShots[8];
 static AttackEffect gEffects[16];
 static int gActive[2] = { 0, 0 };
+static int gRoundWins[2] = { 0, 0 };
+static int gRoundNumber = 1;
 static int gWinner = -1;
 static int gMenuSelection = 0;
 static MenuPage gMenuStack[4];
@@ -176,8 +134,8 @@ static int gStoryUnlocked = 0;
 static int gRunFloor = 1;
 static int gCpuDifficulty = 1;
 static int gArenaIndex = 0;
-static int gPlayerSpecies[TEAM_SIZE] = { 0, 1, 2 };
-static int gTeamSlot = 0;
+static int gPlayerSpecies[TEAM_SIZE] = { 0 };
+static int gOpponentSpecies = 1;
 static float gUiTextScale = 1.15f;
 static float gBattleTime = 0.0f;
 static float gCpuBasicCd = 0.0f;
@@ -350,10 +308,10 @@ static C2D_Image pokemonFrame(int art, int animation, int direction, int frame)
 }
 
 static void drawPokemonAt(int art, int animation, int direction, int frame,
-                          float pivotX, float pivotY)
+                          float pivotX, float pivotY, float formScale)
 {
     C2D_Image image = pokemonFrame(art, animation, direction, frame);
-    float scale = (4.0f / 3.0f) * p2dSpeciesScale[art];
+    float scale = (4.0f / 3.0f) * p2dSpeciesScale[art] * formScale;
     float originX = (float)p2dOriginX[art][animation] * scale;
     float originY = (float)p2dOriginY[art][animation] * scale;
     C2D_DrawImageAt(image, pivotX - originX, pivotY - originY, 0.36f,
@@ -386,30 +344,37 @@ static int faceDirection(float dx, float dy)
 static Pokemon pokemonFromRoster(int rosterIndex)
 {
     if (rosterIndex < 0 || rosterIndex >= ARENA2D_ROSTER_COUNT)
-        return kSpecies[0];
+        rosterIndex = 0;
     const Arena2dRosterEntry *entry = &kArena2dRoster[rosterIndex];
-    Pokemon pokemon;
-    pokemon.name = entry->name;
-    pokemon.type = entry->type1;
-    pokemon.speciesArt = entry->fallbackArt;
+    Pokemon pokemon = { 0 };
     pokemon.rosterIndex = rosterIndex;
-    /* The source project balances on base stats.  This converts its HP base
-       to a compact, readable action-game life bar on the Old 2DS. */
-    pokemon.maxHp = 55 + entry->base[0];
+    pokemon.formIndex = entry->baseForm;
+    const Arena2dFormEntry *form = &kArena2dForms[pokemon.formIndex];
+    pokemon.name = form->name;
+    if (form->type2[0])
+        snprintf(pokemon.type, sizeof(pokemon.type), "%s / %s", form->type1,
+                 form->type2);
+    else
+        snprintf(pokemon.type, sizeof(pokemon.type), "%s", form->type1);
+    pokemon.speciesArt = form->spriteArt;
+    pokemon.maxHp = (int)ceilf(form->base[0] * 1.8f);
     pokemon.hp = pokemon.maxHp;
     return pokemon;
 }
 
-static const char *rosterMoveName(const Pokemon *pokemon, int slot)
+static void setPokemonForm(Pokemon *pokemon, int formIndex)
 {
-    if (!pokemon || pokemon->rosterIndex < 0 ||
-        pokemon->rosterIndex >= ARENA2D_ROSTER_COUNT || slot < 0 || slot >= 4)
-        return "MOVE";
-    const char *key = kArena2dRoster[pokemon->rosterIndex].moves[slot];
-    for (int i = 0; i < ARENA2D_MOVE_COUNT; ++i)
-        if (strcmp(kArena2dMoves[i].key, key) == 0)
-            return kArena2dMoves[i].name;
-    return key && key[0] ? key : "MOVE";
+    if (!pokemon || formIndex < 0 || formIndex >= ARENA2D_FORM_COUNT) return;
+    const Arena2dFormEntry *form = &kArena2dForms[formIndex];
+    pokemon->formIndex = formIndex;
+    pokemon->name = form->name;
+    if (form->type2[0])
+        snprintf(pokemon->type, sizeof(pokemon->type), "%s / %s", form->type1,
+                 form->type2);
+    else
+        snprintf(pokemon->type, sizeof(pokemon->type), "%s", form->type1);
+    pokemon->speciesArt = form->spriteArt;
+    pokemon->maxHp = (int)ceilf(form->base[0] * 1.8f);
 }
 
 static const Arena2dMoveEntry *rosterMove(const Pokemon *pokemon, int slot)
@@ -417,37 +382,94 @@ static const Arena2dMoveEntry *rosterMove(const Pokemon *pokemon, int slot)
     if (!pokemon || pokemon->rosterIndex < 0 ||
         pokemon->rosterIndex >= ARENA2D_ROSTER_COUNT || slot < 0 || slot >= 4)
         return NULL;
-    const char *key = kArena2dRoster[pokemon->rosterIndex].moves[slot];
-    for (int i = 0; i < ARENA2D_MOVE_COUNT; ++i)
-        if (strcmp(kArena2dMoves[i].key, key) == 0)
-            return &kArena2dMoves[i];
-    return NULL;
+    return &kArena2dMoves[kArena2dForms[pokemon->formIndex].moves[slot + 1]];
+}
+
+static const Arena2dMoveEntry *rosterBasicMove(const Pokemon *pokemon)
+{
+    if (!pokemon || pokemon->rosterIndex < 0 ||
+        pokemon->rosterIndex >= ARENA2D_ROSTER_COUNT) return NULL;
+    return &kArena2dMoves[kArena2dForms[pokemon->formIndex].moves[0]];
+}
+
+static bool transformPokemon(int side)
+{
+    Pokemon *pokemon = &gTeam[side][gActive[side]];
+    const Arena2dRosterEntry *line = &kArena2dRoster[pokemon->rosterIndex];
+    Combatant *fighter = &gFighter[side];
+    if (pokemon->evolutionStage < line->evolutionCount) {
+        int stage = pokemon->evolutionStage;
+        float threshold = line->evolutionThreshold[stage];
+        if (pokemon->experience >= threshold && threshold > 0.0f) {
+            float healthRatio = pokemon->maxHp > 0 ?
+                (float)pokemon->hp / (float)pokemon->maxHp : 1.0f;
+            pokemon->experience -= threshold;
+            pokemon->evolutionStage++;
+            pokemon->isMega = 0;
+            setPokemonForm(pokemon, line->evolutionForms[stage]);
+            float healedRatio = healthRatio + line->evolutionHeal * (1.0f - healthRatio);
+            pokemon->hp = (int)ceilf((float)pokemon->maxHp * healedRatio);
+            if (pokemon->hp > pokemon->maxHp) pokemon->hp = pokemon->maxHp;
+            fighter->dashIFrames = 0.9f;
+            fighter->hitStun = 0.0f;
+            fighter->burnTime = fighter->slowTime = 0.0f;
+            snprintf(gHitLabel, sizeof(gHitLabel), "EVOLVED!");
+            gHitFlash = 1.0f;
+            sfxPlay(SFX_MOVE);
+            return true;
+        }
+    }
+    int megaForm = line->megaForms[pokemon->evolutionStage];
+    if (!pokemon->isMega && megaForm >= 0 && fighter->ultimate >= 100.0f) {
+        setPokemonForm(pokemon, megaForm);
+        pokemon->isMega = 1;
+        fighter->ultimate = 0.0f;
+        fighter->dashIFrames = 0.9f;
+        snprintf(gHitLabel, sizeof(gHitLabel), "MEGA EVOLUTION!");
+        gHitFlash = 1.0f;
+        sfxPlay(SFX_HEAVY_HIT);
+        return true;
+    }
+    return false;
 }
 
 static void resetBattle(void)
 {
-    static const int opponentOrder[6][3] = {
-        { 3, 4, 5 }, { 4, 5, 3 }, { 5, 3, 4 },
-        { 3, 5, 4 }, { 4, 3, 5 }, { 5, 4, 3 }
-    };
-    int retainedHp[TEAM_SIZE] = { 0, 0, 0 };
+    int retainedHp[TEAM_SIZE] = { 0 };
+    int playerStage = gTeam[0][0].evolutionStage;
+    float playerExperience = gTeam[0][0].experience;
+    int cpuStage = gTeam[1][0].evolutionStage;
+    float cpuExperience = gTeam[1][0].experience;
     bool carryRunHp = gGameMode == MODE_RUN && gRunFloor > 1 &&
                       gScene == SCENE_RESULT && gWinner == 0;
     if (carryRunHp)
         for (int i = 0; i < TEAM_SIZE; ++i)
             retainedHp[i] = gTeam[0][i].hp;
-    int order = gGameMode == MODE_RUN ? (gRunFloor - 1) % 6 : 0;
-    for (int i = 0; i < TEAM_SIZE; ++i) {
-        gTeam[0][i] = pokemonFromRoster(gPlayerSpecies[i]);
-        gTeam[0][i].hp = gTeam[0][i].maxHp;
-        gTeam[1][i] = pokemonFromRoster(opponentOrder[order][i]);
-        gTeam[1][i].hp = gTeam[1][i].maxHp;
-        if (carryRunHp)
-            gTeam[0][i].hp = retainedHp[i] < gTeam[0][i].maxHp ?
-                             retainedHp[i] : gTeam[0][i].maxHp;
+    gTeam[0][0] = pokemonFromRoster(gPlayerSpecies[0]);
+    gTeam[1][0] = pokemonFromRoster(gOpponentSpecies);
+    if (gRoundNumber > 1) {
+        int stage = playerStage < kArena2dRoster[gPlayerSpecies[0]].evolutionCount ?
+                    playerStage : kArena2dRoster[gPlayerSpecies[0]].evolutionCount;
+        if (stage > 0) {
+            gTeam[0][0].evolutionStage = stage;
+            gTeam[0][0].experience = playerExperience;
+            setPokemonForm(&gTeam[0][0], kArena2dRoster[gPlayerSpecies[0]].evolutionForms[stage - 1]);
+        }
+        stage = cpuStage < kArena2dRoster[gOpponentSpecies].evolutionCount ?
+                cpuStage : kArena2dRoster[gOpponentSpecies].evolutionCount;
+        if (stage > 0) {
+            gTeam[1][0].evolutionStage = stage;
+            gTeam[1][0].experience = cpuExperience;
+            setPokemonForm(&gTeam[1][0], kArena2dRoster[gOpponentSpecies].evolutionForms[stage - 1]);
+        }
     }
+    gTeam[0][0].hp = gTeam[0][0].maxHp;
+    gTeam[1][0].hp = gTeam[1][0].maxHp;
+    if (carryRunHp)
+        gTeam[0][0].hp = retainedHp[0] < gTeam[0][0].maxHp ?
+                         retainedHp[0] : gTeam[0][0].maxHp;
     if (gGameMode == MODE_STORY) {
-        gTeam[1][0] = pokemonFromRoster(3 + (gStoryStage % 3));
+        gTeam[1][0] = pokemonFromRoster((gStoryStage + 1) % ARENA2D_ROSTER_COUNT);
         gTeam[1][0].hp = gTeam[1][0].maxHp;
         for (int i = 1; i < TEAM_SIZE; ++i) {
             gTeam[0][i].hp = 0;
@@ -464,9 +486,11 @@ static void resetBattle(void)
     gFighter[0].y = 155.0f;
     gFighter[1].x = 308.0f;
     gFighter[1].y = 130.0f;
-    gFighter[0].ultimate = 50.0f;
-    gFighter[1].ultimate = 50.0f;
-    gBattleTime = 0.0f;
+    gFighter[0].energy = 30.0f;
+    gFighter[1].energy = 30.0f;
+    gFighter[0].ultimate = 0.0f;
+    gFighter[1].ultimate = 0.0f;
+    gBattleTime = 99.0f;
     static const float basicDelay[3] = { 1.10f, 0.90f, 0.67f };
     static const float skillDelay[3] = { 4.70f, 3.40f, 2.45f };
     gCpuBasicCd = basicDelay[gCpuDifficulty];
@@ -540,6 +564,11 @@ static void damagePokemon(int side, int damage, float chargeRatio)
         gFighter[opponent].ultimate = clampf(gFighter[opponent].ultimate + (float)damage / (float)oppMax * chargeRatio, 0.0f, 100.0f);
 
     if (p->hp == 0) {
+        if (gGameMode == MODE_TRAINING && side == 1) {
+            p->hp = p->maxHp;
+            gFighter[side].dashIFrames = 0.45f;
+            return;
+        }
         sfxPlay(SFX_KO);
         int next = nextLiving(side, gActive[side]);
         if (next >= 0) {
@@ -599,11 +628,61 @@ static AttackType speciesType(int species)
 static AttackType attackTypeFromName(const char *type)
 {
     if (!type) return TYPE_NEUTRAL;
-    if (strcmp(type, "Fire") == 0) return TYPE_FIRE;
-    if (strcmp(type, "Water") == 0 || strcmp(type, "Ice") == 0) return TYPE_WATER;
-    if (strcmp(type, "Grass") == 0 || strcmp(type, "Bug") == 0) return TYPE_GRASS;
-    if (strcmp(type, "Electric") == 0) return TYPE_ELECTRIC;
+    if (strcmp(type, "FIRE") == 0) return TYPE_FIRE;
+    if (strcmp(type, "WATER") == 0 || strcmp(type, "ICE") == 0) return TYPE_WATER;
+    if (strcmp(type, "GRASS") == 0 || strcmp(type, "BUG") == 0) return TYPE_GRASS;
+    if (strcmp(type, "ELECTRIC") == 0) return TYPE_ELECTRIC;
     return TYPE_NEUTRAL;
+}
+
+static MoveDefinition moveFromEntry(const Arena2dMoveEntry *source)
+{
+    MoveDefinition move = { MOVE_LINE, 1, 3.0f, 220.0f,
+                            TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0.0f, 0.0f, 0xD9C5A2FF };
+    if (!source) return move;
+    move.type = attackTypeFromName(source->type);
+    move.color = moveColorForType(move.type);
+    move.damage = source->power > 0.0f ? (int)ceilf(source->power) : 0;
+    move.cooldown = source->cooldown > 0.0f ? source->cooldown : 4.0f;
+    move.range = source->range > 0.0f ? clampf(source->range * 0.44f, 20.0f, 250.0f) : 80.0f;
+    move.energy = source->energy;
+    move.velocity = source->velocity * 0.44f;
+    if (strcmp(source->kind, "tajo") == 0 || strcmp(source->kind, "golpe") == 0 ||
+        strcmp(source->kind, "lanzamiento") == 0 || strcmp(source->kind, "contra") == 0)
+        move.style = MOVE_MELEE;
+    else if (strcmp(source->kind, "dash") == 0 || strcmp(source->kind, "embestidas") == 0 ||
+             strcmp(source->kind, "patada") == 0 || strcmp(source->kind, "vuelo") == 0 ||
+             strcmp(source->kind, "salto") == 0 || strcmp(source->kind, "ascenso") == 0)
+        move.style = MOVE_DASH;
+    else if (strcmp(source->kind, "cono") == 0 || strcmp(source->kind, "burbujas") == 0 ||
+             strcmp(source->kind, "abanico") == 0 || strcmp(source->kind, "lluvia") == 0 ||
+             strcmp(source->kind, "bolaFuego") == 0 || strcmp(source->kind, "bolaShuriken") == 0)
+        move.style = MOVE_SPREAD;
+    else if (strcmp(source->kind, "pulso") == 0 || strcmp(source->kind, "viento") == 0 ||
+             strcmp(source->kind, "caparazon") == 0 || strcmp(source->kind, "chorro") == 0 ||
+             strcmp(source->kind, "erupcion") == 0 || strcmp(source->kind, "tormentaHojas") == 0 ||
+             strcmp(source->kind, "rafaga") == 0 || strcmp(source->kind, "andanada") == 0 ||
+             strcmp(source->kind, "maleficio") == 0 || strcmp(source->kind, "meteoro") == 0 ||
+             strcmp(source->kind, "torbellino") == 0 || strcmp(source->kind, "trampa") == 0 ||
+             strcmp(source->kind, "explosion") == 0 || strcmp(source->kind, "juicio") == 0 ||
+             strcmp(source->kind, "frenesi") == 0 || strcmp(source->kind, "tormenta") == 0 ||
+             strcmp(source->kind, "estallido") == 0 || strcmp(source->kind, "vcreate") == 0 ||
+             strcmp(source->kind, "redElectrica") == 0 || strcmp(source->kind, "bombaLodo") == 0 ||
+             strcmp(source->kind, "bolaSombra") == 0) move.style = MOVE_BURST;
+    if (strcmp(source->effect, "burn") == 0 || strcmp(source->effect, "poison") == 0) {
+        move.status = STATUS_BURN;
+        move.statusTime = 3.0f;
+    } else if (strcmp(source->effect, "slow") == 0) {
+        move.status = STATUS_SLOW;
+        move.statusTime = 2.0f;
+    } else if (strcmp(source->effect, "stun") == 0 || strcmp(source->effect, "sleep") == 0 ||
+               strcmp(source->effect, "confuse") == 0) {
+        move.status = STATUS_STUN;
+        move.statusTime = 0.6f;
+    } else if (strcmp(source->effect, "drain") == 0) {
+        move.status = STATUS_DRAIN;
+    }
+    return move;
 }
 
 static u32 moveColorForType(AttackType type)
@@ -619,47 +698,19 @@ static u32 moveColorForType(AttackType type)
 
 static MoveDefinition moveFromRoster(const Pokemon *pokemon, int slot)
 {
-    const Arena2dMoveEntry *source = rosterMove(pokemon, slot);
-    MoveDefinition move = { MOVE_LINE, 14, 3.0f, 220.0f,
-                            TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0xD9C5A2FF };
-    if (!source) return move;
-    move.type = attackTypeFromName(source->type);
-    move.color = moveColorForType(move.type);
-    move.damage = source->power > 0 ? (int)clampf(source->power * 0.19f, 8.0f, 31.0f) : 0;
-    move.cooldown = source->cooldown > 0.0f ? source->cooldown : 4.0f;
-    move.range = source->range > 0.0f ? clampf(source->range * 0.50f, 60.0f, 290.0f) : 190.0f;
-    if (strcmp(source->kind, "melee") == 0) move.style = MOVE_MELEE;
-    else if (strcmp(source->kind, "dash") == 0) move.style = MOVE_DASH;
-    else if (strcmp(source->kind, "spread") == 0) move.style = MOVE_SPREAD;
-    else if (strcmp(source->kind, "quake") == 0 || strcmp(source->kind, "psy") == 0 ||
-             strcmp(source->kind, "sig") == 0 || strcmp(source->kind, "spec") == 0)
-        move.style = MOVE_BURST;
-    if (strcmp(source->effect, "burn") == 0 || strcmp(source->effect, "poison") == 0) {
-        move.status = STATUS_BURN;
-        move.statusTime = 3.0f;
-    } else if (strcmp(source->effect, "slow") == 0) {
-        move.status = STATUS_SLOW;
-        move.statusTime = 2.0f;
-    } else if (strcmp(source->effect, "stun") == 0 || strcmp(source->effect, "sleep") == 0) {
-        move.status = STATUS_STUN;
-        move.statusTime = 0.6f;
-    }
-    return move;
+    return moveFromEntry(rosterMove(pokemon, slot));
+}
+
+static MoveDefinition moveFromBasic(const Pokemon *pokemon)
+{
+    return moveFromEntry(rosterBasicMove(pokemon));
 }
 
 static float typeMultiplier(AttackType attack, AttackType defender)
 {
-    if (attack == TYPE_NEUTRAL || defender == TYPE_NEUTRAL) return 1.0f;
-    if ((attack == TYPE_GRASS && defender == TYPE_WATER) ||
-        (attack == TYPE_FIRE && defender == TYPE_GRASS) ||
-        (attack == TYPE_WATER && defender == TYPE_FIRE) ||
-        (attack == TYPE_ELECTRIC && defender == TYPE_WATER))
-        return 1.5f;
-    if ((attack == TYPE_GRASS && defender == TYPE_FIRE) ||
-        (attack == TYPE_FIRE && defender == TYPE_WATER) ||
-        (attack == TYPE_WATER && defender == TYPE_GRASS) ||
-        (attack == TYPE_ELECTRIC && defender == TYPE_GRASS))
-        return 0.65f;
+    /* The web game ships with type-chart damage disabled by default. */
+    (void)attack;
+    (void)defender;
     return 1.0f;
 }
 
@@ -671,15 +722,12 @@ static void combatHit(int attacker, int rawDamage, AttackType attackType,
     Pokemon *attackerPokemon = &gTeam[attacker][gActive[attacker]];
     Pokemon *targetPokemon = &gTeam[target][gActive[target]];
     AttackType defenderType = targetPokemon->rosterIndex >= 0 ?
-        attackTypeFromName(kArena2dRoster[targetPokemon->rosterIndex].type1) :
+        attackTypeFromName(kArena2dForms[targetPokemon->formIndex].type1) :
         speciesType(targetPokemon->speciesArt);
-    AttackType attackerType = attackerPokemon->rosterIndex >= 0 ?
-        attackTypeFromName(kArena2dRoster[attackerPokemon->rosterIndex].type1) :
-        speciesType(attackerPokemon->speciesArt);
     float effectiveness = typeMultiplier(attackType, defenderType);
-    float multiplier = effectiveness;
-    if (attackType != TYPE_NEUTRAL && attackType == attackerType)
-        multiplier *= 1.2f;
+    float attackPower = kArena2dForms[attackerPokemon->formIndex].base[1];
+    float defense = kArena2dForms[targetPokemon->formIndex].base[2];
+    float multiplier = effectiveness * attackPower / fmaxf(0.5f, defense);
     int damage = (int)ceilf((float)rawDamage * multiplier);
     if (damage < 1) damage = 1;
     int activeBefore = gActive[target];
@@ -691,6 +739,15 @@ static void combatHit(int attacker, int rawDamage, AttackType attackType,
     damagePokemon(target, damage, 30.0f);
     if (gActive[target] != activeBefore || gTeam[target][activeBefore].hp == hpBefore)
         return;
+
+    gFighter[attacker].energy = clampf(gFighter[attacker].energy + 6.0f, 0.0f, 100.0f);
+    gFighter[target].energy = clampf(gFighter[target].energy + 3.0f, 0.0f, 100.0f);
+    if (status == STATUS_DRAIN) {
+        int dealt = hpBefore - gTeam[target][activeBefore].hp;
+        Pokemon *healer = &gTeam[attacker][gActive[attacker]];
+        healer->hp = (int)fminf((float)healer->maxHp,
+                                (float)healer->hp + (float)dealt * 0.35f);
+    }
 
     sfxPlay(damage >= 18 ? SFX_HEAVY_HIT : SFX_BASIC);
 
@@ -722,8 +779,9 @@ static void fireProjectile(int side, const MoveDefinition *move,
 {
     float cosine = cosf(angle);
     float sine = sinf(angle);
-    float vx = (dx * cosine - dy * sine) * 250.0f;
-    float vy = (dx * sine + dy * cosine) * 250.0f;
+    float speed = move->velocity > 0.0f ? move->velocity : 250.0f;
+    float vx = (dx * cosine - dy * sine) * speed;
+    float vy = (dx * sine + dy * cosine) * speed;
     for (int i = 0; i < 8; ++i) {
         Shot *shot = &gShots[i];
         if (shot->active) continue;
@@ -731,7 +789,7 @@ static void fireProjectile(int side, const MoveDefinition *move,
         shot->y = gFighter[side].y;
         shot->vx = vx;
         shot->vy = vy;
-        shot->life = 1.25f;
+        shot->life = move->range > 0.0f ? move->range / speed : 1.25f;
         shot->damage = damage;
         shot->attackType = move->type;
         shot->status = move->status;
@@ -748,8 +806,10 @@ static void useMove(int side, int slot)
 {
     int opponent = side == 0 ? 1 : 0;
     Pokemon *activePokemon = &gTeam[side][gActive[side]];
-    const Arena2dMoveEntry *sourceMove = rosterMove(activePokemon, slot);
-    MoveDefinition resolvedMove = moveFromRoster(activePokemon, slot);
+    const Arena2dMoveEntry *sourceMove = slot == -1 ? rosterBasicMove(activePokemon) :
+                                                    rosterMove(activePokemon, slot);
+    MoveDefinition resolvedMove = slot == -1 ? moveFromBasic(activePokemon) :
+                                               moveFromRoster(activePokemon, slot);
     const MoveDefinition *move = &resolvedMove;
     Combatant *fighter = &gFighter[side];
     float startX = fighter->x;
@@ -757,12 +817,22 @@ static void useMove(int side, int slot)
     float dx = gFighter[opponent].x - startX;
     float dy = gFighter[opponent].y - startY;
     float distance = sqrtf(dx * dx + dy * dy);
-    if (distance < 0.1f) return;
+    if (slot == 3) {
+        if (fighter->ultimate < 100.0f) return;
+        fighter->ultimate = 0.0f;
+    }
+    if (move->energy > 0.0f) {
+        if (fighter->energy < move->energy) return;
+        fighter->energy -= move->energy;
+    }
     if (sourceMove && (strcmp(sourceMove->kind, "heal") == 0 ||
                        strcmp(sourceMove->kind, "rest") == 0 ||
-                       strcmp(sourceMove->kind, "ring") == 0)) {
+                       strcmp(sourceMove->kind, "ring") == 0 ||
+                       strcmp(sourceMove->kind, "recuperar") == 0 ||
+                       strcmp(sourceMove->kind, "descanso") == 0)) {
         int heal = activePokemon->maxHp *
-                   (strcmp(sourceMove->kind, "rest") == 0 ? 35 : 22) / 100;
+                   (strcmp(sourceMove->kind, "rest") == 0 ||
+                    strcmp(sourceMove->kind, "descanso") == 0 ? 35 : 22) / 100;
         activePokemon->hp = activePokemon->hp + heal > activePokemon->maxHp ?
                             activePokemon->maxHp : activePokemon->hp + heal;
         spawnEffect(FX_BURST, fighter->x, fighter->y, fighter->x, fighter->y,
@@ -770,14 +840,18 @@ static void useMove(int side, int slot)
         sfxPlay(SFX_HEAL);
         return;
     }
-    if (sourceMove && strcmp(sourceMove->kind, "buff") == 0) {
+    if (sourceMove && (strcmp(sourceMove->kind, "buff") == 0 ||
+                        strcmp(sourceMove->kind, "potenciar") == 0 ||
+                        strcmp(sourceMove->kind, "crecimiento") == 0)) {
         fighter->speedBoost = 5.0f;
         spawnEffect(FX_BURST, fighter->x, fighter->y, fighter->x, fighter->y,
                     0.36f, 0xE9C94BFF);
         sfxPlay(SFX_MOVE);
         return;
     }
-    if (sourceMove && strcmp(sourceMove->kind, "mirror") == 0) {
+    if (distance < 0.1f) return;
+    if (sourceMove && (strcmp(sourceMove->kind, "mirror") == 0 ||
+                       strcmp(sourceMove->kind, "escudo") == 0)) {
         fighter->dashIFrames = 0.85f;
         spawnEffect(FX_DODGE, fighter->x, fighter->y, fighter->x, fighter->y,
                     0.32f, 0xE986D1FF);
@@ -798,15 +872,17 @@ static void useMove(int side, int slot)
     dx /= distance;
     dy /= distance;
     playAttackAnimation(side);
+    if (slot == 1 && move->style == MOVE_DASH)
+        fighter->dashIFrames = fmaxf(fighter->dashIFrames, 0.25f);
 
     if (move->style == MOVE_MELEE) {
-        if (distance > 78.0f) return;
+        if (distance > move->range) return;
         spawnEffect(FX_SLASH, startX + dx * 8.0f, startY + dy * 8.0f,
                     gFighter[opponent].x, gFighter[opponent].y, 0.22f, move->color);
         combatHit(side, move->damage, move->type, move->status, move->statusTime,
                   54.0f, 0.16f, move->color);
     } else if (move->style == MOVE_DASH) {
-        float travel = fminf(48.0f, fmaxf(0.0f, distance - 29.0f));
+        float travel = fminf(move->range, fmaxf(0.0f, distance - 29.0f));
         fighter->x = clampf(fighter->x + dx * travel, 26.0f, 374.0f);
         fighter->y = clampf(fighter->y + dy * travel, 96.0f, 184.0f);
         spawnEffect(FX_SLASH, startX, startY, fighter->x, fighter->y,
@@ -816,9 +892,13 @@ static void useMove(int side, int slot)
             combatHit(side, move->damage, move->type, move->status, move->statusTime,
                       70.0f, 0.22f, move->color);
     } else if (move->style == MOVE_BURST) {
-        spawnEffect(FX_BURST, gFighter[opponent].x, gFighter[opponent].y,
-                    gFighter[opponent].x, gFighter[opponent].y,
-                    0.38f, move->color);
+        if (sourceMove && strcmp(sourceMove->kind, "chorro") == 0)
+            spawnEffect(FX_BEAM, startX, startY, gFighter[opponent].x,
+                        gFighter[opponent].y, 0.38f, move->color);
+        else
+            spawnEffect(FX_BURST, gFighter[opponent].x, gFighter[opponent].y,
+                        gFighter[opponent].x, gFighter[opponent].y,
+                        0.38f, move->color);
         combatHit(side, move->damage, move->type, move->status, move->statusTime,
                   42.0f, 0.14f, move->color);
     } else if (move->style == MOVE_SPREAD) {
@@ -860,30 +940,8 @@ static void updateShots(float dt)
 
 static void performBasicAttack(int side)
 {
-    Combatant *fighter = &gFighter[side];
-    int opponent = side == 0 ? 1 : 0;
-    float range = 56.0f;
-    if (distance2(fighter->x, fighter->y, gFighter[opponent].x,
-                  gFighter[opponent].y) > range * range)
-        return;
-    if (fighter->comboTimer <= 0.0f) fighter->comboCount = 0;
-    fighter->comboCount = (fighter->comboCount % 3) + 1;
-    fighter->comboTimer = 0.92f;
     playAttackAnimation(side);
-    sfxPlay(fighter->comboCount == 3 ? SFX_HEAVY_HIT : SFX_BASIC);
-    static const float damageRatio[3] = { 0.032f, 0.046f, 0.066f };
-    static const float knockback[3] = { 24.0f, 39.0f, 72.0f };
-    static const float stun[3] = { 0.07f, 0.11f, 0.24f };
-    int targetMax = gTeam[opponent][gActive[opponent]].maxHp;
-    int damage = (int)ceilf((float)targetMax * damageRatio[fighter->comboCount - 1]);
-    spawnEffect(FX_SLASH, fighter->x, fighter->y,
-                gFighter[opponent].x, gFighter[opponent].y,
-                0.2f, fighter->comboCount == 3 ? C_GOLD : 0xF4E8C8FF);
-    combatHit(side, damage,
-              attackTypeFromName(kArena2dRoster[gTeam[side][gActive[side]].rosterIndex].type1),
-              STATUS_NONE, 0.0f, knockback[fighter->comboCount - 1],
-              stun[fighter->comboCount - 1], 0xFFF1D2FF);
-    if (fighter->comboCount == 3) fighter->comboTimer = 0.0f;
+    useMove(side, -1);
 }
 
 static void useBasic(int side)
@@ -891,7 +949,7 @@ static void useBasic(int side)
     Combatant *fighter = &gFighter[side];
     if (fighter->basicCd > 0.0f || gScene != SCENE_BATTLE || fighter->hitStun > 0.0f)
         return;
-    fighter->basicCd = 0.38f;
+    fighter->basicCd = moveFromBasic(&gTeam[side][gActive[side]]).cooldown;
     performBasicAttack(side);
 }
 
@@ -902,49 +960,11 @@ static void useSkill(int slot)
     if (gScene != SCENE_BATTLE || slot < 0 || slot > 3 ||
         fighter->skillCd[slot] > 0.0f || fighter->hitStun > 0.0f)
         return;
-    fighter->skillCd[slot] = moveFromRoster(activePokemon, slot).cooldown;
+    if (slot == 3 && fighter->ultimate < 100.0f) return;
+    MoveDefinition move = moveFromRoster(activePokemon, slot);
+    if (move.energy > fighter->energy) return;
+    fighter->skillCd[slot] = move.cooldown;
     useMove(0, slot);
-}
-
-static void useDash(void)
-{
-    Combatant *c = &gFighter[0];
-    if (c->dashCd > 0.0f || c->hitStun > 0.0f) return;
-    c->dashCd = 2.5f;
-    c->dashIFrames = 0.3f;
-    float dx = c->moveX;
-    float dy = c->moveY;
-    float mag = sqrtf(dx * dx + dy * dy);
-    if (mag < 0.1f) {
-        dx = c->x - gFighter[1].x;
-        dy = c->y - gFighter[1].y;
-        mag = sqrtf(dx * dx + dy * dy);
-    }
-    if (mag > 0.1f) {
-        c->x = clampf(c->x + dx / mag * 38.0f, 28.0f, 372.0f);
-        c->y = clampf(c->y + dy / mag * 32.0f, 52.0f, 215.0f);
-        spawnEffect(FX_DODGE, c->x - dx / mag * 20.0f,
-                    c->y - dy / mag * 16.0f, c->x, c->y,
-                    0.24f, 0x76E4E8FF);
-        sfxPlay(SFX_DASH);
-    }
-}
-
-static void useUltimate(void)
-{
-    Combatant *c = &gFighter[0];
-    if (c->ultimate < 100.0f || c->hitStun > 0.0f) return;
-    c->ultimate = 0.0f;
-    if (distance2(c->x, c->y, gFighter[1].x, gFighter[1].y) <= 285.0f * 285.0f) {
-        Pokemon *activePokemon = &gTeam[0][gActive[0]];
-        MoveDefinition finalMove = moveFromRoster(activePokemon, 3);
-        u32 color = finalMove.color;
-        spawnEffect(FX_BURST, gFighter[1].x, gFighter[1].y,
-                    gFighter[1].x, gFighter[1].y, 0.55f, color);
-        combatHit(0, finalMove.damage > 0 ? finalMove.damage + 14 : 35,
-                  finalMove.type, finalMove.status, finalMove.statusTime,
-                  82.0f, 0.28f, color);
-    }
 }
 
 static void spawnSupply(void)
@@ -1019,13 +1039,27 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
         gScene = SCENE_PAUSE;
         return;
     }
-    gBattleTime += dt;
+    if (gGameMode != MODE_TRAINING)
+        gBattleTime = fmaxf(0.0f, gBattleTime - dt);
     updateShots(dt);
     updateEffects(dt);
     Combatant *player = &gFighter[0];
     Combatant *cpu = &gFighter[1];
     updateStatusEffects(0, dt);
     updateStatusEffects(1, dt);
+    for (int side = 0; side < 2; ++side) {
+        Pokemon *pokemon = &gTeam[side][gActive[side]];
+        Combatant *fighter = &gFighter[side];
+        fighter->energy = clampf(fighter->energy + (100.0f / 3.0f) * dt, 0.0f, 100.0f);
+        fighter->ultimate = clampf(fighter->ultimate + (100.0f / 3.0f) * dt, 0.0f, 100.0f);
+        const Arena2dRosterEntry *line = &kArena2dRoster[pokemon->rosterIndex];
+        if (pokemon->evolutionStage < line->evolutionCount) {
+            float threshold = line->evolutionThreshold[pokemon->evolutionStage];
+            pokemon->experience = fminf(threshold,
+                pokemon->experience + threshold / 3.0f * dt);
+        }
+    }
+    (void)transformPokemon(1);
     float moveX = (float)pad->dx / 156.0f;
     float moveY = -(float)pad->dy / 156.0f;
     /* The D-pad is a second movement option. It is only used when the Circle
@@ -1041,7 +1075,9 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     if (player->hitStun > 0.0f) moveX = moveY = 0.0f;
     player->moveX = moveX;
     player->moveY = moveY;
-    float speed = player->speedBoost > 0.0f ? 125.0f : 96.0f;
+    float speciesSpeed = kArena2dForms[gTeam[0][0].formIndex].base[3];
+    float speed = speciesSpeed * 0.44f;
+    if (player->speedBoost > 0.0f) speed *= 1.25f;
     if (player->slowTime > 0.0f) speed *= 0.62f;
     player->x = clampf(player->x + (moveX * speed + player->knockbackX) * dt,
                        26.0f, 374.0f);
@@ -1053,16 +1089,21 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     float dx = player->x - cpu->x;
     float dy = player->y - cpu->y;
     float d = sqrtf(dx * dx + dy * dy);
-    static const float cpuSpeed[3] = { 23.0f, 34.0f, 47.0f };
+    static const float cpuScale[3] = { 0.68f, 0.86f, 1.0f };
     static const float basicDelay[3] = { 1.10f, 0.90f, 0.67f };
     static const float skillDelay[3] = { 4.70f, 3.40f, 2.45f };
-    if (cpu->hitStun <= 0.0f && d > 58.0f && d > 0.1f) {
+    MoveDefinition cpuBasicMove = moveFromBasic(&gTeam[1][0]);
+    if (gGameMode != MODE_TRAINING && cpu->hitStun <= 0.0f &&
+        d > cpuBasicMove.range * 0.72f && d > 0.1f) {
         float cpuMoveScale = cpu->slowTime > 0.0f ? 0.62f : 1.0f;
-        cpu->x = clampf(cpu->x + (dx / d * cpuSpeed[gCpuDifficulty] * cpuMoveScale +
+        float cpuSpeed = kArena2dForms[gTeam[1][0].formIndex].base[3] *
+                         0.44f * cpuScale[gCpuDifficulty];
+        cpu->x = clampf(cpu->x + (dx / d * cpuSpeed * cpuMoveScale +
                                   cpu->knockbackX) * dt, 26.0f, 374.0f);
-        cpu->y = clampf(cpu->y + (dy / d * cpuSpeed[gCpuDifficulty] * cpuMoveScale +
+        cpu->y = clampf(cpu->y + (dy / d * cpuSpeed * cpuMoveScale +
                                   cpu->knockbackY) * dt, 96.0f, 184.0f);
-    } else if (cpu->hitStun <= 0.0f && d <= 58.0f) {
+    } else if (gGameMode != MODE_TRAINING && cpu->hitStun <= 0.0f &&
+               d <= cpuBasicMove.range) {
         gCpuBasicCd -= dt;
         if (gCpuBasicCd <= 0.0f) {
             gCpuBasicCd = basicDelay[gCpuDifficulty];
@@ -1072,11 +1113,13 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     cpu->knockbackX *= expf(-8.0f * dt);
     cpu->knockbackY *= expf(-8.0f * dt);
 
-    gCpuSkillCd -= dt;
-    if (cpu->hitStun <= 0.0f && gCpuSkillCd <= 0.0f) {
-        int slot = gActive[1] % 3;
+    if (gGameMode != MODE_TRAINING) gCpuSkillCd -= dt;
+    if (gGameMode != MODE_TRAINING && cpu->hitStun <= 0.0f && gCpuSkillCd <= 0.0f) {
+        int slot = (int)(gBattleTime / 3.0f) % 4;
         MoveDefinition cpuMove = moveFromRoster(&gTeam[1][gActive[1]], slot);
-        if (d <= cpuMove.range)
+        if ((slot != 3 || cpu->ultimate >= 100.0f) &&
+            (cpuMove.energy <= cpu->energy) &&
+            (cpuMove.range <= 0.0f || d <= cpuMove.range))
             useMove(1, slot);
         gCpuSkillCd = skillDelay[gCpuDifficulty] + (float)slot * 0.45f;
     }
@@ -1085,13 +1128,13 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     cpu->attackAnim = fmaxf(0.0f, cpu->attackAnim - dt);
     player->animKind = player->attackAnim > 0.0f ? ANIM_SHOOT :
                        (mag > 0.15f ? ANIM_WALK : ANIM_IDLE);
-    cpu->animKind = cpu->attackAnim > 0.0f ? ANIM_SHOOT :
-                    (d > 58.0f ? ANIM_WALK : ANIM_IDLE);
+    cpu->animKind = gGameMode == MODE_TRAINING ? ANIM_IDLE :
+                    (cpu->attackAnim > 0.0f ? ANIM_SHOOT :
+                     (d > 58.0f ? ANIM_WALK : ANIM_IDLE));
     player->animClock += dt;
     cpu->animClock += dt;
     player->basicCd = fmaxf(0.0f, player->basicCd - dt);
     cpu->basicCd = fmaxf(0.0f, cpu->basicCd - dt);
-    player->dashCd = fmaxf(0.0f, player->dashCd - dt);
     player->switchCd = fmaxf(0.0f, player->switchCd - dt);
     player->dashIFrames = fmaxf(0.0f, player->dashIFrames - dt);
     player->speedBoost = fmaxf(0.0f, player->speedBoost - dt);
@@ -1107,21 +1150,31 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     if (down & KEY_B) useSkill(0);
     if (down & KEY_X) useSkill(1);
     if (down & KEY_Y) useSkill(2);
-    if (down & KEY_L) useDash();
     if (down & KEY_R) useSkill(3);
+    if (down & KEY_L) (void)transformPokemon(0);
     if (down & KEY_SELECT)
         switchPokemon(0, (gActive[0] + 1) % TEAM_SIZE);
 
-    updateSupply(dt);
-    if (livingCount(0) == 0 || livingCount(1) == 0) {
-        gWinner = livingCount(0) > 0 ? 0 : 1;
+    if (gGameMode != MODE_TRAINING) updateSupply(dt);
+    if (livingCount(0) == 0 || livingCount(1) == 0 ||
+        (gGameMode != MODE_TRAINING && gBattleTime <= 0.0f)) {
+        if (livingCount(0) == 0) gWinner = 1;
+        else if (livingCount(1) == 0) gWinner = 0;
+        else {
+            Pokemon *p = &gTeam[0][gActive[0]];
+            Pokemon *e = &gTeam[1][gActive[1]];
+            gWinner = (float)p->hp / p->maxHp >= (float)e->hp / e->maxHp ? 0 : 1;
+        }
+        ++gRoundWins[gWinner];
         gScene = SCENE_RESULT;
     }
 }
 
 static void drawArena(void)
 {
-    C2D_DrawImageAt(gWebStadium, 0.0f, 0.0f, 0.0f, NULL, 1.0f, 1.0f);
+    int arena = gArenaIndex;
+    if (arena < 0 || arena >= ARENA_COUNT) arena = 0;
+    C2D_DrawImageAt(gArenaImages[arena], 0.0f, 0.0f, 0.0f, NULL, 1.0f, 1.0f);
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -1161,11 +1214,12 @@ static void drawFighter(int side)
     int frame = (int)(fighter->animClock * fps) % frameCount;
     int direction = faceDirection(gFighter[opponent].x - fighter->x,
                                   gFighter[opponent].y - fighter->y);
-    float shadowW = pokemon->speciesArt == 1 || pokemon->speciesArt == 3 ? 30.0f : 22.0f;
+    float shadowW = p2dFrameHeight[pokemon->speciesArt][ANIM_IDLE] > 40 ? 30.0f : 22.0f;
     rect(fighter->x - shadowW * 0.5f, fighter->y + 2.0f,
          shadowW, 4.0f, 0x090D16AA);
     drawPokemonAt(pokemon->speciesArt, fighter->animKind, direction, frame,
-                  fighter->x, fighter->y + bob);
+                  fighter->x, fighter->y + bob,
+                  kArena2dForms[pokemon->formIndex].scale);
     if (fighter->hurtFlash > 0.0f)
         rect(fighter->x - 10.0f, fighter->y - 31.0f, 20.0f, 2.0f, 0xFFF3D9FF);
     if (side == 0 && fighter->dashIFrames > 0.0f)
@@ -1242,10 +1296,15 @@ static void drawBattleTop(void)
     drawSegmentedBar(250, 30, 107, 7, e->hp, e->maxHp);
     char clockText[16];
     int seconds = (int)gBattleTime;
-    snprintf(clockText, sizeof(clockText), "%02d:%02d", seconds / 60, seconds % 60);
+    if (gGameMode == MODE_TRAINING)
+        snprintf(clockText, sizeof(clockText), "TRAIN");
+    else
+        snprintf(clockText, sizeof(clockText), "%02d:%02d", seconds / 60, seconds % 60);
     rect(165, 4, 70, 34, 0x0B101BF5);
     centeredText(200, 8, 0.37f, 0xFFFFFFFF, clockText);
-    centeredText(200, 24, 0.18f, 0xFFD740FF, "ROUND 1");
+    char roundText[16];
+    snprintf(roundText, sizeof(roundText), "ROUND %d", gRoundNumber);
+    centeredText(200, 24, 0.18f, 0xFFD740FF, roundText);
 
     if (gSupplyLife > 0.0f) {
         u32 supplyColor = gSupplyKind == DROP_HEAL ? 0xF48CC8FF :
@@ -1272,48 +1331,76 @@ static void drawBattleTop(void)
         centeredText(200, 52, 0.28f, C_GOLD, gHitLabel);
 }
 
-static void actionButton(float x, float y, const char *key, const char *label,
-                         float cooldown, u32 tint)
+static void webActionButton(float x, const char *key, const char *label,
+                            float cooldown, float energyCost, u32 tint)
 {
-    rect(x, y, 96.0f, 49.0f, 0x0B2341FF);
-    rect(x + 2.0f, y + 2.0f, 92.0f, 45.0f, 0x4CC65FFF);
-    rect(x + 2.0f, y + 2.0f, 3.0f, 45.0f, tint);
-    rect(x + 9.0f, y + 7.0f, 16.0f, 13.0f, 0x17355DFF);
-    fittedText(x + 17.0f, y + 8.0f, 15.0f, 0.27f, C_TEXT, key, true);
-    fittedText(x + 51.0f, y + 27.0f, 81.0f, 0.29f,
-               0x17355DFF, label, true);
+    const float y = 85.0f, w = 59.0f, h = 77.0f;
+    rect(x, y, w, h, 0x1A2434FF);
+    rect(x + 2, y + 2, w - 4, h - 4,
+         cooldown > 0.0f || energyCost > gFighter[0].energy ? 0x263448FF : 0x315273FF);
+    rect(x + 2, y + 2, 3, h - 4, tint);
+    rect(x + 8, y + 7, 19, 16, 0x111A29FF);
+    centeredText(x + 17.5f, y + 8, 0.26f, 0xFFD740FF, key);
+    fittedText(x + 8, y + 29, w - 12, 0.22f, 0xFFFFFFFF, label, true);
+    if (energyCost > 0.0f) {
+        char cost[12];
+        snprintf(cost, sizeof(cost), "E %.0f", energyCost);
+        fittedText(x + 8, y + 45, w - 12, 0.17f, 0xB7C7DCFF, cost, true);
+    }
     if (cooldown > 0.0f) {
-        char cd[10];
-        if (strcmp(key, "R") == 0)
-            snprintf(cd, sizeof(cd), "%d%%", (int)gFighter[0].ultimate);
-        else
-            snprintf(cd, sizeof(cd), "%.1f", cooldown);
-        fittedText(x + 73.0f, y + 8.0f, 18.0f, 0.23f,
-                   0x4A4E58FF, cd, true);
+        char cd[12];
+        snprintf(cd, sizeof(cd), "%.1f s", cooldown);
+        fittedText(x + 8, y + 59, w - 12, 0.16f, 0xFFD740FF, cd, true);
     }
 }
 
 static void drawBottomBattle(void)
 {
     Pokemon *activePokemon = &gTeam[0][gActive[0]];
-    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x0C1726FF);
-    for (int x = 0; x < 320; x += 16)
-        for (int y = 0; y < 240; y += 16)
-            if (((x / 16) + (y / 16)) & 1) rect((float)x, (float)y, 16, 16, 0x10223AFF);
-    rect(7, 7, 306, 24, 0x132C4BFF);
-    fittedText(16, 12, 285, 0.28f, 0xFFD740FF, "SKILL MOVES   1P", false);
-    char basicLabel[16];
-    snprintf(basicLabel, sizeof(basicLabel), "%s", kArena2dRoster[activePokemon->rosterIndex].basic);
-    actionButton(7, 40, "A", basicLabel, gFighter[0].basicCd, 0x64DFF4FF);
-    actionButton(112, 40, "B", rosterMoveName(activePokemon, 0), gFighter[0].skillCd[0], 0xFF754CFF);
-    actionButton(217, 40, "X", rosterMoveName(activePokemon, 1), gFighter[0].skillCd[1], 0xFFD740FF);
-    actionButton(59, 98, "Y", rosterMoveName(activePokemon, 2), gFighter[0].skillCd[2], 0xAA7CFFFF);
-    actionButton(164, 98, "R", rosterMoveName(activePokemon, 3), gFighter[0].skillCd[3], 0x63D7FFFF);
-    rect(7, 163, 306, 30, 0x111D30FF);
-    fittedText(15, 169, 290, 0.20f, C_TEXT, "CIRCLE PAD: MOVE     L: SPRINT / DODGE", false);
-    fittedText(15, 181, 290, 0.20f, C_MUTED, "SELECT: CHANGE 1P     START: PAUSE", false);
-    rect(7, 204, 306, 25, 0x132C4BFF);
-    fittedText(15, 211, 290, 0.20f, 0x9BC5EFFF, "KOREAN ARENA  |  CPU BATTLE", false);
+    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x090E18FF);
+    rect(0, 0, BOTTOM_W, 3, 0xE8B940FF);
+    drawPokemonIcon(activePokemon->speciesArt, 8, 7, 28);
+    fittedText(42, 8, 263, 0.31f, 0xFFFFFFFF, activePokemon->name, false);
+    fittedText(42, 22, 263, 0.18f, 0xAFC3D8FF, activePokemon->type, false);
+    drawSegmentedBar(42, 36, 263, 8, activePokemon->hp, activePokemon->maxHp);
+    fittedText(8, 50, 70, 0.19f, 0xAFC3D8FF, "ENERGY", false);
+    rect(66, 51, 245, 6, 0x1C2636FF);
+    rect(67, 52, 243.0f * gFighter[0].energy / 100.0f, 4, 0x54BCEBFF);
+    fittedText(8, 62, 70, 0.19f, 0xAFC3D8FF, "ULTIMATE", false);
+    rect(66, 63, 245, 6, 0x1C2636FF);
+    rect(67, 64, 243.0f * gFighter[0].ultimate / 100.0f, 4, 0xF1BE48FF);
+    const Arena2dRosterEntry *line = &kArena2dRoster[activePokemon->rosterIndex];
+    if (activePokemon->evolutionStage < line->evolutionCount) {
+        float threshold = line->evolutionThreshold[activePokemon->evolutionStage];
+        float progress = threshold > 0.0f ?
+            clampf(activePokemon->experience / threshold, 0.0f, 1.0f) : 0.0f;
+        fittedText(8, 72, 52, 0.17f, 0xAFC3D8FF, "EVOLVE", false);
+        rect(66, 73, 245, 5, 0x1C2636FF);
+        rect(67, 74, 243.0f * progress, 3, 0x7EDB88FF);
+    } else {
+        fittedText(8, 72, 70, 0.17f, 0xAFC3D8FF,
+                   activePokemon->isMega ? "MEGA" : "MAX LEVEL", false);
+    }
+    const Arena2dMoveEntry *basic = rosterBasicMove(activePokemon);
+    const Arena2dMoveEntry *b = rosterMove(activePokemon, 0);
+    const Arena2dMoveEntry *x = rosterMove(activePokemon, 1);
+    const Arena2dMoveEntry *y = rosterMove(activePokemon, 2);
+    const Arena2dMoveEntry *r = rosterMove(activePokemon, 3);
+    webActionButton(6, "A", basic ? basic->name : "ATTACK", gFighter[0].basicCd, 0, 0x68C5F0FF);
+    webActionButton(69, "B", b ? b->name : "SKILL", gFighter[0].skillCd[0], b ? b->energy : 0, 0xEA7654FF);
+    webActionButton(132, "X", x ? x->name : "DODGE", gFighter[0].skillCd[1], x ? x->energy : 0, 0x63D7C5FF);
+    webActionButton(195, "Y", y ? y->name : "SKILL", gFighter[0].skillCd[2], y ? y->energy : 0, 0x85C76DFF);
+    webActionButton(258, "R", r ? r->name : "ULTIMATE", gFighter[0].skillCd[3], r ? r->energy : 0, 0xE8B940FF);
+    fittedText(8, 170, 304, 0.19f, 0xC2CBD8FF,
+               "CIRCLE PAD MOVE    L EVOLVE/MEGA   START PAUSE", false);
+    fittedText(8, 183, 304, 0.18f, 0x8C9CB2FF,
+               "A BASIC   B RMB   X SPACE   Y Q   R E", false);
+    const char *modeLabel = gGameMode == MODE_TRAINING ? "TRAINING" :
+                            (gGameMode == MODE_STORY ? "LEAGUE" :
+                             (gGameMode == MODE_RUN ? "ARENA CHALLENGE" : "VS CPU"));
+    char footer[48];
+    snprintf(footer, sizeof(footer), "POKE ARENA 2D   /   %s", modeLabel);
+    fittedText(8, 210, 304, 0.20f, 0xE8B940FF, footer, false);
 }
 
 static void drawMenuBackdrop(void)
@@ -1359,10 +1446,10 @@ static void drawMenuHeader(const char *title)
 static void drawHomeMenuBottom(void)
 {
     static const char *const titles[] = {
-        "PLAY", "ONLINE", "CUSTOMIZE", "POKEDEX", "TUTORIAL", "SETTINGS", "CREDITS"
+        "PLAY", "ONLINE", "ROSTER", "POKEDEX", "TUTORIAL", "SETTINGS", "CREDITS"
     };
     static const char *const subtitles[] = {
-        "CHOOSE A GAME MODE", "ONLINE BATTLES", "EDIT YOUR TEAM", "VIEW YOUR POKEMON",
+        "CHOOSE A GAME MODE", "ONLINE BATTLES", "CHOOSE YOUR FIGHTER", "VIEW YOUR POKEMON",
         "CONTROLS AND RULES", "ARENA AND TEXT SIZE", "PROJECT CREDITS"
     };
     drawMenuHeader("POKE ARENA 2D");
@@ -1376,7 +1463,7 @@ static void drawHomeMenuBottom(void)
 static void drawPlayMenuBottom(void)
 {
     static const char *const titles[] = {
-        "LEAGUE", "VS CPU", "2 PLAYERS", "TRAINING", "ARENA", "BACK"
+        "LEAGUE", "VS CPU", "2 PLAYERS", "TRAINING", "CHALLENGE", "BACK"
     };
     static const char *const subtitles[] = {
         "PLAY A SERIES OF DUELS", "PICK YOUR CPU DIFFICULTY",
@@ -1392,110 +1479,18 @@ static void drawPlayMenuBottom(void)
 
 static void drawTitle(void)
 {
-    /* The source game opens straight into a battle setup, rather than the
-       old multi-mode console menu. */
-    drawArena();
-    rect(51, 78, 298, 52, 0x0B1423E8);
-    rect(51, 78, 298, 3, 0xFBC02DFF);
-    centeredText(200, 87, 0.54f, 0xFFFFFFFF, "POKEMON ARENA");
-    centeredText(200, 111, 0.22f, 0xAFC8E2FF, "RETRO STADIUM BATTLE");
-    drawPokemonAt(kArena2dRoster[gPlayerSpecies[0]].fallbackArt, ANIM_IDLE, 2, 0,
-                  112.0f, 183.0f);
-    drawPokemonAt(kArena2dRoster[3].fallbackArt, ANIM_IDLE, 6, 0,
-                  288.0f, 158.0f);
-    centeredText(200, 188, 0.26f, 0xFFD740FF, "VS CPU");
-    return;
-
-    static const char *const title[] = {
-        "CHOOSE A MODE", "ONLINE BATTLES", "CUSTOMIZE YOUR TEAM", "POKEDEX",
-        "HOW TO PLAY", "SETTINGS", "CREDITS"
-    };
-    static const char *const subtitle[] = {
-        "REAL TIME POKEMON DUELS", "NETWORK PLAY IS NOT AVAILABLE ON 3DS",
-        "CHOOSE YOUR POKEMON", "SIX POKEMON READY TO BATTLE",
-        "MOVE, ATTACK AND DODGE", "ARENA AND DISPLAY OPTIONS", "A FAN MADE 3DS PROJECT"
-    };
-    char modeDetail[48];
-    const char *heading = "POKE ARENA 2D";
-    const char *detail = "REAL TIME POKEMON BATTLES";
-    if (gMenuPage == PAGE_HOME) {
-        heading = title[gMenuSelection < 7 ? gMenuSelection : 0];
-        detail = subtitle[gMenuSelection < 7 ? gMenuSelection : 0];
-    } else if (gMenuPage == PAGE_PLAY) {
-        heading = "CHOOSE A PLAY MODE";
-        detail = "TRAINING, LEAGUE, CPU AND ARENA";
-    } else if (gMenuPage == PAGE_CPU) {
-        heading = "VS CPU";
-        detail = gCpuDifficulty == 0 ? "EASY BATTLE" :
-                 (gCpuDifficulty == 1 ? "NORMAL BATTLE" : "HARD BATTLE");
-    } else if (gMenuPage == PAGE_STORY) {
-        snprintf(modeDetail, sizeof(modeDetail), "DUEL %02d OF 16", gStoryStage + 1);
-        heading = "LEAGUE";
-        detail = modeDetail;
-    } else if (gMenuPage == PAGE_RUN) {
-        snprintf(modeDetail, sizeof(modeDetail), "FIGHT %d OF 6", gRunFloor);
-        heading = "ARENA CHALLENGE";
-        detail = modeDetail;
-    } else if (gMenuPage == PAGE_TEAMS) {
-        heading = "CUSTOMIZE YOUR TEAM";
-        detail = kArena2dRoster[gPlayerSpecies[gTeamSlot]].name;
-    } else if (gMenuPage == PAGE_ONLINE) {
-        heading = "ONLINE";
-        detail = "NOT AVAILABLE IN THIS 3DS BUILD";
-    } else if (gMenuPage == PAGE_SETTINGS) {
-        heading = "SETTINGS";
-        detail = "CHOOSE AN ARENA AND TEXT SIZE";
-    } else if (gMenuPage == PAGE_DEX) {
-        heading = "POKEDEX";
-        detail = kArena2dRoster[gMenuSelection % ARENA2D_ROSTER_COUNT].name;
-    } else if (gMenuPage == PAGE_TUTORIAL) {
-        heading = "HOW TO PLAY";
-        detail = "MOVE, AIM, ATTACK AND DODGE";
-    } else if (gMenuPage == PAGE_CREDITS) {
-        heading = "CREDITS";
-        detail = "INSPIRED BY POKE ARENA 2D";
-    } else if (gMenuPage == PAGE_2PLAY) {
-        heading = "TWO PLAYER";
-        detail = "NOT AVAILABLE IN THIS VERSION";
-    }
-
-    drawStage(gMenuBackground);
-    C2D_DrawImageAt(gGameLogo, 53.0f, 4.0f, 0.12f, NULL, 1.0f, 1.0f);
-    fittedText(200.0f, 119.0f, 372.0f, 0.43f, C_TEXT, heading, true);
-    fittedText(200.0f, 142.0f, 372.0f, 0.28f, C_GOLD, detail, true);
-    drawPokemonAt(kArena2dRoster[gPlayerSpecies[0]].fallbackArt, ANIM_IDLE, 6, 0, 62.0f, 216.0f);
-    drawPokemonAt(kArena2dRoster[gPlayerSpecies[1]].fallbackArt, ANIM_IDLE, 2, 0, 338.0f, 216.0f);
+    C2D_DrawImageAt(gWebTitle, 0, 0, 0, NULL, 1.0f, 1.0f);
+    C2D_DrawImageAt(gGameLogo, 53.0f, 7.0f, 0.10f, NULL, 1.0f, 1.0f);
+    int playerForm = kArena2dRoster[gPlayerSpecies[0]].baseForm;
+    int opponentForm = kArena2dRoster[gOpponentSpecies].baseForm;
+    drawPokemonAt(kArena2dForms[playerForm].spriteArt, ANIM_IDLE, 2, 0,
+                  88.0f, 218.0f, kArena2dForms[playerForm].scale);
+    drawPokemonAt(kArena2dForms[opponentForm].spriteArt, ANIM_IDLE, 6, 0,
+                  312.0f, 216.0f, kArena2dForms[opponentForm].scale);
 }
 
 static void drawTitleBottom(void)
 {
-    const Arena2dRosterEntry *selected = &kArena2dRoster[gPlayerSpecies[0]];
-    static const char *const diff[] = { "EASY", "NORMAL", "HARD" };
-    rect(0, 0, BOTTOM_W, BOTTOM_H, 0x0C1726FF);
-    for (int x = 0; x < 320; x += 16)
-        for (int y = 0; y < 240; y += 16)
-            if (((x / 16) + (y / 16)) & 1) rect((float)x, (float)y, 16, 16, 0x10223AFF);
-    centeredText(160, 16, 0.38f, 0xFFD740FF, "BATTLE SETUP");
-    for (int i = 0; i < 3; ++i) {
-        float y = 39.0f + i * 48.0f;
-        bool active = gMenuSelection == i;
-        rect(15, y, 290, 40, active ? 0x2D5A8BFF : 0x132C4BFF);
-        rect(15, y, 4, 40, active ? 0xFBC02DFF : 0x496A8EFF);
-        if (i == 0) {
-            drawPokemonIcon(selected->fallbackArt, 27, y + 7, 25);
-            fittedText(62, y + 8, 220, 0.30f, C_TEXT, selected->name, false);
-            fittedText(62, y + 23, 220, 0.18f, C_MUTED, "LEFT / RIGHT: CHANGE POKEMON", false);
-        } else if (i == 1) {
-            fittedText(28, y + 8, 250, 0.30f, C_TEXT, diff[gCpuDifficulty], false);
-            fittedText(28, y + 23, 250, 0.18f, C_MUTED, "CPU DIFFICULTY", false);
-        } else {
-            fittedText(28, y + 11, 250, 0.33f, 0xFFD740FF, "START BATTLE", false);
-            fittedText(28, y + 25, 250, 0.17f, C_MUTED, "A / START", false);
-        }
-    }
-    fittedText(16, 204, 288, 0.21f, C_MUTED, "UP/DOWN: SELECT   B: BACK", false);
-    return;
-
     if (gMenuPage == PAGE_HOME) {
         drawHomeMenuBottom();
         return;
@@ -1506,14 +1501,19 @@ static void drawTitleBottom(void)
     }
 
     switch (gMenuPage) {
-    case PAGE_CPU:
+    case PAGE_CPU: {
+        static const char *const diff[] = { "EASY", "NORMAL", "HARD" };
         drawMenuHeader("VS CPU");
-        drawMenuRow(34, "EASY", "SLOWER MOVES AND ATTACKS", "", gMenuSelection == 0, false);
-        drawMenuRow(61, "NORMAL", "BALANCED CPU", "", gMenuSelection == 1, false);
-        drawMenuRow(88, "HARD", "FASTER AND STRONGER CPU", "", gMenuSelection == 2, false);
-        drawMenuRow(125, "START BATTLE", "USE THE SELECTED DIFFICULTY", "A", gMenuSelection == 3, false);
-        textAt(10, 211, 0.32f, C_GOLD, "A: START  /  B: BACK");
+        char player[48], opponent[48];
+        snprintf(player, sizeof(player), "PLAYER   %s", kArena2dRoster[gPlayerSpecies[0]].name);
+        snprintf(opponent, sizeof(opponent), "CPU      %s", kArena2dRoster[gOpponentSpecies].name);
+        drawMenuRow(31, player, "LEFT / RIGHT: CHOOSE POKEMON", NULL, gMenuSelection == 0, false);
+        drawMenuRow(58, opponent, "LEFT / RIGHT: CHOOSE OPPONENT", NULL, gMenuSelection == 1, false);
+        drawMenuRow(85, diff[gCpuDifficulty], "CPU DIFFICULTY", NULL, gMenuSelection == 2, false);
+        drawMenuRow(120, "START BATTLE", "A / START", "A", gMenuSelection == 3, false);
+        textAt(10, 211, 0.32f, C_GOLD, "A: SELECT  /  B: BACK");
         break;
+    }
     case PAGE_STORY: {
         int first = (gStoryStage / 6) * 6;
         drawMenuHeader("CHOOSE A LEAGUE DUEL");
@@ -1540,35 +1540,24 @@ static void drawTitleBottom(void)
         textAt(10, 211, 0.32f, C_GOLD, "A: START  /  B: BACK");
         break;
     case PAGE_TEAMS: {
-        drawMenuHeader("CUSTOMIZE YOUR TEAM");
-        for (int i = 0; i < TEAM_SIZE; ++i) {
-            float y = 27.0f + (float)i * 26.0f;
-            bool selected = i == gTeamSlot;
-            rect(7, y, 306, 23, 0x0B2D55FF);
-            rect(8, y, 304, 21, selected ? 0xF5C54DFF : 0x214D82FF);
-            if (selected) rect(8, y, 4, 21, 0xFFFFFFFF);
-            char label[36];
-            snprintf(label, sizeof(label), "SLOT %d   %s", i + 1,
-                     kArena2dRoster[gPlayerSpecies[i]].name);
-            fittedText(17, y, 285, 0.39f,
-                       selected ? 0x102849FF : C_TEXT, label, false);
+        drawMenuHeader("SELECT YOUR FIGHTER");
+        for (int i = 0; i < ARENA2D_ROSTER_COUNT; ++i) {
+            int row = i / 7, col = i % 7;
+            float x = 2.0f + (float)col * 45.0f;
+            float y = 30.0f + (float)row * 34.0f;
+            const Arena2dRosterEntry *entry = &kArena2dRoster[i];
+            bool focused = i == gMenuSelection;
+            bool chosen = i == gPlayerSpecies[0];
+            rect(x, y, 43.0f, 32.0f,
+                 focused ? 0xF5C54DFF : (chosen ? 0x345F8CFF : 0x21416CFF));
+            drawPokemonIcon(entry->fallbackArt, x + 12.0f, y + 1.0f, 19.0f);
+            fittedText(x + 1.0f, y + 21.0f, 41.0f, 0.17f,
+                       focused ? 0x102849FF : C_TEXT, entry->name, true);
         }
-        textAt(10, 108, 0.35f, C_GOLD, "AUTHORIZED ARENA-2D ROSTER");
-        for (int i = 0; i < 6; ++i) {
-            int rosterIndex = (gPlayerSpecies[gTeamSlot] + i - 2 +
-                               ARENA2D_ROSTER_COUNT) % ARENA2D_ROSTER_COUNT;
-            int row = i / 2, col = i % 2;
-            float x = col == 0 ? 8.0f : 164.0f;
-            float y = 125.0f + (float)row * 25.0f;
-            const Arena2dRosterEntry *entry = &kArena2dRoster[rosterIndex];
-            bool chosen = gPlayerSpecies[gTeamSlot] == rosterIndex;
-            rect(x, y, 148, 22, chosen ? 0x345F8CFF : 0x21416CFF);
-            drawPokemonIcon(entry->fallbackArt, x + 2.0f, y + 2.0f, 18.0f);
-            fittedText(x + 29.0f, y + 3.0f, 112.0f, 0.34f,
-                       chosen ? C_GOLD : C_TEXT, entry->name, false);
-        }
-        fittedText(10, 205, 300.0f, 0.27f, C_MUTED, "163 MONS  UP/DOWN: SLOT  LEFT/RIGHT: BROWSE", false);
-        fittedText(10, 222, 300.0f, 0.29f, C_GOLD, "START: FIGHT  /  B: BACK", false);
+        fittedText(8, 205, 304.0f, 0.26f, C_MUTED,
+                   "33 FIGHTERS  D-PAD: BROWSE  A: CHOOSE", false);
+        fittedText(8, 222, 304.0f, 0.29f, C_GOLD,
+                   "START: BATTLE  /  B: BACK", false);
         break;
     }
     case PAGE_ONLINE:
@@ -1595,8 +1584,8 @@ static void drawTitleBottom(void)
         drawMenuRow(93, size, "MAKE LABELS LARGER", "LEFT/RIGHT", gMenuSelection == 2, false);
         rect(8, 132, 304, 54, 0x14375FFF);
         fittedText(160, 138, 284, 0.33f, C_GOLD, "CONTROLS", true);
-        fittedText(160, 157, 284, 0.27f, C_TEXT, "PAD/D-PAD MOVE   A ATTACK   B/X/Y MOVES", true);
-        fittedText(160, 172, 284, 0.27f, C_TEXT, "L DODGE   R SKILL 4   START PAUSE", true);
+        fittedText(160, 157, 284, 0.27f, C_TEXT, "PAD/D-PAD MOVE   A BASIC   B/X/Y/R MOVES", true);
+        fittedText(160, 172, 284, 0.27f, C_TEXT, "X SPACE MOVE   L EVOLVE/MEGA   START PAUSE", true);
         fittedText(10, 211, 300.0f, 0.29f, C_GOLD, "A / LEFT / RIGHT: CHANGE  B: BACK", false);
         break;
     }
@@ -1609,20 +1598,21 @@ static void drawTitleBottom(void)
                 const Arena2dRosterEntry *entry = &kArena2dRoster[i];
                 float y = 29.0f + row * 27.0f;
                 bool selected = i == gMenuSelection;
-                drawMenuRow(y, entry->name, entry->type1, NULL, selected, false);
+                drawMenuRow(y, entry->name,
+                            kArena2dForms[entry->baseForm].type1, NULL, selected, false);
                 drawPokemonIcon(entry->fallbackArt, 284.0f, y + 1.0f, 19.0f);
             }
         }
-        fittedText(10, 211, 300.0f, 0.32f, C_GOLD, "163 POKEMON  UP/DOWN: BROWSE  B: BACK", false);
+        fittedText(10, 211, 300.0f, 0.32f, C_GOLD, "33 POKEMON  UP/DOWN: BROWSE  B: BACK", false);
         break;
     case PAGE_TUTORIAL:
         drawMenuHeader("HOW TO PLAY");
         drawMenuRow(34, "MOVE", "CIRCLE PAD OR D-PAD MOVES YOU", NULL, false, false);
         drawMenuRow(62, "ATTACK", "A CHAINS THREE BASIC HITS", NULL, false, false);
-        drawMenuRow(90, "SPECIAL MOVES", "B / X / Y USE YOUR MOVES", NULL, false, false);
-        drawMenuRow(118, "DODGE", "L DASHES AND AVOIDS DAMAGE", NULL, false, false);
-        drawMenuRow(146, "SKILL 4", "R USES THE FOURTH KOREAN SKILL", NULL, false, false);
-        drawMenuRow(174, "TYPE AND STATUS", "MATCH TYPES; MOVES CAN BURN, SLOW OR STUN",
+        drawMenuRow(90, "SPECIAL MOVES", "B / X / Y / R USE YOUR POKEMON'S KIT", NULL, false, false);
+        drawMenuRow(118, "DODGE", "X USES YOUR POKEMON'S SPACE MOVE", NULL, false, false);
+        drawMenuRow(146, "EVOLVE", "L WHEN YOUR EVOLUTION METER IS READY", NULL, false, false);
+        drawMenuRow(174, "ENERGY AND STATUS", "SPECIALS COST ENERGY; SOME BURN OR STUN",
                     NULL, false, false);
         textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
         break;
@@ -1654,18 +1644,23 @@ static void drawTitleBottom(void)
 
 static void drawResult(void)
 {
+    bool matchComplete = gRoundWins[0] >= 2 || gRoundWins[1] >= 2;
     drawArena();
     rect(48, 70, 304, 94, 0x1C2743EE);
     rect(48, 70, 304, 3, gWinner == 0 ? C_GREEN : C_RED);
     fittedText(200, 82, 286, 0.94f, gWinner == 0 ? C_GREEN : C_RED,
-               gWinner == 0 ? "VICTORY" : "DEFEAT", true);
+               matchComplete ? (gWinner == 0 ? "VICTORY" : "DEFEAT") :
+                               (gWinner == 0 ? "ROUND WON" : "ROUND LOST"), true);
     fittedText(200, 119, 280, 0.46f, C_TEXT, "A: CONTINUE   B: MAIN MENU", true);
 }
 
 static void drawResultBottom(void)
 {
     rect(0, 0, BOTTOM_W, BOTTOM_H, C_BG);
-    textAt(12, 18, 0.61f, C_TEXT, "MATCH COMPLETE");
+    char score[32];
+    snprintf(score, sizeof(score), "ROUND %d   P1 %d - %d CPU", gRoundNumber,
+             gRoundWins[0], gRoundWins[1]);
+    textAt(12, 18, 0.48f, C_TEXT, score);
     if (gGameMode == MODE_STORY) {
         char stage[32];
         snprintf(stage, sizeof(stage), "CHAPTER %02d %s", gStoryStage + 1,
@@ -1686,7 +1681,7 @@ static void setMenuPage(MenuPage page)
 {
     gMenuPage = page;
     gMenuSelection = 0;
-    if (page == PAGE_TEAMS) gTeamSlot = 0;
+    if (page == PAGE_TEAMS) gMenuSelection = gPlayerSpecies[0];
     if (page == PAGE_HOME) gMenuDepth = 0;
 }
 
@@ -1706,6 +1701,8 @@ static void goBackMenu(void)
 static void startMode(GameMode mode)
 {
     gGameMode = mode;
+    gRoundWins[0] = gRoundWins[1] = 0;
+    gRoundNumber = 1;
     if (mode == MODE_RUN) gRunFloor = 1;
     resetBattle();
 }
@@ -1732,7 +1729,7 @@ static void activatePlaySelection(void)
     case 0: pushMenuPage(PAGE_STORY); gStoryStage = gStoryUnlocked; break;
     case 1: pushMenuPage(PAGE_CPU); break;
     case 2: pushMenuPage(PAGE_2PLAY); break;
-    case 3: startMode(MODE_QUICK); break;
+    case 3: startMode(MODE_TRAINING); break;
     case 4: pushMenuPage(PAGE_RUN); gRunFloor = 1; break;
     case 5: goBackMenu(); break;
     default: break;
@@ -1754,12 +1751,6 @@ static void selectPlayerSpecies(int slot, int species)
         }
         candidate = (candidate + 1) % ARENA2D_ROSTER_COUNT;
     }
-}
-
-static void changePlayerSpecies(int slot, int delta)
-{
-    if (slot < 0 || slot >= TEAM_SIZE) return;
-    selectPlayerSpecies(slot, gPlayerSpecies[slot] + delta);
 }
 
 static void adjustSetting(int delta)
@@ -1811,18 +1802,10 @@ static void handleMenuInput(u32 down)
 {
     if (gScene != SCENE_TITLE) return;
     if (gMenuPage == PAGE_HOME) {
-        if (down & KEY_UP) gMenuSelection = (gMenuSelection + 2) % 3;
-        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % 3;
-        if (gMenuSelection == 0 && (down & KEY_LEFT))
-            gPlayerSpecies[0] = (gPlayerSpecies[0] + ARENA2D_ROSTER_COUNT - 1) % ARENA2D_ROSTER_COUNT;
-        if (gMenuSelection == 0 && (down & KEY_RIGHT))
-            gPlayerSpecies[0] = (gPlayerSpecies[0] + 1) % ARENA2D_ROSTER_COUNT;
-        if (gMenuSelection == 1 && (down & KEY_LEFT))
-            gCpuDifficulty = (gCpuDifficulty + 2) % 3;
-        if (gMenuSelection == 1 && (down & KEY_RIGHT))
-            gCpuDifficulty = (gCpuDifficulty + 1) % 3;
-        if (down & KEY_START) { startMode(MODE_CPU); return; }
-        if ((down & KEY_A) && gMenuSelection == 2) startMode(MODE_CPU);
+        if (down & KEY_UP) gMenuSelection = (gMenuSelection + 6) % 7;
+        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % 7;
+        if (down & KEY_START) { pushMenuPage(PAGE_PLAY); return; }
+        if (down & KEY_A) activateHomeSelection();
         return;
     }
 
@@ -1839,15 +1822,18 @@ static void handleMenuInput(u32 down)
     case PAGE_CPU:
         if (down & KEY_UP) gMenuSelection = (gMenuSelection + 3) % 4;
         if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % 4;
-        if (gMenuSelection < 3) gCpuDifficulty = gMenuSelection;
-        if (down & KEY_LEFT) {
+        if (gMenuSelection == 0 && (down & KEY_LEFT))
+            gPlayerSpecies[0] = (gPlayerSpecies[0] + ARENA2D_ROSTER_COUNT - 1) % ARENA2D_ROSTER_COUNT;
+        if (gMenuSelection == 0 && (down & KEY_RIGHT))
+            gPlayerSpecies[0] = (gPlayerSpecies[0] + 1) % ARENA2D_ROSTER_COUNT;
+        if (gMenuSelection == 1 && (down & KEY_LEFT))
+            gOpponentSpecies = (gOpponentSpecies + ARENA2D_ROSTER_COUNT - 1) % ARENA2D_ROSTER_COUNT;
+        if (gMenuSelection == 1 && (down & KEY_RIGHT))
+            gOpponentSpecies = (gOpponentSpecies + 1) % ARENA2D_ROSTER_COUNT;
+        if (gMenuSelection == 2 && (down & KEY_LEFT))
             gCpuDifficulty = (gCpuDifficulty + 2) % 3;
-            gMenuSelection = gCpuDifficulty;
-        }
-        if (down & KEY_RIGHT) {
+        if (gMenuSelection == 2 && (down & KEY_RIGHT))
             gCpuDifficulty = (gCpuDifficulty + 1) % 3;
-            gMenuSelection = gCpuDifficulty;
-        }
         if ((down & (KEY_A | KEY_START)) && gMenuSelection == 3)
             startMode(MODE_CPU);
         break;
@@ -1863,12 +1849,21 @@ static void handleMenuInput(u32 down)
         if (down & (KEY_A | KEY_START)) startMode(MODE_RUN);
         break;
     case PAGE_TEAMS:
-        if (down & KEY_UP) gTeamSlot = (gTeamSlot + TEAM_SIZE - 1) % TEAM_SIZE;
-        if (down & KEY_DOWN) gTeamSlot = (gTeamSlot + 1) % TEAM_SIZE;
-        if (down & KEY_LEFT) changePlayerSpecies(gTeamSlot, -1);
-        if (down & KEY_RIGHT) changePlayerSpecies(gTeamSlot, 1);
-        if (down & KEY_A) gTeamSlot = (gTeamSlot + 1) % TEAM_SIZE;
-        if (down & KEY_START) startMode(MODE_QUICK);
+        if (down & (KEY_UP | KEY_DOWN)) {
+            int row = gMenuSelection / 7;
+            int col = gMenuSelection % 7;
+            row = down & KEY_UP ? (row + 4) % 5 : (row + 1) % 5;
+            gMenuSelection = row * 7 + col;
+            if (gMenuSelection >= ARENA2D_ROSTER_COUNT)
+                gMenuSelection = ARENA2D_ROSTER_COUNT - 1;
+        }
+        if (down & KEY_LEFT) gMenuSelection = (gMenuSelection + ARENA2D_ROSTER_COUNT - 1) % ARENA2D_ROSTER_COUNT;
+        if (down & KEY_RIGHT) gMenuSelection = (gMenuSelection + 1) % ARENA2D_ROSTER_COUNT;
+        if (down & KEY_A) selectPlayerSpecies(0, gMenuSelection);
+        if (down & KEY_START) {
+            selectPlayerSpecies(0, gMenuSelection);
+            startMode(MODE_QUICK);
+        }
         break;
     case PAGE_SETTINGS:
         if (down & KEY_UP) gMenuSelection = (gMenuSelection + 2) % 3;
@@ -1927,25 +1922,42 @@ static void handleResultInput(u32 down)
 {
     if (down & KEY_B) { gScene = SCENE_TITLE; setMenuPage(PAGE_HOME); return; }
     if (!(down & KEY_A)) return;
+    if (gRoundWins[0] < 2 && gRoundWins[1] < 2) {
+        ++gRoundNumber;
+        resetBattle();
+        return;
+    }
     if (gGameMode == MODE_STORY) {
         if (gWinner == 0 && gStoryStage < 15) {
             ++gStoryStage;
             if (gStoryStage > gStoryUnlocked) gStoryUnlocked = gStoryStage;
+            gRoundWins[0] = gRoundWins[1] = 0;
+            gRoundNumber = 1;
             resetBattle();
         } else if (gWinner == 0) {
             gScene = SCENE_TITLE;
             setMenuPage(PAGE_STORY);
-        } else resetBattle();
+        } else {
+            gRoundWins[0] = gRoundWins[1] = 0;
+            gRoundNumber = 1;
+            resetBattle();
+        }
     } else if (gGameMode == MODE_RUN) {
         if (gWinner == 0 && gRunFloor < 6) {
             ++gRunFloor;
+            gRoundWins[0] = gRoundWins[1] = 0;
+            gRoundNumber = 1;
             resetBattle();
         } else {
             gScene = SCENE_TITLE;
             setMenuPage(PAGE_RUN);
             if (gWinner != 0) gRunFloor = 1;
         }
-    } else resetBattle();
+    } else {
+        gRoundWins[0] = gRoundWins[1] = 0;
+        gRoundNumber = 1;
+        resetBattle();
+    }
 }
 
 static void handleTouch(const touchPosition *touch)
@@ -1965,10 +1977,16 @@ static void handleTouch(const touchPosition *touch)
             gMenuSelection = (touch->py - 30) / 27;
             if (gMenuSelection >= 0 && gMenuSelection < 6) activatePlaySelection();
         } else if (gMenuPage == PAGE_CPU) {
-            if (touch->py >= 34 && touch->py < 111) {
-                gCpuDifficulty = (touch->py - 34) / 27;
-                gMenuSelection = gCpuDifficulty;
-            } else if (touch->py >= 125 && touch->py < 150) {
+            if (touch->py >= 31 && touch->py < 112) {
+                gMenuSelection = (touch->py - 31) / 27;
+                int direction = touch->px < 160 ? -1 : 1;
+                if (gMenuSelection == 0)
+                    gPlayerSpecies[0] = (gPlayerSpecies[0] + ARENA2D_ROSTER_COUNT + direction) % ARENA2D_ROSTER_COUNT;
+                else if (gMenuSelection == 1)
+                    gOpponentSpecies = (gOpponentSpecies + ARENA2D_ROSTER_COUNT + direction) % ARENA2D_ROSTER_COUNT;
+                else if (gMenuSelection == 2)
+                    gCpuDifficulty = (gCpuDifficulty + 3 + direction) % 3;
+            } else if (touch->py >= 120 && touch->py < 150) {
                 gMenuSelection = 3;
                 startMode(MODE_CPU);
             }
@@ -1982,14 +2000,14 @@ static void handleTouch(const touchPosition *touch)
         } else if (gMenuPage == PAGE_RUN && touch->py >= 40 && touch->py < 66)
             startMode(MODE_RUN);
         else if (gMenuPage == PAGE_TEAMS) {
-            if (touch->py >= 27 && touch->py < 105)
-                gTeamSlot = (touch->py - 27) / 26;
-            else if (touch->py >= 125 && touch->py < 200) {
-                int row = (touch->py - 125) / 25;
-                int col = touch->px >= 160 ? 1 : 0;
-                int species = (gPlayerSpecies[gTeamSlot] + row * 2 + col - 2 +
-                               ARENA2D_ROSTER_COUNT) % ARENA2D_ROSTER_COUNT;
-                selectPlayerSpecies(gTeamSlot, species);
+            if (touch->py >= 30 && touch->py < 200) {
+                int row = (touch->py - 30) / 34;
+                int col = touch->px / 45;
+                int species = row * 7 + col;
+                if (species >= 0 && species < ARENA2D_ROSTER_COUNT) {
+                    gMenuSelection = species;
+                    selectPlayerSpecies(0, species);
+                }
             } else if (touch->py >= 216) startMode(MODE_QUICK);
         } else if (gMenuPage == PAGE_SETTINGS && touch->py >= 35 && touch->py < 122) {
             gMenuSelection = (touch->py - 35) / 29;
@@ -2019,18 +2037,12 @@ static void handleTouch(const touchPosition *touch)
     }
     if (gScene != SCENE_BATTLE) return;
 
-    if (touch->py >= 23 && touch->py <= 66) {
-        int slot = touch->px / 103;
-        if (slot >= 0 && slot < TEAM_SIZE) switchPokemon(0, slot);
-        return;
-    }
-    if (touch->py >= 91 && touch->py <= 140) {
-        if (touch->px < 108) useBasic(0);
-        else if (touch->px < 212) useSkill(0);
-        else useSkill(1);
-    } else if (touch->py >= 148 && touch->py <= 197) {
-        if (touch->px < 108) useSkill(2);
-        else if (touch->px < 212) useDash();
+    if (touch->py >= 85 && touch->py <= 162) {
+        int column = touch->px / 64;
+        if (column == 0) useBasic(0);
+        else if (column == 1) useSkill(0);
+        else if (column == 2) useSkill(1);
+        else if (column == 3) useSkill(2);
         else useSkill(3);
     }
 }
@@ -2071,11 +2083,22 @@ int main(int argc, char **argv)
     }
     gMenuBackground = C2D_SpriteSheetGetImage(
         gEnvironmentAtlas, poke2d_background_indices_bg_menu_background_idx);
-    gWebStadium = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_web_stadium_idx);
+    gArenaImages[0] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_stadium_idx);
+    gArenaImages[1] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_neon_idx);
+    gArenaImages[2] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_crater_idx);
+    gArenaImages[3] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_ruinas_idx);
+    gWebTitle = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_web_title_idx);
     gGameLogo = C2D_SpriteSheetGetImage(
         gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
+    C3D_TexSetFilter(gWebTitle.tex, GPU_LINEAR, GPU_LINEAR);
+    for (int i = 0; i < ARENA_COUNT; ++i)
+        C3D_TexSetFilter(gArenaImages[i].tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gGameLogo.tex, GPU_NEAREST, GPU_NEAREST);
     for (int i = 0; i < P2D_TEXT_COUNT; ++i) {
         gTextFill[i] = C2D_SpriteSheetGetImage(gFontAtlas, p2dTextIndex[i]);

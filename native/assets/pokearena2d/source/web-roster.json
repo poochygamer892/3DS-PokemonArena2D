@@ -1,0 +1,8269 @@
+{
+  "source": "PokeArena2D.com v0.65.1; music excluded",
+  "rules": {
+    "energiaInicial": 30,
+    "energiaMax": 100,
+    "energiaPorGolpeBasico": 6,
+    "energiaPorGolpeRecibido": 3,
+    "surgeUmbral": 80,
+    "surgeMult": 1.3,
+    "calorMax": 100,
+    "calorEnfriaRetraso": 0.6,
+    "calorEnfria": 20,
+    "sobrecargaDur": 2,
+    "comboVentana": 2.2,
+    "comboBonusEnergia": 10,
+    "energiaFisico": 1.3,
+    "energiaInicialFisico": 60,
+    "invulDash": 0.25,
+    "rondasParaGanar": 2,
+    "tiempoRonda": 99,
+    "tablaTipos": false,
+    "superEficaz": 1.35,
+    "pocoEficaz": 0.8,
+    "marcaMult": 1.15,
+    "ultiMax": 100,
+    "ultiPorDanoHecho": 1.1,
+    "ultiPorDanoRecibido": 0.75,
+    "ultiPasiva": 0.9,
+    "ultiPorDanoUlti": 0.5,
+    "ultiTopeUlti": 0.5,
+    "ultiCd": 5,
+    "cargaRespiro": 0.35,
+    "expEvolucion": [
+      55,
+      100
+    ],
+    "expPorDanoHecho": 1,
+    "expPorDanoRecibido": 0.5,
+    "expPasiva": 1,
+    "curaEvolucion": 0.3,
+    "expPorLinea": {
+      "L3": [
+        50,
+        90
+      ]
+    },
+    "expArrastre": true,
+    "curaPerdida": {
+      "L3": 0.6,
+      "L2": 0.6,
+      "LEG": 0.4,
+      "PU": 0.4
+    },
+    "vidaGlobal": 1.8,
+    "imanDisparo": 0.3,
+    "imanGiro": 0.8,
+    "imanCono": 0.8,
+    "giroCarga": 8,
+    "escalaPorEtapa": 0.12,
+    "escalaMega": 0.06,
+    "danoGlobal": 1.3,
+    "basicosNeutros": true,
+    "estadoGolpes": 3,
+    "estadoVentana": 3,
+    "estadoDur": 3,
+    "estadoGolpesHabilidad": 2,
+    "curaTras": 4,
+    "curaFuera": 1,
+    "clash": {
+      "vel": 900,
+      "ulti": 1.3,
+      "arrasa": 2.2,
+      "pulso": 0.14,
+      "crit": 0.08,
+      "critVida": 0.2,
+      "critMult": 1.7,
+      "extra": 0.25,
+      "colapso": 10,
+      "minimo": 0.3,
+      "cierre": 0.08,
+      "remate": 0.45,
+      "crece": 1000,
+      "suerte": 0.25,
+      "bolaRayo": 3
+    }
+  },
+  "roster": [
+    {
+      "id": "bulbasaur",
+      "dex": "0001",
+      "name": "BULBASAUR",
+      "types": [
+        "GRASS",
+        "POISON"
+      ],
+      "baseForm": 0,
+      "evolutionForms": [
+        1,
+        2
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "charmander",
+      "dex": "0004",
+      "name": "CHARMANDER",
+      "types": [
+        "FIRE"
+      ],
+      "baseForm": 3,
+      "evolutionForms": [
+        4,
+        5
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        6
+      ],
+      "scale": 1
+    },
+    {
+      "id": "squirtle",
+      "dex": "0007",
+      "name": "SQUIRTLE",
+      "types": [
+        "WATER"
+      ],
+      "baseForm": 7,
+      "evolutionForms": [
+        8,
+        9
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "zubat",
+      "dex": "0041",
+      "name": "ZUBAT",
+      "types": [
+        "POISON",
+        "FLYING"
+      ],
+      "baseForm": 10,
+      "evolutionForms": [
+        11,
+        12
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "machop",
+      "dex": "0066",
+      "name": "MACHOP",
+      "types": [
+        "FIGHTING"
+      ],
+      "baseForm": 13,
+      "evolutionForms": [
+        14,
+        15
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "ponyta",
+      "dex": "0077",
+      "name": "PONYTA",
+      "types": [
+        "FIRE"
+      ],
+      "baseForm": 16,
+      "evolutionForms": [
+        17,
+        18
+      ],
+      "evolutionThresholds": [
+        45,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "onix",
+      "dex": "0095",
+      "name": "ONIX",
+      "types": [
+        "ROCK",
+        "GROUND"
+      ],
+      "baseForm": 19,
+      "evolutionForms": [
+        20,
+        21
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        22
+      ],
+      "scale": 1
+    },
+    {
+      "id": "exeggcute",
+      "dex": "0102",
+      "name": "EXEGGCUTE",
+      "types": [
+        "GRASS",
+        "PSYCHIC"
+      ],
+      "baseForm": 23,
+      "evolutionForms": [
+        24,
+        25
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "magikarp",
+      "dex": "0129",
+      "name": "MAGIKARP",
+      "types": [
+        "WATER"
+      ],
+      "baseForm": 26,
+      "evolutionForms": [
+        27,
+        28
+      ],
+      "evolutionThresholds": [
+        40,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "munchlax",
+      "dex": "0446",
+      "name": "MUNCHLAX",
+      "types": [
+        "NORMAL"
+      ],
+      "baseForm": 29,
+      "evolutionForms": [
+        30,
+        31
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "zapdos",
+      "dex": "0145",
+      "name": "ZAPDOS",
+      "types": [
+        "ELECTRIC",
+        "FLYING"
+      ],
+      "baseForm": 32,
+      "evolutionForms": [
+        33,
+        34
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "pichu",
+      "dex": "0172",
+      "name": "PICHU",
+      "types": [
+        "ELECTRIC"
+      ],
+      "baseForm": 35,
+      "evolutionForms": [
+        36,
+        37
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "raikou",
+      "dex": "0243",
+      "name": "RAIKOU",
+      "types": [
+        "ELECTRIC"
+      ],
+      "baseForm": 38,
+      "evolutionForms": [
+        39,
+        40
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "entei",
+      "dex": "0244",
+      "name": "ENTEI",
+      "types": [
+        "FIRE"
+      ],
+      "baseForm": 41,
+      "evolutionForms": [
+        42,
+        43
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "suicune",
+      "dex": "0245",
+      "name": "SUICUNE",
+      "types": [
+        "WATER"
+      ],
+      "baseForm": 44,
+      "evolutionForms": [
+        45,
+        46
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "seedot",
+      "dex": "0273",
+      "name": "SEEDOT",
+      "types": [
+        "GRASS"
+      ],
+      "baseForm": 47,
+      "evolutionForms": [
+        48,
+        49
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "buneary",
+      "dex": "0427",
+      "name": "BUNEARY",
+      "types": [
+        "NORMAL"
+      ],
+      "baseForm": 50,
+      "evolutionForms": [
+        51,
+        52
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        53
+      ],
+      "scale": 1
+    },
+    {
+      "id": "riolu",
+      "dex": "0447",
+      "name": "RIOLU",
+      "types": [
+        "FIGHTING"
+      ],
+      "baseForm": 54,
+      "evolutionForms": [
+        55,
+        56
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        57
+      ],
+      "scale": 1
+    },
+    {
+      "id": "lugia",
+      "dex": "0249",
+      "name": "LUGIA",
+      "types": [
+        "PSYCHIC",
+        "FLYING"
+      ],
+      "baseForm": 58,
+      "evolutionForms": [
+        59,
+        60
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        61
+      ],
+      "scale": 1
+    },
+    {
+      "id": "hooh",
+      "dex": "0250",
+      "name": "HO-OH",
+      "types": [
+        "FIRE",
+        "FLYING"
+      ],
+      "baseForm": 62,
+      "evolutionForms": [
+        63,
+        64
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "regigigas",
+      "dex": "0486",
+      "name": "REGIGIGAS",
+      "types": [
+        "NORMAL"
+      ],
+      "baseForm": 65,
+      "evolutionForms": [
+        66,
+        67
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "victini",
+      "dex": "0494",
+      "name": "VICTINI",
+      "types": [
+        "PSYCHIC",
+        "FIRE"
+      ],
+      "baseForm": 68,
+      "evolutionForms": [
+        69,
+        70
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "joltik",
+      "dex": "0595",
+      "name": "JOLTIK",
+      "types": [
+        "BUG",
+        "ELECTRIC"
+      ],
+      "baseForm": 71,
+      "evolutionForms": [
+        72,
+        73
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "dreepy",
+      "dex": "0885",
+      "name": "DREEPY",
+      "types": [
+        "DRAGON",
+        "GHOST"
+      ],
+      "baseForm": 74,
+      "evolutionForms": [
+        75,
+        76
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "froakie",
+      "dex": "0656",
+      "name": "FROAKIE",
+      "types": [
+        "WATER"
+      ],
+      "baseForm": 77,
+      "evolutionForms": [
+        78,
+        79
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "mewtwo",
+      "dex": "0150",
+      "name": "MEWTWO",
+      "types": [
+        "PSYCHIC"
+      ],
+      "baseForm": 80,
+      "evolutionForms": [
+        81,
+        82
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        83
+      ],
+      "scale": 1.15
+    },
+    {
+      "id": "arceus",
+      "dex": "0493",
+      "name": "ARCEUS",
+      "types": [
+        "NORMAL"
+      ],
+      "baseForm": 84,
+      "evolutionForms": [
+        85,
+        86
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "rayquaza",
+      "dex": "0384",
+      "name": "RAYQUAZA",
+      "types": [
+        "DRAGON",
+        "FLYING"
+      ],
+      "baseForm": 87,
+      "evolutionForms": [
+        88,
+        89
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        90
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "gastly",
+      "dex": "0092",
+      "name": "GASTLY",
+      "types": [
+        "GHOST",
+        "POISON"
+      ],
+      "baseForm": 91,
+      "evolutionForms": [
+        92,
+        93
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "articuno",
+      "dex": "0144",
+      "name": "ARTICUNO",
+      "types": [
+        "ICE",
+        "FLYING"
+      ],
+      "baseForm": 94,
+      "evolutionForms": [
+        95,
+        96
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "deoxys",
+      "dex": "0386",
+      "name": "DEOXYS",
+      "types": [
+        "PSYCHIC"
+      ],
+      "baseForm": 97,
+      "evolutionForms": [
+        98,
+        99
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.4,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "nincada",
+      "dex": "0290",
+      "name": "NINCADA",
+      "types": [
+        "BUG",
+        "GROUND"
+      ],
+      "baseForm": 100,
+      "evolutionForms": [
+        101,
+        102
+      ],
+      "evolutionThresholds": [
+        55,
+        100
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    },
+    {
+      "id": "torchic",
+      "dex": "0255",
+      "name": "TORCHIC",
+      "types": [
+        "FIRE"
+      ],
+      "baseForm": 103,
+      "evolutionForms": [
+        104,
+        105
+      ],
+      "evolutionThresholds": [
+        50,
+        90
+      ],
+      "evolutionHeal": 0.6,
+      "megaForms": [
+        -1,
+        -1,
+        -1
+      ],
+      "scale": 1
+    }
+  ],
+  "forms": [
+    {
+      "name": "BULBASAUR",
+      "dex": "0001",
+      "types": [
+        "GRASS",
+        "POISON"
+      ],
+      "hp": 70,
+      "speed": 118,
+      "attack": 0.92,
+      "defense": 0.95,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Razor Leaf",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.9,
+          "cooldown": 0.55,
+          "range": 190,
+          "energy": 0,
+          "velocity": 320
+        },
+        {
+          "name": "Growth",
+          "type": "GRASS",
+          "kind": "crecimiento",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 3,
+          "range": 180,
+          "energy": 24,
+          "velocity": 260
+        },
+        {
+          "name": "Vine Whip",
+          "type": "GRASS",
+          "kind": "dash",
+          "effect": "slow",
+          "power": 4,
+          "cooldown": 6,
+          "range": 95,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Leech Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4,
+          "cooldown": 7,
+          "range": 200,
+          "energy": 30,
+          "velocity": 250
+        },
+        {
+          "name": "Solar Beam",
+          "type": "GRASS",
+          "kind": "chorro",
+          "effect": "",
+          "power": 24,
+          "cooldown": 1,
+          "range": 260,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "IVYSAUR",
+      "dex": "0002",
+      "types": [
+        "GRASS",
+        "POISON"
+      ],
+      "hp": 80,
+      "speed": 117,
+      "attack": 1,
+      "defense": 1.04,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Razor Leaf",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.8,
+          "cooldown": 0.55,
+          "range": 200,
+          "energy": 0,
+          "velocity": 320
+        },
+        {
+          "name": "Growth",
+          "type": "GRASS",
+          "kind": "crecimiento",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 3,
+          "range": 180,
+          "energy": 28,
+          "velocity": 260
+        },
+        {
+          "name": "Vine Whip",
+          "type": "GRASS",
+          "kind": "dash",
+          "effect": "slow",
+          "power": 4,
+          "cooldown": 6,
+          "range": 95,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Leech Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4,
+          "cooldown": 7,
+          "range": 200,
+          "energy": 30,
+          "velocity": 250
+        },
+        {
+          "name": "Solar Beam",
+          "type": "GRASS",
+          "kind": "chorro",
+          "effect": "",
+          "power": 28,
+          "cooldown": 1,
+          "range": 290,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "VENUSAUR",
+      "dex": "0003",
+      "types": [
+        "GRASS",
+        "POISON"
+      ],
+      "hp": 98,
+      "speed": 106,
+      "attack": 1.02,
+      "defense": 1.16,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Razor Leaf",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 320
+        },
+        {
+          "name": "Growth",
+          "type": "GRASS",
+          "kind": "crecimiento",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 3,
+          "range": 180,
+          "energy": 28,
+          "velocity": 260
+        },
+        {
+          "name": "Vine Whip",
+          "type": "GRASS",
+          "kind": "dash",
+          "effect": "slow",
+          "power": 4,
+          "cooldown": 6,
+          "range": 95,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Leech Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4,
+          "cooldown": 7,
+          "range": 200,
+          "energy": 30,
+          "velocity": 250
+        },
+        {
+          "name": "Solar Beam",
+          "type": "GRASS",
+          "kind": "chorro",
+          "effect": "",
+          "power": 32,
+          "cooldown": 1,
+          "range": 310,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "CHARMANDER",
+      "dex": "0004",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 66,
+      "speed": 126,
+      "attack": 1,
+      "defense": 0.84,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Ember",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.55,
+          "range": 170,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Flamethrower",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 15,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Spin",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 9,
+          "cooldown": 9.5,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Blast",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 20,
+          "cooldown": 1,
+          "range": 230,
+          "energy": 0,
+          "velocity": 250
+        }
+      ]
+    },
+    {
+      "name": "CHARMELEON",
+      "dex": "0005",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 74,
+      "speed": 128,
+      "attack": 1.08,
+      "defense": 0.88,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Ember",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.5,
+          "cooldown": 0.55,
+          "range": 185,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Flamethrower",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 15,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Spin",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 9,
+          "cooldown": 9.5,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Blast",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 20,
+          "cooldown": 1,
+          "range": 230,
+          "energy": 0,
+          "velocity": 250
+        }
+      ]
+    },
+    {
+      "name": "CHARIZARD",
+      "dex": "0006",
+      "types": [
+        "FIRE",
+        "FLYING"
+      ],
+      "hp": 80,
+      "speed": 130,
+      "attack": 1.17,
+      "defense": 0.94,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Ember",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 6,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 280
+        },
+        {
+          "name": "Flamethrower",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 15,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Fly",
+          "type": "FLYING",
+          "kind": "vuelo",
+          "effect": "stun",
+          "power": 9,
+          "cooldown": 10,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Spin",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 9,
+          "cooldown": 9.5,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blast Burn",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "slow",
+          "power": 26.4,
+          "cooldown": 1,
+          "range": 330,
+          "energy": 0,
+          "velocity": 250
+        }
+      ]
+    },
+    {
+      "name": "MEGA CHARIZARD X",
+      "dex": "0006-0001",
+      "types": [
+        "FIRE",
+        "DRAGON"
+      ],
+      "hp": 80,
+      "speed": 134,
+      "attack": 1.3199999999999998,
+      "defense": 1.06,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Ember",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 6,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 280
+        },
+        {
+          "name": "Flamethrower",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 21,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Fly",
+          "type": "FLYING",
+          "kind": "vuelo",
+          "effect": "stun",
+          "power": 9,
+          "cooldown": 10,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Spin",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 9,
+          "cooldown": 9.5,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blast Burn",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "slow",
+          "power": 30.8,
+          "cooldown": 1,
+          "range": 330,
+          "energy": 0,
+          "velocity": 250
+        }
+      ]
+    },
+    {
+      "name": "SQUIRTLE",
+      "dex": "0007",
+      "types": [
+        "WATER"
+      ],
+      "hp": 68,
+      "speed": 120,
+      "attack": 1.01,
+      "defense": 1.05,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Water Gun",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.5,
+          "cooldown": 0.6,
+          "range": 190,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Bubble Beam",
+          "type": "WATER",
+          "kind": "burbujas",
+          "effect": "",
+          "power": 20,
+          "cooldown": 6,
+          "range": 190,
+          "energy": 35,
+          "velocity": 230
+        },
+        {
+          "name": "Rapid Spin",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 6,
+          "range": 90,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Typhoon",
+          "type": "WATER",
+          "kind": "caparazon",
+          "effect": "",
+          "power": 1.6,
+          "cooldown": 13.5,
+          "range": 70,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 18,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "WARTORTLE",
+      "dex": "0008",
+      "types": [
+        "WATER"
+      ],
+      "hp": 78,
+      "speed": 117,
+      "attack": 1.08,
+      "defense": 1.08,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Water Gun",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 6.3,
+          "cooldown": 0.6,
+          "range": 200,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Bubble Beam",
+          "type": "WATER",
+          "kind": "burbujas",
+          "effect": "",
+          "power": 21.9,
+          "cooldown": 6,
+          "range": 200,
+          "energy": 35,
+          "velocity": 230
+        },
+        {
+          "name": "Rapid Spin",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4.6,
+          "cooldown": 6,
+          "range": 90,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Typhoon",
+          "type": "WATER",
+          "kind": "caparazon",
+          "effect": "",
+          "power": 2.1,
+          "cooldown": 13.5,
+          "range": 82,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 23,
+          "cooldown": 1,
+          "range": 255,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "BLASTOISE",
+      "dex": "0009",
+      "types": [
+        "WATER"
+      ],
+      "hp": 88,
+      "speed": 112,
+      "attack": 1.19,
+      "defense": 1.1,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Water Gun",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3.44,
+          "cooldown": 0.6,
+          "range": 215,
+          "energy": 0,
+          "velocity": 320
+        },
+        {
+          "name": "Bubble Beam",
+          "type": "WATER",
+          "kind": "burbujas",
+          "effect": "",
+          "power": 25,
+          "cooldown": 6,
+          "range": 210,
+          "energy": 35,
+          "velocity": 230
+        },
+        {
+          "name": "Rapid Spin",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 6,
+          "range": 90,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Typhoon",
+          "type": "WATER",
+          "kind": "caparazon",
+          "effect": "",
+          "power": 2.5,
+          "cooldown": 13.5,
+          "range": 95,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Cannon",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 28.4,
+          "cooldown": 1,
+          "range": 270,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ZUBAT",
+      "dex": "0041",
+      "types": [
+        "POISON",
+        "FLYING"
+      ],
+      "hp": 59,
+      "speed": 160,
+      "attack": 0.89,
+      "defense": 0.82,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Wing Attack",
+          "type": "FLYING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 3.8,
+          "cooldown": 0.46,
+          "range": 46,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Air Cutter",
+          "type": "FLYING",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 190,
+          "energy": 25,
+          "velocity": 330
+        },
+        {
+          "name": "Acrobatics",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 3.5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Leech Life",
+          "type": "BUG",
+          "kind": "golpe",
+          "effect": "drain",
+          "power": 8,
+          "cooldown": 8,
+          "range": 46,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Supersonic",
+          "type": "NORMAL",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 6,
+          "cooldown": 1,
+          "range": 150,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GOLBAT",
+      "dex": "0042",
+      "types": [
+        "POISON",
+        "FLYING"
+      ],
+      "hp": 69,
+      "speed": 164,
+      "attack": 0.98,
+      "defense": 0.88,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Wing Attack",
+          "type": "FLYING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.2,
+          "cooldown": 0.46,
+          "range": 46,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Air Cutter",
+          "type": "FLYING",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.6,
+          "cooldown": 4,
+          "range": 190,
+          "energy": 25,
+          "velocity": 330
+        },
+        {
+          "name": "Acrobatics",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 3.5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Leech Life",
+          "type": "BUG",
+          "kind": "golpe",
+          "effect": "drain",
+          "power": 10,
+          "cooldown": 8,
+          "range": 46,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Supersonic",
+          "type": "NORMAL",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 6,
+          "cooldown": 1,
+          "range": 150,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "CROBAT",
+      "dex": "0169",
+      "types": [
+        "POISON",
+        "FLYING"
+      ],
+      "hp": 79,
+      "speed": 178,
+      "attack": 1.07,
+      "defense": 0.92,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Wing Attack",
+          "type": "FLYING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.4,
+          "cooldown": 0.42,
+          "range": 46,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Air Cutter",
+          "type": "FLYING",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 190,
+          "energy": 25,
+          "velocity": 330
+        },
+        {
+          "name": "Acrobatics",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 3.5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Leech Life",
+          "type": "BUG",
+          "kind": "golpe",
+          "effect": "drain",
+          "power": 11,
+          "cooldown": 8,
+          "range": 46,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Cross Poison",
+          "type": "POISON",
+          "kind": "embestidas",
+          "effect": "poison",
+          "power": 6,
+          "cooldown": 1,
+          "range": 150,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MACHOP",
+      "dex": "0066",
+      "types": [
+        "FIGHTING"
+      ],
+      "hp": 70,
+      "speed": 124,
+      "attack": 1.08,
+      "defense": 0.94,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Karate Chop",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 3.8,
+          "cooldown": 0.6,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Low Sweep",
+          "type": "FIGHTING",
+          "kind": "dash",
+          "effect": "slow",
+          "power": 7,
+          "cooldown": 7,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Bullet Punch",
+          "type": "STEEL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 7,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Revenge",
+          "type": "FIGHTING",
+          "kind": "contra",
+          "effect": "stun",
+          "power": 9,
+          "cooldown": 13,
+          "range": 56,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Seismic Toss",
+          "type": "FIGHTING",
+          "kind": "lanzamiento",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 1,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MACHOKE",
+      "dex": "0067",
+      "types": [
+        "FIGHTING"
+      ],
+      "hp": 84,
+      "speed": 122,
+      "attack": 1.17,
+      "defense": 1,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Karate Chop",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 3,
+          "cooldown": 0.6,
+          "range": 54,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Low Sweep",
+          "type": "FIGHTING",
+          "kind": "dash",
+          "effect": "slow",
+          "power": 8,
+          "cooldown": 5.5,
+          "range": 115,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Bullet Punch",
+          "type": "STEEL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 5.5,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Revenge",
+          "type": "FIGHTING",
+          "kind": "contra",
+          "effect": "stun",
+          "power": 10,
+          "cooldown": 10,
+          "range": 56,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Seismic Toss",
+          "type": "FIGHTING",
+          "kind": "lanzamiento",
+          "effect": "stun",
+          "power": 14,
+          "cooldown": 1,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MACHAMP",
+      "dex": "0068",
+      "types": [
+        "FIGHTING"
+      ],
+      "hp": 113,
+      "speed": 120,
+      "attack": 1.25,
+      "defense": 1.06,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Karate Chop",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 1.9,
+          "cooldown": 0.6,
+          "range": 58,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dynamic Punch",
+          "type": "FIGHTING",
+          "kind": "dash",
+          "effect": "stun",
+          "power": 11,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Bullet Punch",
+          "type": "STEEL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Revenge",
+          "type": "FIGHTING",
+          "kind": "contra",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 7,
+          "range": 56,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Seismic Toss",
+          "type": "FIGHTING",
+          "kind": "lanzamiento",
+          "effect": "stun",
+          "power": 17,
+          "cooldown": 1,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "PONYTA",
+      "dex": "0077",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 52,
+      "speed": 146,
+      "attack": 0.84,
+      "defense": 0.86,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Stomp",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 3.7,
+          "cooldown": 0.58,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Flamethrower",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 15,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Flame Charge",
+          "type": "FIRE",
+          "kind": "dash",
+          "effect": "burn",
+          "power": 4,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Bounce",
+          "type": "FLYING",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 10,
+          "cooldown": 9,
+          "range": 130,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Flare Blitz",
+          "type": "FIRE",
+          "kind": "embestidas",
+          "effect": "burn",
+          "power": 5,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RAPIDASH",
+      "dex": "0078",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 71,
+      "speed": 152,
+      "attack": 0.96,
+      "defense": 0.92,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Stomp",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.6,
+          "cooldown": 0.58,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Flamethrower",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 15,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Flame Charge",
+          "type": "FIRE",
+          "kind": "dash",
+          "effect": "burn",
+          "power": 4,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Megahorn",
+          "type": "BUG",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 13,
+          "cooldown": 9,
+          "range": 56,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Flare Blitz",
+          "type": "FIRE",
+          "kind": "embestidas",
+          "effect": "burn",
+          "power": 4.5,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RAPIDASH",
+      "dex": "0078",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 74,
+      "speed": 154,
+      "attack": 0.99,
+      "defense": 0.94,
+      "scale": 1.16,
+      "moves": [
+        {
+          "name": "Stomp",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.58,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Flamethrower",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 15,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Flame Charge",
+          "type": "FIRE",
+          "kind": "dash",
+          "effect": "burn",
+          "power": 4,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Megahorn",
+          "type": "BUG",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 13.5,
+          "cooldown": 9,
+          "range": 56,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Flare Blitz",
+          "type": "FIRE",
+          "kind": "embestidas",
+          "effect": "burn",
+          "power": 4.5,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ONIX",
+      "dex": "0095",
+      "types": [
+        "ROCK",
+        "GROUND"
+      ],
+      "hp": 76,
+      "speed": 106,
+      "attack": 1.053,
+      "defense": 1.12,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Rock Throw",
+          "type": "ROCK",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.72,
+          "cooldown": 0.62,
+          "range": 175,
+          "energy": 0,
+          "velocity": 240
+        },
+        {
+          "name": "Rock Slide",
+          "type": "ROCK",
+          "kind": "lluvia",
+          "effect": "",
+          "power": 5,
+          "cooldown": 8,
+          "range": 190,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dig",
+          "type": "GROUND",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 6,
+          "cooldown": 8,
+          "range": 40,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Earthquake",
+          "type": "GROUND",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 9,
+          "cooldown": 11,
+          "range": 80,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Stone Edge",
+          "type": "ROCK",
+          "kind": "erupcion",
+          "effect": "",
+          "power": 2.5,
+          "cooldown": 1,
+          "range": 22,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "STEELIX",
+      "dex": "0208",
+      "types": [
+        "STEEL",
+        "GROUND"
+      ],
+      "hp": 88,
+      "speed": 102,
+      "attack": 1.264,
+      "defense": 1.22,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Iron Tail",
+          "type": "STEEL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6.6,
+          "cooldown": 0.75,
+          "range": 66,
+          "energy": 0,
+          "velocity": 240
+        },
+        {
+          "name": "Gyro Ball",
+          "type": "STEEL",
+          "kind": "dash",
+          "effect": "",
+          "power": 12,
+          "cooldown": 7,
+          "range": 190,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dig",
+          "type": "GROUND",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 6,
+          "cooldown": 8,
+          "range": 40,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Earthquake",
+          "type": "GROUND",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 9,
+          "cooldown": 11,
+          "range": 88,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Heavy Slam",
+          "type": "STEEL",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 24,
+          "cooldown": 1,
+          "range": 46,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "STEELIX",
+      "dex": "0208",
+      "types": [
+        "STEEL",
+        "GROUND"
+      ],
+      "hp": 92,
+      "speed": 102,
+      "attack": 1.474,
+      "defense": 1.24,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Iron Tail",
+          "type": "STEEL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6.6,
+          "cooldown": 0.75,
+          "range": 68,
+          "energy": 0,
+          "velocity": 240
+        },
+        {
+          "name": "Gyro Ball",
+          "type": "STEEL",
+          "kind": "dash",
+          "effect": "",
+          "power": 12,
+          "cooldown": 7,
+          "range": 190,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dig",
+          "type": "GROUND",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 6,
+          "cooldown": 8,
+          "range": 40,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Earthquake",
+          "type": "GROUND",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 9,
+          "cooldown": 11,
+          "range": 96,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Heavy Slam",
+          "type": "STEEL",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 24,
+          "cooldown": 1,
+          "range": 52,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MEGA STEELIX",
+      "dex": "0208-0001",
+      "types": [
+        "STEEL",
+        "GROUND"
+      ],
+      "hp": 92,
+      "speed": 102,
+      "attack": 1.895,
+      "defense": 1.3599999999999999,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Iron Tail",
+          "type": "STEEL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6.6,
+          "cooldown": 0.75,
+          "range": 68,
+          "energy": 0,
+          "velocity": 240
+        },
+        {
+          "name": "Gyro Ball",
+          "type": "STEEL",
+          "kind": "dash",
+          "effect": "",
+          "power": 12,
+          "cooldown": 7,
+          "range": 190,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dig",
+          "type": "GROUND",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 6,
+          "cooldown": 8,
+          "range": 40,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Earthquake",
+          "type": "GROUND",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 9,
+          "cooldown": 11,
+          "range": 112,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Heavy Slam",
+          "type": "STEEL",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 24,
+          "cooldown": 1,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "EXEGGCUTE",
+      "dex": "0102",
+      "types": [
+        "GRASS",
+        "PSYCHIC"
+      ],
+      "hp": 72,
+      "speed": 120,
+      "attack": 1.05,
+      "defense": 1,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Bullet Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 1.9,
+          "cooldown": 0.55,
+          "range": 180,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Barrage",
+          "type": "NORMAL",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 6,
+          "range": 190,
+          "energy": 30,
+          "velocity": 240
+        },
+        {
+          "name": "Teleport",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 150,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hypnosis",
+          "type": "PSYCHIC",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 3,
+          "cooldown": 12,
+          "range": 114,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Egg Bomb",
+          "type": "NORMAL",
+          "kind": "lluvia",
+          "effect": "",
+          "power": 7,
+          "cooldown": 1,
+          "range": 220,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "EXEGGUTOR",
+      "dex": "0103",
+      "types": [
+        "GRASS",
+        "PSYCHIC"
+      ],
+      "hp": 98,
+      "speed": 110,
+      "attack": 1.24,
+      "defense": 1.08,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Bullet Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.2,
+          "cooldown": 0.55,
+          "range": 180,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Barrage",
+          "type": "NORMAL",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.3,
+          "cooldown": 6,
+          "range": 190,
+          "energy": 30,
+          "velocity": 240
+        },
+        {
+          "name": "Teleport",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 150,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hypnosis",
+          "type": "PSYCHIC",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 3,
+          "cooldown": 12,
+          "range": 114,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Egg Bomb",
+          "type": "NORMAL",
+          "kind": "lluvia",
+          "effect": "",
+          "power": 6.5,
+          "cooldown": 1,
+          "range": 220,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "EXEGGUTOR",
+      "dex": "0103",
+      "types": [
+        "GRASS",
+        "PSYCHIC"
+      ],
+      "hp": 102,
+      "speed": 110,
+      "attack": 1.27,
+      "defense": 1.1,
+      "scale": 1.16,
+      "moves": [
+        {
+          "name": "Bullet Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2,
+          "cooldown": 0.55,
+          "range": 180,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Barrage",
+          "type": "NORMAL",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.1,
+          "cooldown": 6,
+          "range": 190,
+          "energy": 30,
+          "velocity": 240
+        },
+        {
+          "name": "Teleport",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 150,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hypnosis",
+          "type": "PSYCHIC",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 3,
+          "cooldown": 12,
+          "range": 114,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Egg Bomb",
+          "type": "NORMAL",
+          "kind": "lluvia",
+          "effect": "",
+          "power": 6.5,
+          "cooldown": 1,
+          "range": 220,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MAGIKARP",
+      "dex": "0129",
+      "types": [
+        "WATER"
+      ],
+      "hp": 66,
+      "speed": 118,
+      "attack": 0.62,
+      "defense": 1.12,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Tackle",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 0.7,
+          "range": 42,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Flail",
+          "type": "NORMAL",
+          "kind": "rafaga",
+          "effect": "",
+          "power": 9,
+          "cooldown": 6,
+          "range": 46,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Splash",
+          "type": "WATER",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 4,
+          "range": 80,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Bounce",
+          "type": "FLYING",
+          "kind": "salto",
+          "effect": "slow",
+          "power": 10,
+          "cooldown": 9,
+          "range": 120,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Splash",
+          "type": "NORMAL",
+          "kind": "chapoteo",
+          "effect": "",
+          "power": 0,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GYARADOS",
+      "dex": "0130",
+      "types": [
+        "WATER",
+        "FLYING"
+      ],
+      "hp": 104,
+      "speed": 132,
+      "attack": 1.34,
+      "defense": 1.06,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Aqua Tail",
+          "type": "WATER",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6,
+          "cooldown": 0.68,
+          "range": 64,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Tail",
+          "type": "DRAGON",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 8,
+          "range": 62,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Waterfall",
+          "type": "WATER",
+          "kind": "dash",
+          "effect": "stun",
+          "power": 5,
+          "cooldown": 6,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Dance",
+          "type": "DRAGON",
+          "kind": "potenciar",
+          "effect": "slow",
+          "power": 10,
+          "cooldown": 3,
+          "range": 120,
+          "energy": 20,
+          "velocity": 260
+        },
+        {
+          "name": "Hyper Beam",
+          "type": "NORMAL",
+          "kind": "chorro",
+          "effect": "",
+          "power": 42,
+          "cooldown": 1,
+          "range": 440,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GYARADOS",
+      "dex": "0130",
+      "types": [
+        "WATER",
+        "FLYING"
+      ],
+      "hp": 107,
+      "speed": 134,
+      "attack": 1.36,
+      "defense": 1.08,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Aqua Tail",
+          "type": "WATER",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6.3,
+          "cooldown": 0.68,
+          "range": 64,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Tail",
+          "type": "DRAGON",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 12.5,
+          "cooldown": 8,
+          "range": 62,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Waterfall",
+          "type": "WATER",
+          "kind": "dash",
+          "effect": "stun",
+          "power": 5,
+          "cooldown": 6,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Dance",
+          "type": "DRAGON",
+          "kind": "potenciar",
+          "effect": "slow",
+          "power": 10,
+          "cooldown": 3,
+          "range": 120,
+          "energy": 20,
+          "velocity": 260
+        },
+        {
+          "name": "Hyper Beam",
+          "type": "NORMAL",
+          "kind": "chorro",
+          "effect": "",
+          "power": 42,
+          "cooldown": 1,
+          "range": 440,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MUNCHLAX",
+      "dex": "0446",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 70,
+      "speed": 104,
+      "attack": 1.12,
+      "defense": 1,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Lick",
+          "type": "GHOST",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.6,
+          "cooldown": 0.65,
+          "range": 46,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Body Slam",
+          "type": "NORMAL",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 9,
+          "cooldown": 7,
+          "range": 120,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Tackle",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 105,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Rest",
+          "type": "PSYCHIC",
+          "kind": "descanso",
+          "effect": "heal",
+          "power": 0,
+          "cooldown": 22,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Giga Impact",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "stun",
+          "power": 16,
+          "cooldown": 1,
+          "range": 220,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SNORLAX",
+      "dex": "0143",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 113,
+      "speed": 96,
+      "attack": 1.39,
+      "defense": 1.14,
+      "scale": 1.3,
+      "moves": [
+        {
+          "name": "Crunch",
+          "type": "DARK",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6.4,
+          "cooldown": 0.75,
+          "range": 54,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Body Slam",
+          "type": "NORMAL",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 13.1,
+          "cooldown": 7,
+          "range": 120,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Tackle",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 105,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Rest",
+          "type": "PSYCHIC",
+          "kind": "descanso",
+          "effect": "heal",
+          "power": 0,
+          "cooldown": 22,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Pulverizing Pancake",
+          "type": "NORMAL",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 26.9,
+          "cooldown": 1,
+          "range": 220,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SNORLAX",
+      "dex": "0143",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 130,
+      "speed": 96,
+      "attack": 1.5,
+      "defense": 1.14,
+      "scale": 1.36,
+      "moves": [
+        {
+          "name": "Crunch",
+          "type": "DARK",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6.4,
+          "cooldown": 0.75,
+          "range": 54,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Body Slam",
+          "type": "NORMAL",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 14.7,
+          "cooldown": 7,
+          "range": 120,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Tackle",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 105,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Rest",
+          "type": "PSYCHIC",
+          "kind": "descanso",
+          "effect": "heal",
+          "power": 0,
+          "cooldown": 22,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Pulverizing Pancake",
+          "type": "NORMAL",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 30.2,
+          "cooldown": 1,
+          "range": 220,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ZAPDOS",
+      "dex": "0145",
+      "types": [
+        "ELECTRIC",
+        "FLYING"
+      ],
+      "hp": 74,
+      "speed": 132,
+      "attack": 1,
+      "defense": 0.94,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Charge Beam",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 0.55,
+          "range": 170,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Thunderbolt",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "stun",
+          "power": 13,
+          "cooldown": 5,
+          "range": 250,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Drill Peck",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Charge",
+          "type": "ELECTRIC",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "frenesi",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 1,
+          "range": 200,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ZAPDOS",
+      "dex": "0145",
+      "types": [
+        "ELECTRIC",
+        "FLYING"
+      ],
+      "hp": 80,
+      "speed": 132,
+      "attack": 1.07,
+      "defense": 0.98,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Charge Beam",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 0.55,
+          "range": 170,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Thunderbolt",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "stun",
+          "power": 13,
+          "cooldown": 5,
+          "range": 250,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Drill Peck",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Charge",
+          "type": "ELECTRIC",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "frenesi",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 1,
+          "range": 200,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ZAPDOS",
+      "dex": "0145",
+      "types": [
+        "ELECTRIC",
+        "FLYING"
+      ],
+      "hp": 86,
+      "speed": 132,
+      "attack": 1.14,
+      "defense": 1.02,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Charge Beam",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "",
+          "power": 3.8,
+          "cooldown": 0.55,
+          "range": 185,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Thunderbolt",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "stun",
+          "power": 13,
+          "cooldown": 5,
+          "range": 250,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Drill Peck",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Charge",
+          "type": "ELECTRIC",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "frenesi",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 1,
+          "range": 200,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "PICHU",
+      "dex": "0172",
+      "types": [
+        "ELECTRIC"
+      ],
+      "hp": 54,
+      "speed": 156,
+      "attack": 0.81,
+      "defense": 0.8,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Thunder Shock",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.5,
+          "cooldown": 0.45,
+          "range": 200,
+          "energy": 0,
+          "velocity": 380
+        },
+        {
+          "name": "Thunderbolt",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "stun",
+          "power": 14.4,
+          "cooldown": 4,
+          "range": 225,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 12,
+          "cooldown": 9,
+          "range": 70,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Thunder",
+          "type": "ELECTRIC",
+          "kind": "tormenta",
+          "effect": "stun",
+          "power": 8,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 1.25
+        }
+      ]
+    },
+    {
+      "name": "PIKACHU",
+      "dex": "0025",
+      "types": [
+        "ELECTRIC"
+      ],
+      "hp": 64,
+      "speed": 150,
+      "attack": 0.89,
+      "defense": 0.88,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Thunder Shock",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.5,
+          "cooldown": 0.45,
+          "range": 200,
+          "energy": 0,
+          "velocity": 380
+        },
+        {
+          "name": "Thunderbolt",
+          "type": "ELECTRIC",
+          "kind": "rayo",
+          "effect": "stun",
+          "power": 14.4,
+          "cooldown": 4,
+          "range": 225,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Volt Tackle",
+          "type": "ELECTRIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 7,
+          "cooldown": 5,
+          "range": 135,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 12,
+          "cooldown": 9,
+          "range": 70,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Thunder",
+          "type": "ELECTRIC",
+          "kind": "tormenta",
+          "effect": "stun",
+          "power": 6.5,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 1.25
+        }
+      ]
+    },
+    {
+      "name": "RAICHU",
+      "dex": "0026",
+      "types": [
+        "ELECTRIC"
+      ],
+      "hp": 74,
+      "speed": 146,
+      "attack": 0.99,
+      "defense": 0.94,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Thunder Shock",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.5,
+          "cooldown": 0.45,
+          "range": 200,
+          "energy": 0,
+          "velocity": 380
+        },
+        {
+          "name": "Electro Ball",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "stun",
+          "power": 14.5,
+          "cooldown": 4,
+          "range": 230,
+          "energy": 30,
+          "velocity": 240
+        },
+        {
+          "name": "Volt Tackle",
+          "type": "ELECTRIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 9,
+          "cooldown": 5,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 12,
+          "cooldown": 9,
+          "range": 70,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Thunder",
+          "type": "ELECTRIC",
+          "kind": "tormenta",
+          "effect": "stun",
+          "power": 6,
+          "cooldown": 1,
+          "range": 270,
+          "energy": 0,
+          "velocity": 1.25
+        }
+      ]
+    },
+    {
+      "name": "RAIKOU",
+      "dex": "0243",
+      "types": [
+        "ELECTRIC"
+      ],
+      "hp": 84,
+      "speed": 156,
+      "attack": 1.06,
+      "defense": 0.92,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Thunder Fang",
+          "type": "ELECTRIC",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.55,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Shock Wave",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 11,
+          "cooldown": 5,
+          "range": 220,
+          "energy": 30,
+          "velocity": 300
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 19,
+          "cooldown": 10,
+          "range": 76,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Wild Charge",
+          "type": "ELECTRIC",
+          "kind": "embestidas",
+          "effect": "",
+          "power": 3.68,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RAIKOU",
+      "dex": "0243",
+      "types": [
+        "ELECTRIC"
+      ],
+      "hp": 90,
+      "speed": 156,
+      "attack": 1.13,
+      "defense": 0.96,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Thunder Fang",
+          "type": "ELECTRIC",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.55,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Shock Wave",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 11,
+          "cooldown": 5,
+          "range": 220,
+          "energy": 30,
+          "velocity": 300
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 19,
+          "cooldown": 10,
+          "range": 76,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Wild Charge",
+          "type": "ELECTRIC",
+          "kind": "embestidas",
+          "effect": "",
+          "power": 3.68,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RAIKOU",
+      "dex": "0243",
+      "types": [
+        "ELECTRIC"
+      ],
+      "hp": 97,
+      "speed": 156,
+      "attack": 1.21,
+      "defense": 1,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Thunder Fang",
+          "type": "ELECTRIC",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.55,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Shock Wave",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 11,
+          "cooldown": 5,
+          "range": 220,
+          "energy": 30,
+          "velocity": 300
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 19,
+          "cooldown": 10,
+          "range": 76,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Wild Charge",
+          "type": "ELECTRIC",
+          "kind": "embestidas",
+          "effect": "",
+          "power": 3.68,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ENTEI",
+      "dex": "0244",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 84,
+      "speed": 134,
+      "attack": 1.05,
+      "defense": 1,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Fire Fang",
+          "type": "FIRE",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.6,
+          "range": 52,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Overheat",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 20.4,
+          "cooldown": 7,
+          "range": 144,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Lava Plume",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 11,
+          "cooldown": 9,
+          "range": 62,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Eruption",
+          "type": "FIRE",
+          "kind": "lluvia",
+          "effect": "burn",
+          "power": 8.05,
+          "cooldown": 1,
+          "range": 200,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ENTEI",
+      "dex": "0244",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 92,
+      "speed": 134,
+      "attack": 1.11,
+      "defense": 1.05,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Fire Fang",
+          "type": "FIRE",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.6,
+          "range": 52,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Overheat",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 20.4,
+          "cooldown": 7,
+          "range": 144,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Lava Plume",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 11,
+          "cooldown": 9,
+          "range": 62,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Eruption",
+          "type": "FIRE",
+          "kind": "lluvia",
+          "effect": "burn",
+          "power": 8.05,
+          "cooldown": 1,
+          "range": 200,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ENTEI",
+      "dex": "0244",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 100,
+      "speed": 134,
+      "attack": 1.17,
+      "defense": 1.1,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Fire Fang",
+          "type": "FIRE",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.6,
+          "range": 52,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Overheat",
+          "type": "FIRE",
+          "kind": "cono",
+          "effect": "burn",
+          "power": 20.4,
+          "cooldown": 7,
+          "range": 144,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Lava Plume",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 11,
+          "cooldown": 9,
+          "range": 62,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Eruption",
+          "type": "FIRE",
+          "kind": "lluvia",
+          "effect": "burn",
+          "power": 8.05,
+          "cooldown": 1,
+          "range": 200,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SUICUNE",
+      "dex": "0245",
+      "types": [
+        "WATER"
+      ],
+      "hp": 80,
+      "speed": 128,
+      "attack": 0.91,
+      "defense": 1.04,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Water Pulse",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.58,
+          "range": 195,
+          "energy": 0,
+          "velocity": 280
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 15,
+          "cooldown": 7,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Aqua Jet",
+          "type": "WATER",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4.5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Mirror Coat",
+          "type": "PSYCHIC",
+          "kind": "contra",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 12,
+          "range": 240,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blizzard",
+          "type": "ICE",
+          "kind": "tormentaHojas",
+          "effect": "slow",
+          "power": 33,
+          "cooldown": 1,
+          "range": 256.5,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SUICUNE",
+      "dex": "0245",
+      "types": [
+        "WATER"
+      ],
+      "hp": 88,
+      "speed": 128,
+      "attack": 0.98,
+      "defense": 1.08,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Water Pulse",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.58,
+          "range": 195,
+          "energy": 0,
+          "velocity": 280
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 15,
+          "cooldown": 7,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Aqua Jet",
+          "type": "WATER",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4.5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Mirror Coat",
+          "type": "PSYCHIC",
+          "kind": "contra",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 12,
+          "range": 240,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blizzard",
+          "type": "ICE",
+          "kind": "tormentaHojas",
+          "effect": "slow",
+          "power": 33,
+          "cooldown": 1,
+          "range": 256.5,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SUICUNE",
+      "dex": "0245",
+      "types": [
+        "WATER"
+      ],
+      "hp": 96,
+      "speed": 128,
+      "attack": 1.04,
+      "defense": 1.12,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Water Pulse",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.58,
+          "range": 195,
+          "energy": 0,
+          "velocity": 280
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 15,
+          "cooldown": 7,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Aqua Jet",
+          "type": "WATER",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4.5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Mirror Coat",
+          "type": "PSYCHIC",
+          "kind": "contra",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 12,
+          "range": 240,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blizzard",
+          "type": "ICE",
+          "kind": "tormentaHojas",
+          "effect": "slow",
+          "power": 39,
+          "cooldown": 1,
+          "range": 283.5,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SEEDOT",
+      "dex": "0273",
+      "types": [
+        "GRASS"
+      ],
+      "hp": 66,
+      "speed": 124,
+      "attack": 0.98,
+      "defense": 1.02,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Bullet Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.6,
+          "cooldown": 0.5,
+          "range": 175,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Grass Knot",
+          "type": "GRASS",
+          "kind": "trampa",
+          "effect": "stun",
+          "power": 11,
+          "cooldown": 5,
+          "range": 170,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Rollout",
+          "type": "ROCK",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 5,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Harden",
+          "type": "NORMAL",
+          "kind": "escudo",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 10,
+          "range": 180,
+          "energy": 25,
+          "velocity": 260
+        },
+        {
+          "name": "Explosion",
+          "type": "NORMAL",
+          "kind": "explosion",
+          "effect": "",
+          "power": 26,
+          "cooldown": 1,
+          "range": 72,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "NUZLEAF",
+      "dex": "0274",
+      "types": [
+        "GRASS",
+        "DARK"
+      ],
+      "hp": 76,
+      "speed": 132,
+      "attack": 1.08,
+      "defense": 0.94,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Bullet Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 1.9,
+          "cooldown": 0.5,
+          "range": 185,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Grass Knot",
+          "type": "GRASS",
+          "kind": "trampa",
+          "effect": "stun",
+          "power": 11,
+          "cooldown": 5,
+          "range": 170,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Feint Attack",
+          "type": "DARK",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 5,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Fake Out",
+          "type": "NORMAL",
+          "kind": "golpe",
+          "effect": "slow",
+          "power": 6,
+          "cooldown": 10,
+          "range": 50,
+          "energy": 25,
+          "velocity": 260
+        },
+        {
+          "name": "Explosion",
+          "type": "NORMAL",
+          "kind": "explosion",
+          "effect": "",
+          "power": 28,
+          "cooldown": 1,
+          "range": 78,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SHIFTRY",
+      "dex": "0275",
+      "types": [
+        "GRASS",
+        "DARK"
+      ],
+      "hp": 86,
+      "speed": 136,
+      "attack": 1.21,
+      "defense": 0.96,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Bullet Seed",
+          "type": "GRASS",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.1,
+          "cooldown": 0.55,
+          "range": 195,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Sucker Punch",
+          "type": "DARK",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 6,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Feint Attack",
+          "type": "DARK",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Grass Knot",
+          "type": "GRASS",
+          "kind": "trampa",
+          "effect": "slow",
+          "power": 12,
+          "cooldown": 6,
+          "range": 175,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Leaf Tornado",
+          "type": "GRASS",
+          "kind": "torbellino",
+          "effect": "",
+          "power": 28,
+          "cooldown": 1,
+          "range": 280,
+          "energy": 0,
+          "velocity": 115
+        }
+      ]
+    },
+    {
+      "name": "BUNEARY",
+      "dex": "0427",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 65,
+      "speed": 142,
+      "attack": 1.07,
+      "defense": 0.86,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Pound",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.2,
+          "cooldown": 0.55,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Jump Kick",
+          "type": "FIGHTING",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Agility",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dizzy Punch",
+          "type": "NORMAL",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 6,
+          "cooldown": 10,
+          "range": 52,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Bounce",
+          "type": "FLYING",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 20,
+          "cooldown": 1,
+          "range": 32,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "LOPUNNY",
+      "dex": "0428",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 84,
+      "speed": 142,
+      "attack": 1.19,
+      "defense": 0.96,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Low Kick",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.55,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "High Jump Kick",
+          "type": "FIGHTING",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 18,
+          "cooldown": 6,
+          "range": 130,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Agility",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Charm",
+          "type": "FAIRY",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3,
+          "cooldown": 9,
+          "range": 190,
+          "energy": 25,
+          "velocity": 240
+        },
+        {
+          "name": "Bounce",
+          "type": "FLYING",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 26,
+          "cooldown": 1,
+          "range": 38,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "LOPUNNY",
+      "dex": "0428",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 90,
+      "speed": 144,
+      "attack": 1.25,
+      "defense": 0.99,
+      "scale": 1.16,
+      "moves": [
+        {
+          "name": "Low Kick",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.55,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "High Jump Kick",
+          "type": "FIGHTING",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 18.5,
+          "cooldown": 6,
+          "range": 140,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Agility",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Charm",
+          "type": "FAIRY",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3,
+          "cooldown": 9,
+          "range": 190,
+          "energy": 25,
+          "velocity": 240
+        },
+        {
+          "name": "Bounce",
+          "type": "FLYING",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 27,
+          "cooldown": 1,
+          "range": 42,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MEGA LOPUNNY",
+      "dex": "0428-0001",
+      "types": [
+        "NORMAL",
+        "FIGHTING"
+      ],
+      "hp": 90,
+      "speed": 154,
+      "attack": 1.41,
+      "defense": 1.03,
+      "scale": 1.16,
+      "moves": [
+        {
+          "name": "Power-Up Punch",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.8,
+          "cooldown": 0.55,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "High Jump Kick",
+          "type": "FIGHTING",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 21,
+          "cooldown": 6,
+          "range": 140,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Agility",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Charm",
+          "type": "FAIRY",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3,
+          "cooldown": 9,
+          "range": 190,
+          "energy": 25,
+          "velocity": 240
+        },
+        {
+          "name": "Bounce",
+          "type": "FLYING",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 30,
+          "cooldown": 1,
+          "range": 42,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RIOLU",
+      "dex": "0447",
+      "types": [
+        "FIGHTING"
+      ],
+      "hp": 75,
+      "speed": 138,
+      "attack": 1.19,
+      "defense": 0.95,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Force Palm",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.58,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Vacuum Wave",
+          "type": "FIGHTING",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 10,
+          "cooldown": 4,
+          "range": 160,
+          "energy": 25,
+          "velocity": 380
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 4,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Close Combat",
+          "type": "FIGHTING",
+          "kind": "rafaga",
+          "effect": "",
+          "power": 17,
+          "cooldown": 10,
+          "range": 54,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Reversal",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 17,
+          "cooldown": 1,
+          "range": 46,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "LUCARIO",
+      "dex": "0448",
+      "types": [
+        "FIGHTING",
+        "STEEL"
+      ],
+      "hp": 98,
+      "speed": 136,
+      "attack": 1.33,
+      "defense": 1.05,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Bone Rush",
+          "type": "GROUND",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.2,
+          "cooldown": 0.58,
+          "range": 58,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Aura Sphere",
+          "type": "FIGHTING",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 14.5,
+          "cooldown": 5,
+          "range": 220,
+          "energy": 30,
+          "velocity": 230
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 4,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Close Combat",
+          "type": "FIGHTING",
+          "kind": "rafaga",
+          "effect": "",
+          "power": 17,
+          "cooldown": 10,
+          "range": 54,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Aura Storm",
+          "type": "FIGHTING",
+          "kind": "chorro",
+          "effect": "",
+          "power": 26,
+          "cooldown": 1,
+          "range": 280,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "LUCARIO",
+      "dex": "0448",
+      "types": [
+        "FIGHTING",
+        "STEEL"
+      ],
+      "hp": 101,
+      "speed": 138,
+      "attack": 1.36,
+      "defense": 1.07,
+      "scale": 1.16,
+      "moves": [
+        {
+          "name": "Bone Rush",
+          "type": "GROUND",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.4,
+          "cooldown": 0.58,
+          "range": 60,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Aura Sphere",
+          "type": "FIGHTING",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 15,
+          "cooldown": 5,
+          "range": 230,
+          "energy": 30,
+          "velocity": 230
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 4,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Close Combat",
+          "type": "FIGHTING",
+          "kind": "rafaga",
+          "effect": "",
+          "power": 17,
+          "cooldown": 10,
+          "range": 54,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Aura Storm",
+          "type": "FIGHTING",
+          "kind": "chorro",
+          "effect": "",
+          "power": 27,
+          "cooldown": 1,
+          "range": 300,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MEGA LUCARIO",
+      "dex": "0448-0001",
+      "types": [
+        "FIGHTING",
+        "STEEL"
+      ],
+      "hp": 101,
+      "speed": 150,
+      "attack": 1.51,
+      "defense": 1.12,
+      "scale": 1.16,
+      "moves": [
+        {
+          "name": "Bone Rush",
+          "type": "GROUND",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.4,
+          "cooldown": 0.58,
+          "range": 60,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Aura Sphere",
+          "type": "FIGHTING",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 15,
+          "cooldown": 5,
+          "range": 230,
+          "energy": 30,
+          "velocity": 230
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 4,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Close Combat",
+          "type": "FIGHTING",
+          "kind": "rafaga",
+          "effect": "",
+          "power": 19,
+          "cooldown": 10,
+          "range": 54,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Aura Storm",
+          "type": "FIGHTING",
+          "kind": "chorro",
+          "effect": "",
+          "power": 27,
+          "cooldown": 1,
+          "range": 300,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "LUGIA",
+      "dex": "0249",
+      "types": [
+        "PSYCHIC",
+        "FLYING"
+      ],
+      "hp": 80,
+      "speed": 122,
+      "attack": 1,
+      "defense": 1,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Extrasensory",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 0.55,
+          "range": 200,
+          "energy": 0,
+          "velocity": 290
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 18,
+          "cooldown": 9,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dive",
+          "type": "WATER",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 5,
+          "cooldown": 8,
+          "range": 34,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Whirlwind",
+          "type": "NORMAL",
+          "kind": "viento",
+          "effect": "slow",
+          "power": 5,
+          "cooldown": 7,
+          "range": 120,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Aeroblast",
+          "type": "FLYING",
+          "kind": "chorro",
+          "effect": "",
+          "power": 33.6,
+          "cooldown": 1,
+          "range": 340,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "LUGIA",
+      "dex": "0249",
+      "types": [
+        "PSYCHIC",
+        "FLYING"
+      ],
+      "hp": 88,
+      "speed": 122,
+      "attack": 1.07,
+      "defense": 1.04,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Extrasensory",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.8,
+          "cooldown": 0.55,
+          "range": 200,
+          "energy": 0,
+          "velocity": 290
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 18,
+          "cooldown": 9,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dive",
+          "type": "WATER",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 5,
+          "cooldown": 8,
+          "range": 34,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Whirlwind",
+          "type": "NORMAL",
+          "kind": "viento",
+          "effect": "slow",
+          "power": 5,
+          "cooldown": 7,
+          "range": 120,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Aeroblast",
+          "type": "FLYING",
+          "kind": "chorro",
+          "effect": "",
+          "power": 33.6,
+          "cooldown": 1,
+          "range": 340,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "LUGIA",
+      "dex": "0249",
+      "types": [
+        "PSYCHIC",
+        "FLYING"
+      ],
+      "hp": 96,
+      "speed": 122,
+      "attack": 1.14,
+      "defense": 1.08,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Extrasensory",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 6,
+          "cooldown": 0.55,
+          "range": 215,
+          "energy": 0,
+          "velocity": 290
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 18,
+          "cooldown": 9,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dive",
+          "type": "WATER",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 5,
+          "cooldown": 8,
+          "range": 34,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Whirlwind",
+          "type": "NORMAL",
+          "kind": "viento",
+          "effect": "slow",
+          "power": 5,
+          "cooldown": 7,
+          "range": 120,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Aeroblast",
+          "type": "FLYING",
+          "kind": "chorro",
+          "effect": "",
+          "power": 33.6,
+          "cooldown": 1,
+          "range": 340,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "SHADOW LUGIA",
+      "dex": "0249-0001",
+      "types": [
+        "PSYCHIC",
+        "FLYING"
+      ],
+      "hp": 96,
+      "speed": 128,
+      "attack": 1.2799999999999998,
+      "defense": 1.1400000000000001,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Shadow Wave",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.8,
+          "cooldown": 0.55,
+          "range": 215,
+          "energy": 0,
+          "velocity": 290
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 18,
+          "cooldown": 9,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Dive",
+          "type": "WATER",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 5,
+          "cooldown": 8,
+          "range": 34,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Whirlwind",
+          "type": "NORMAL",
+          "kind": "viento",
+          "effect": "slow",
+          "power": 5,
+          "cooldown": 7,
+          "range": 120,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Shadow Blast",
+          "type": "FLYING",
+          "kind": "chorro",
+          "effect": "",
+          "power": 36,
+          "cooldown": 1,
+          "range": 340,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "HO-OH",
+      "dex": "0250",
+      "types": [
+        "FIRE",
+        "FLYING"
+      ],
+      "hp": 72,
+      "speed": 120,
+      "attack": 0.98,
+      "defense": 0.96,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Incinerate",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.6,
+          "cooldown": 0.55,
+          "range": 185,
+          "energy": 0,
+          "velocity": 270
+        },
+        {
+          "name": "Brave Bird",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "stun",
+          "power": 16.5,
+          "cooldown": 10,
+          "range": 195,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Flame Charge",
+          "type": "FIRE",
+          "kind": "dash",
+          "effect": "burn",
+          "power": 6,
+          "cooldown": 7.5,
+          "range": 78,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Recover",
+          "type": "NORMAL",
+          "kind": "recuperar",
+          "effect": "heal",
+          "power": 0,
+          "cooldown": 18,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Sacred Fire",
+          "type": "FIRE",
+          "kind": "bolaFuego",
+          "effect": "burn",
+          "power": 30,
+          "cooldown": 1,
+          "range": 420,
+          "energy": 0,
+          "velocity": 520
+        }
+      ]
+    },
+    {
+      "name": "HO-OH",
+      "dex": "0250",
+      "types": [
+        "FIRE",
+        "FLYING"
+      ],
+      "hp": 78,
+      "speed": 120,
+      "attack": 1.04,
+      "defense": 0.99,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Incinerate",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.3,
+          "cooldown": 0.55,
+          "range": 185,
+          "energy": 0,
+          "velocity": 270
+        },
+        {
+          "name": "Brave Bird",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "stun",
+          "power": 16.5,
+          "cooldown": 10,
+          "range": 195,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Flame Charge",
+          "type": "FIRE",
+          "kind": "dash",
+          "effect": "burn",
+          "power": 6,
+          "cooldown": 7.5,
+          "range": 78,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Recover",
+          "type": "NORMAL",
+          "kind": "recuperar",
+          "effect": "heal",
+          "power": 0,
+          "cooldown": 18,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Sacred Fire",
+          "type": "FIRE",
+          "kind": "bolaFuego",
+          "effect": "burn",
+          "power": 30,
+          "cooldown": 1,
+          "range": 420,
+          "energy": 0,
+          "velocity": 520
+        }
+      ]
+    },
+    {
+      "name": "HO-OH",
+      "dex": "0250",
+      "types": [
+        "FIRE",
+        "FLYING"
+      ],
+      "hp": 84,
+      "speed": 120,
+      "attack": 1.1,
+      "defense": 1.02,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Incinerate",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 0.55,
+          "range": 200,
+          "energy": 0,
+          "velocity": 270
+        },
+        {
+          "name": "Brave Bird",
+          "type": "FLYING",
+          "kind": "dash",
+          "effect": "stun",
+          "power": 16.5,
+          "cooldown": 10,
+          "range": 195,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Flame Charge",
+          "type": "FIRE",
+          "kind": "dash",
+          "effect": "burn",
+          "power": 6,
+          "cooldown": 7.5,
+          "range": 78,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Recover",
+          "type": "NORMAL",
+          "kind": "recuperar",
+          "effect": "heal",
+          "power": 0,
+          "cooldown": 18,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Sacred Fire",
+          "type": "FIRE",
+          "kind": "bolaFuego",
+          "effect": "burn",
+          "power": 30,
+          "cooldown": 1,
+          "range": 420,
+          "energy": 0,
+          "velocity": 520
+        }
+      ]
+    },
+    {
+      "name": "REGIGIGAS",
+      "dex": "0486",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 72,
+      "speed": 86,
+      "attack": 0.68,
+      "defense": 1.13,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Mega Punch",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 0.8,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Knock Off",
+          "type": "DARK",
+          "kind": "golpe",
+          "effect": "",
+          "power": 12,
+          "cooldown": 7,
+          "range": 56,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Heavy Slam",
+          "type": "STEEL",
+          "kind": "patada",
+          "effect": "",
+          "power": 6,
+          "cooldown": 5,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Drain Punch",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "drain",
+          "power": 10,
+          "cooldown": 9,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Crush Grip",
+          "type": "NORMAL",
+          "kind": "lanzamiento",
+          "effect": "stun",
+          "power": 18,
+          "cooldown": 1,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "REGIGIGAS",
+      "dex": "0486",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 84,
+      "speed": 102,
+      "attack": 0.88,
+      "defense": 1.22,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Mega Punch",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6,
+          "cooldown": 0.74,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Knock Off",
+          "type": "DARK",
+          "kind": "golpe",
+          "effect": "",
+          "power": 12,
+          "cooldown": 5.95,
+          "range": 56,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Heavy Slam",
+          "type": "STEEL",
+          "kind": "patada",
+          "effect": "",
+          "power": 6,
+          "cooldown": 5,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Drain Punch",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "drain",
+          "power": 10,
+          "cooldown": 7.65,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Crush Grip",
+          "type": "NORMAL",
+          "kind": "lanzamiento",
+          "effect": "stun",
+          "power": 22,
+          "cooldown": 1,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "REGIGIGAS",
+      "dex": "0486",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 92,
+      "speed": 118,
+      "attack": 1.1,
+      "defense": 1.3,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Mega Punch",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 6.6,
+          "cooldown": 0.65,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Knock Off",
+          "type": "DARK",
+          "kind": "golpe",
+          "effect": "",
+          "power": 12,
+          "cooldown": 5.05,
+          "range": 56,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Heavy Slam",
+          "type": "STEEL",
+          "kind": "patada",
+          "effect": "",
+          "power": 6,
+          "cooldown": 5,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Drain Punch",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "drain",
+          "power": 10,
+          "cooldown": 6.5,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Crush Grip",
+          "type": "NORMAL",
+          "kind": "lanzamiento",
+          "effect": "stun",
+          "power": 26,
+          "cooldown": 1,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "VICTINI",
+      "dex": "0494",
+      "types": [
+        "PSYCHIC",
+        "FIRE"
+      ],
+      "hp": 66,
+      "speed": 140,
+      "attack": 1,
+      "defense": 0.9,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Searing Shot",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.55,
+          "range": 180,
+          "energy": 0,
+          "velocity": 290
+        },
+        {
+          "name": "Zen Headbutt",
+          "type": "PSYCHIC",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 10,
+          "cooldown": 6,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Victory Dance",
+          "type": "FIRE",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 14,
+          "range": 180,
+          "energy": 35,
+          "velocity": 1.15
+        },
+        {
+          "name": "V-create",
+          "type": "FIRE",
+          "kind": "vcreate",
+          "effect": "burn",
+          "power": 26,
+          "cooldown": 1,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "VICTINI",
+      "dex": "0494",
+      "types": [
+        "PSYCHIC",
+        "FIRE"
+      ],
+      "hp": 72,
+      "speed": 140,
+      "attack": 1.07,
+      "defense": 0.94,
+      "scale": 1.06,
+      "moves": [
+        {
+          "name": "Searing Shot",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.55,
+          "range": 180,
+          "energy": 0,
+          "velocity": 290
+        },
+        {
+          "name": "Zen Headbutt",
+          "type": "PSYCHIC",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 10,
+          "cooldown": 6,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Victory Dance",
+          "type": "FIRE",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 14,
+          "range": 180,
+          "energy": 35,
+          "velocity": 1.15
+        },
+        {
+          "name": "V-create",
+          "type": "FIRE",
+          "kind": "vcreate",
+          "effect": "burn",
+          "power": 26,
+          "cooldown": 1,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "VICTINI",
+      "dex": "0494",
+      "types": [
+        "PSYCHIC",
+        "FIRE"
+      ],
+      "hp": 78,
+      "speed": 140,
+      "attack": 1.14,
+      "defense": 0.98,
+      "scale": 1.12,
+      "moves": [
+        {
+          "name": "Searing Shot",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.55,
+          "range": 180,
+          "energy": 0,
+          "velocity": 290
+        },
+        {
+          "name": "Zen Headbutt",
+          "type": "PSYCHIC",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 10,
+          "cooldown": 6,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Victory Dance",
+          "type": "FIRE",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 14,
+          "range": 180,
+          "energy": 35,
+          "velocity": 1.15
+        },
+        {
+          "name": "V-create",
+          "type": "FIRE",
+          "kind": "vcreate",
+          "effect": "burn",
+          "power": 30,
+          "cooldown": 1,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "JOLTIK",
+      "dex": "0595",
+      "types": [
+        "BUG",
+        "ELECTRIC"
+      ],
+      "hp": 68,
+      "speed": 142,
+      "attack": 1,
+      "defense": 0.94,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "String Shot",
+          "type": "BUG",
+          "kind": "proyectil",
+          "effect": "slow",
+          "power": 5.2,
+          "cooldown": 0.52,
+          "range": 180,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Electroweb",
+          "type": "ELECTRIC",
+          "kind": "telarana",
+          "effect": "",
+          "power": 10,
+          "cooldown": 6,
+          "range": 190,
+          "energy": 30,
+          "velocity": 230
+        },
+        {
+          "name": "Thread Swing",
+          "type": "BUG",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Electro Ball",
+          "type": "ELECTRIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 12.5,
+          "cooldown": 6,
+          "range": 200,
+          "energy": 30,
+          "velocity": 280
+        },
+        {
+          "name": "Discharge",
+          "type": "ELECTRIC",
+          "kind": "pulso",
+          "effect": "slow",
+          "power": 24,
+          "cooldown": 1,
+          "range": 100,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GALVANTULA",
+      "dex": "0596",
+      "types": [
+        "BUG",
+        "ELECTRIC"
+      ],
+      "hp": 92,
+      "speed": 140,
+      "attack": 1.16,
+      "defense": 1,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "String Shot",
+          "type": "BUG",
+          "kind": "proyectil",
+          "effect": "slow",
+          "power": 5,
+          "cooldown": 0.52,
+          "range": 180,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Electroweb",
+          "type": "ELECTRIC",
+          "kind": "telarana",
+          "effect": "",
+          "power": 10,
+          "cooldown": 6,
+          "range": 190,
+          "energy": 30,
+          "velocity": 230
+        },
+        {
+          "name": "Thread Swing",
+          "type": "BUG",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Sticky Web",
+          "type": "BUG",
+          "kind": "telarana",
+          "effect": "",
+          "power": 0,
+          "cooldown": 8,
+          "range": 180,
+          "energy": 25,
+          "velocity": 280
+        },
+        {
+          "name": "Thunder",
+          "type": "ELECTRIC",
+          "kind": "redElectrica",
+          "effect": "slow",
+          "power": 9,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GALVANTULA",
+      "dex": "0596",
+      "types": [
+        "BUG",
+        "ELECTRIC"
+      ],
+      "hp": 95,
+      "speed": 140,
+      "attack": 1.19,
+      "defense": 1.02,
+      "scale": 1.16,
+      "moves": [
+        {
+          "name": "String Shot",
+          "type": "BUG",
+          "kind": "proyectil",
+          "effect": "slow",
+          "power": 5.2,
+          "cooldown": 0.52,
+          "range": 180,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Electroweb",
+          "type": "ELECTRIC",
+          "kind": "telarana",
+          "effect": "",
+          "power": 10.5,
+          "cooldown": 6,
+          "range": 190,
+          "energy": 30,
+          "velocity": 230
+        },
+        {
+          "name": "Thread Swing",
+          "type": "BUG",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Sticky Web",
+          "type": "BUG",
+          "kind": "telarana",
+          "effect": "",
+          "power": 0,
+          "cooldown": 8,
+          "range": 180,
+          "energy": 25,
+          "velocity": 280
+        },
+        {
+          "name": "Thunder",
+          "type": "ELECTRIC",
+          "kind": "redElectrica",
+          "effect": "slow",
+          "power": 9,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "DREEPY",
+      "dex": "0885",
+      "types": [
+        "DRAGON",
+        "GHOST"
+      ],
+      "hp": 43,
+      "speed": 142,
+      "attack": 0.86,
+      "defense": 0.8,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Astonish",
+          "type": "GHOST",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.05,
+          "cooldown": 0.3,
+          "range": 190,
+          "energy": 0,
+          "velocity": 360
+        },
+        {
+          "name": "Lock-On",
+          "type": "NORMAL",
+          "kind": "mira",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 5,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Agility",
+          "type": "PSYCHIC",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 10,
+          "range": 180,
+          "energy": 30,
+          "velocity": 1.25
+        },
+        {
+          "name": "Hex",
+          "type": "GHOST",
+          "kind": "maleficio",
+          "effect": "",
+          "power": 6,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "DRAKLOAK",
+      "dex": "0886",
+      "types": [
+        "DRAGON",
+        "GHOST"
+      ],
+      "hp": 53,
+      "speed": 152,
+      "attack": 0.96,
+      "defense": 0.84,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Astonish",
+          "type": "GHOST",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.3,
+          "cooldown": 0.3,
+          "range": 190,
+          "energy": 0,
+          "velocity": 360
+        },
+        {
+          "name": "Lock-On",
+          "type": "NORMAL",
+          "kind": "mira",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Phantom Force",
+          "type": "GHOST",
+          "kind": "dash",
+          "effect": "",
+          "power": 5,
+          "cooldown": 4,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Dance",
+          "type": "DRAGON",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 2.5,
+          "range": 180,
+          "energy": 20,
+          "velocity": 1.25
+        },
+        {
+          "name": "Hex",
+          "type": "GHOST",
+          "kind": "maleficio",
+          "effect": "",
+          "power": 6,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "DRAGAPULT",
+      "dex": "0887",
+      "types": [
+        "DRAGON",
+        "GHOST"
+      ],
+      "hp": 63,
+      "speed": 162,
+      "attack": 1.06,
+      "defense": 0.88,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Dragon Darts",
+          "type": "DRAGON",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 1.33,
+          "cooldown": 0.33,
+          "range": 215,
+          "energy": 0,
+          "velocity": 400
+        },
+        {
+          "name": "Lock-On",
+          "type": "NORMAL",
+          "kind": "mira",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Phantom Force",
+          "type": "GHOST",
+          "kind": "dash",
+          "effect": "",
+          "power": 6,
+          "cooldown": 4,
+          "range": 110,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Dance",
+          "type": "DRAGON",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 2.5,
+          "range": 180,
+          "energy": 20,
+          "velocity": 1.25
+        },
+        {
+          "name": "Draco Meteor",
+          "type": "DRAGON",
+          "kind": "lluvia",
+          "effect": "",
+          "power": 6.5,
+          "cooldown": 1,
+          "range": 260,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "FROAKIE",
+      "dex": "0656",
+      "types": [
+        "WATER"
+      ],
+      "hp": 58,
+      "speed": 146,
+      "attack": 0.92,
+      "defense": 0.82,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Bubble",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.5,
+          "cooldown": 0.55,
+          "range": 185,
+          "energy": 0,
+          "velocity": 280
+        },
+        {
+          "name": "Water Pulse",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "stun",
+          "power": 12,
+          "cooldown": 6,
+          "range": 220,
+          "energy": 30,
+          "velocity": 340
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4.5,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Smokescreen",
+          "type": "NORMAL",
+          "kind": "humo",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 104,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 18,
+          "cooldown": 1,
+          "range": 220,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "FROGADIER",
+      "dex": "0657",
+      "types": [
+        "WATER"
+      ],
+      "hp": 68,
+      "speed": 152,
+      "attack": 1.02,
+      "defense": 0.86,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Smack Down",
+          "type": "ROCK",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 2.35,
+          "cooldown": 0.55,
+          "range": 210,
+          "energy": 0,
+          "velocity": 380
+        },
+        {
+          "name": "Double Team",
+          "type": "NORMAL",
+          "kind": "clones",
+          "effect": "",
+          "power": 12,
+          "cooldown": 9,
+          "range": 220,
+          "energy": 30,
+          "velocity": 340
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4.5,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Smokescreen",
+          "type": "NORMAL",
+          "kind": "humo",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 104,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Hydro Pump",
+          "type": "WATER",
+          "kind": "chorro",
+          "effect": "",
+          "power": 21,
+          "cooldown": 1,
+          "range": 245,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GRENINJA",
+      "dex": "0658",
+      "types": [
+        "WATER",
+        "DARK"
+      ],
+      "hp": 78,
+      "speed": 158,
+      "attack": 1.12,
+      "defense": 0.9,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Water Shuriken",
+          "type": "WATER",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 1.75,
+          "cooldown": 0.55,
+          "range": 215,
+          "energy": 0,
+          "velocity": 400
+        },
+        {
+          "name": "Double Team",
+          "type": "NORMAL",
+          "kind": "clones",
+          "effect": "",
+          "power": 12,
+          "cooldown": 9,
+          "range": 220,
+          "energy": 30,
+          "velocity": 340
+        },
+        {
+          "name": "Shadow Sneak",
+          "type": "GHOST",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Smokescreen",
+          "type": "NORMAL",
+          "kind": "humo",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 104,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Waterburst Shuriken",
+          "type": "WATER",
+          "kind": "bolaShuriken",
+          "effect": "slow",
+          "power": 2.6,
+          "cooldown": 1,
+          "range": 380,
+          "energy": 0,
+          "velocity": 540
+        }
+      ]
+    },
+    {
+      "name": "MEWTWO",
+      "dex": "0150",
+      "types": [
+        "PSYCHIC"
+      ],
+      "hp": 72,
+      "speed": 128,
+      "attack": 1,
+      "defense": 0.98,
+      "scale": 1.15,
+      "moves": [
+        {
+          "name": "Confusion",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 310
+        },
+        {
+          "name": "Focus Punch",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 11,
+          "cooldown": 7,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Barrier",
+          "type": "PSYCHIC",
+          "kind": "burbuja",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 22,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Psywave",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 10,
+          "range": 330,
+          "energy": 35,
+          "velocity": 270
+        },
+        {
+          "name": "Psybeam",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 29.7,
+          "cooldown": 1,
+          "range": 380,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MEWTWO",
+      "dex": "0150",
+      "types": [
+        "PSYCHIC"
+      ],
+      "hp": 80,
+      "speed": 128,
+      "attack": 1.05,
+      "defense": 1.02,
+      "scale": 1.2,
+      "moves": [
+        {
+          "name": "Confusion",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.1,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 310
+        },
+        {
+          "name": "Focus Punch",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 11,
+          "cooldown": 7,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Barrier",
+          "type": "PSYCHIC",
+          "kind": "burbuja",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 22,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Psywave",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 10,
+          "range": 330,
+          "energy": 35,
+          "velocity": 270
+        },
+        {
+          "name": "Psybeam",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 32,
+          "cooldown": 1,
+          "range": 380,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MEWTWO",
+      "dex": "0150",
+      "types": [
+        "PSYCHIC"
+      ],
+      "hp": 88,
+      "speed": 128,
+      "attack": 1.1,
+      "defense": 1.06,
+      "scale": 1.25,
+      "moves": [
+        {
+          "name": "Confusion",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.4,
+          "cooldown": 0.55,
+          "range": 215,
+          "energy": 0,
+          "velocity": 310
+        },
+        {
+          "name": "Focus Punch",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 11,
+          "cooldown": 7,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Barrier",
+          "type": "PSYCHIC",
+          "kind": "burbuja",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 22,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Psywave",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 10,
+          "range": 330,
+          "energy": 35,
+          "velocity": 270
+        },
+        {
+          "name": "Psybeam",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 34,
+          "cooldown": 1,
+          "range": 420,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MEGA MEWTWO Y",
+      "dex": "0150-0002",
+      "types": [
+        "PSYCHIC"
+      ],
+      "hp": 88,
+      "speed": 136,
+      "attack": 1.2000000000000002,
+      "defense": 1.1,
+      "scale": 1.25,
+      "moves": [
+        {
+          "name": "Confusion",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 0.55,
+          "range": 240,
+          "energy": 0,
+          "velocity": 310
+        },
+        {
+          "name": "Psystrike",
+          "type": "PSYCHIC",
+          "kind": "estallido",
+          "effect": "stun",
+          "power": 6,
+          "cooldown": 7,
+          "range": 170,
+          "energy": 30,
+          "velocity": 400
+        },
+        {
+          "name": "Barrier",
+          "type": "PSYCHIC",
+          "kind": "burbuja",
+          "effect": "",
+          "power": 0,
+          "cooldown": 11,
+          "range": 22,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Psywave",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 10,
+          "range": 330,
+          "energy": 35,
+          "velocity": 270
+        },
+        {
+          "name": "Psybeam",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 38.5,
+          "cooldown": 1,
+          "range": 460,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ARCEUS",
+      "dex": "0493",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 83,
+      "speed": 131,
+      "attack": 0.92,
+      "defense": 0.92,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Dragon Claw",
+          "type": "DRAGON",
+          "kind": "tajo",
+          "effect": "",
+          "power": 7.8,
+          "cooldown": 0.55,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Pulse",
+          "type": "DRAGON",
+          "kind": "chorro",
+          "effect": "",
+          "power": 15,
+          "cooldown": 8,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 165,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Recover",
+          "type": "NORMAL",
+          "kind": "recuperar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 12,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Judgment",
+          "type": "NORMAL",
+          "kind": "juicio",
+          "effect": "",
+          "power": 6,
+          "cooldown": 1,
+          "range": 300,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ARCEUS",
+      "dex": "0493",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 92,
+      "speed": 131,
+      "attack": 0.98,
+      "defense": 0.95,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Dragon Claw",
+          "type": "DRAGON",
+          "kind": "tajo",
+          "effect": "",
+          "power": 8.4,
+          "cooldown": 0.55,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Pulse",
+          "type": "DRAGON",
+          "kind": "chorro",
+          "effect": "",
+          "power": 15,
+          "cooldown": 8,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 165,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Recover",
+          "type": "NORMAL",
+          "kind": "recuperar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 12,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Judgment",
+          "type": "NORMAL",
+          "kind": "juicio",
+          "effect": "",
+          "power": 6.6,
+          "cooldown": 1,
+          "range": 300,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ARCEUS",
+      "dex": "0493",
+      "types": [
+        "NORMAL"
+      ],
+      "hp": 100,
+      "speed": 131,
+      "attack": 1.04,
+      "defense": 0.99,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Dragon Claw",
+          "type": "DRAGON",
+          "kind": "tajo",
+          "effect": "",
+          "power": 9,
+          "cooldown": 0.55,
+          "range": 50,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Pulse",
+          "type": "DRAGON",
+          "kind": "chorro",
+          "effect": "",
+          "power": 17,
+          "cooldown": 8,
+          "range": 230,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 165,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Recover",
+          "type": "NORMAL",
+          "kind": "recuperar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 12,
+          "range": 180,
+          "energy": 40,
+          "velocity": 260
+        },
+        {
+          "name": "Judgment",
+          "type": "NORMAL",
+          "kind": "juicio",
+          "effect": "",
+          "power": 7.2,
+          "cooldown": 1,
+          "range": 300,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RAYQUAZA",
+      "dex": "0384",
+      "types": [
+        "DRAGON",
+        "FLYING"
+      ],
+      "hp": 80,
+      "speed": 136,
+      "attack": 1.04,
+      "defense": 0.98,
+      "scale": 0.94,
+      "moves": [
+        {
+          "name": "Dragon Claw",
+          "type": "DRAGON",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.2,
+          "cooldown": 0.6,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Twister",
+          "type": "DRAGON",
+          "kind": "torbellino",
+          "effect": "",
+          "power": 12,
+          "cooldown": 7,
+          "range": 210,
+          "energy": 30,
+          "velocity": 170
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Dance",
+          "type": "DRAGON",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 2.5,
+          "range": 180,
+          "energy": 20,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Ascent",
+          "type": "FLYING",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 26,
+          "cooldown": 1,
+          "range": 44,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RAYQUAZA",
+      "dex": "0384",
+      "types": [
+        "DRAGON",
+        "FLYING"
+      ],
+      "hp": 86,
+      "speed": 136,
+      "attack": 1.1,
+      "defense": 1.02,
+      "scale": 0.98,
+      "moves": [
+        {
+          "name": "Dragon Claw",
+          "type": "DRAGON",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.5,
+          "cooldown": 0.6,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Twister",
+          "type": "DRAGON",
+          "kind": "torbellino",
+          "effect": "",
+          "power": 13,
+          "cooldown": 7,
+          "range": 210,
+          "energy": 30,
+          "velocity": 170
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Dance",
+          "type": "DRAGON",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 2.5,
+          "range": 180,
+          "energy": 20,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Ascent",
+          "type": "FLYING",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 26,
+          "cooldown": 1,
+          "range": 44,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "RAYQUAZA",
+      "dex": "0384",
+      "types": [
+        "DRAGON",
+        "FLYING"
+      ],
+      "hp": 92,
+      "speed": 136,
+      "attack": 1.16,
+      "defense": 1.06,
+      "scale": 1.02,
+      "moves": [
+        {
+          "name": "Dragon Claw",
+          "type": "DRAGON",
+          "kind": "tajo",
+          "effect": "",
+          "power": 5.8,
+          "cooldown": 0.6,
+          "range": 56,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Twister",
+          "type": "DRAGON",
+          "kind": "torbellino",
+          "effect": "",
+          "power": 14,
+          "cooldown": 7,
+          "range": 210,
+          "energy": 30,
+          "velocity": 170
+        },
+        {
+          "name": "Extreme Speed",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 4,
+          "cooldown": 4,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Dance",
+          "type": "DRAGON",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 2.5,
+          "range": 180,
+          "energy": 20,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Ascent",
+          "type": "FLYING",
+          "kind": "meteoro",
+          "effect": "stun",
+          "power": 30,
+          "cooldown": 1,
+          "range": 48,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "MEGA RAYQUAZA",
+      "dex": "0384-0001",
+      "types": [
+        "DRAGON",
+        "FLYING"
+      ],
+      "hp": 92,
+      "speed": 144,
+      "attack": 1.2999999999999998,
+      "defense": 1.1,
+      "scale": 1.02,
+      "moves": [
+        {
+          "name": "Dragon Breath",
+          "type": "DRAGON",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 0.55,
+          "range": 185,
+          "energy": 0,
+          "velocity": 270
+        },
+        {
+          "name": "Hurricane",
+          "type": "FLYING",
+          "kind": "torbellino",
+          "effect": "",
+          "power": 20,
+          "cooldown": 8,
+          "range": 260,
+          "energy": 35,
+          "velocity": 125
+        },
+        {
+          "name": "Dragon Ascent",
+          "type": "FLYING",
+          "kind": "ascenso",
+          "effect": "",
+          "power": 6,
+          "cooldown": 8,
+          "range": 34,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Dragon Tail",
+          "type": "DRAGON",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 13,
+          "cooldown": 8,
+          "range": 66,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Hyper Beam",
+          "type": "NORMAL",
+          "kind": "chorro",
+          "effect": "",
+          "power": 42,
+          "cooldown": 1,
+          "range": 440,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GASTLY",
+      "dex": "0092",
+      "types": [
+        "GHOST",
+        "POISON"
+      ],
+      "hp": 66,
+      "speed": 140,
+      "attack": 1,
+      "defense": 0.88,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Night Shade",
+          "type": "GHOST",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.55,
+          "range": 190,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Shadow Ball",
+          "type": "GHOST",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 12,
+          "cooldown": 6,
+          "range": 220,
+          "energy": 30,
+          "velocity": 380
+        },
+        {
+          "name": "Shadow Sneak",
+          "type": "GHOST",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hypnosis",
+          "type": "PSYCHIC",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 3,
+          "cooldown": 12,
+          "range": 114,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Hex",
+          "type": "GHOST",
+          "kind": "maleficio",
+          "effect": "",
+          "power": 7.5,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "HAUNTER",
+      "dex": "0093",
+      "types": [
+        "GHOST",
+        "POISON"
+      ],
+      "hp": 74,
+      "speed": 144,
+      "attack": 1.08,
+      "defense": 0.94,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Night Shade",
+          "type": "GHOST",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.2,
+          "cooldown": 0.55,
+          "range": 190,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Shadow Ball",
+          "type": "GHOST",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 13.5,
+          "cooldown": 6,
+          "range": 220,
+          "energy": 30,
+          "velocity": 380
+        },
+        {
+          "name": "Shadow Sneak",
+          "type": "GHOST",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hypnosis",
+          "type": "PSYCHIC",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 3,
+          "cooldown": 12,
+          "range": 114,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Hex",
+          "type": "GHOST",
+          "kind": "maleficio",
+          "effect": "",
+          "power": 7.5,
+          "cooldown": 1,
+          "range": 240,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "GENGAR",
+      "dex": "0094",
+      "types": [
+        "GHOST",
+        "POISON"
+      ],
+      "hp": 82,
+      "speed": 148,
+      "attack": 1.17,
+      "defense": 0.98,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Night Shade",
+          "type": "GHOST",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 300
+        },
+        {
+          "name": "Sludge Bomb",
+          "type": "POISON",
+          "kind": "bombaLodo",
+          "effect": "poison",
+          "power": 13,
+          "cooldown": 7,
+          "range": 200,
+          "energy": 35,
+          "velocity": 380
+        },
+        {
+          "name": "Shadow Sneak",
+          "type": "GHOST",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Hypnosis",
+          "type": "PSYCHIC",
+          "kind": "viento",
+          "effect": "stun",
+          "power": 3,
+          "cooldown": 12,
+          "range": 114,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Shadow Ball",
+          "type": "GHOST",
+          "kind": "bolaSombra",
+          "effect": "slow",
+          "power": 3.5,
+          "cooldown": 1,
+          "range": 420,
+          "energy": 0,
+          "velocity": 420
+        }
+      ]
+    },
+    {
+      "name": "ARTICUNO",
+      "dex": "0144",
+      "types": [
+        "ICE",
+        "FLYING"
+      ],
+      "hp": 74,
+      "speed": 124,
+      "attack": 0.92,
+      "defense": 0.98,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Ice Shard",
+          "type": "ICE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.55,
+          "range": 200,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Ice Beam",
+          "type": "ICE",
+          "kind": "chorro",
+          "effect": "slow",
+          "power": 13,
+          "cooldown": 7,
+          "range": 240,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Roost",
+          "type": "FLYING",
+          "kind": "recuperar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 10,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blizzard",
+          "type": "ICE",
+          "kind": "tormentaHojas",
+          "effect": "slow",
+          "power": 24,
+          "cooldown": 1,
+          "range": 270,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ARTICUNO",
+      "dex": "0144",
+      "types": [
+        "ICE",
+        "FLYING"
+      ],
+      "hp": 80,
+      "speed": 124,
+      "attack": 0.98,
+      "defense": 1.02,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Ice Shard",
+          "type": "ICE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5,
+          "cooldown": 0.55,
+          "range": 200,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Ice Beam",
+          "type": "ICE",
+          "kind": "chorro",
+          "effect": "slow",
+          "power": 13,
+          "cooldown": 7,
+          "range": 240,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Roost",
+          "type": "FLYING",
+          "kind": "recuperar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 10,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blizzard",
+          "type": "ICE",
+          "kind": "tormentaHojas",
+          "effect": "slow",
+          "power": 27,
+          "cooldown": 1,
+          "range": 270,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "ARTICUNO",
+      "dex": "0144",
+      "types": [
+        "ICE",
+        "FLYING"
+      ],
+      "hp": 86,
+      "speed": 124,
+      "attack": 1.04,
+      "defense": 1.06,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Ice Shard",
+          "type": "ICE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.6,
+          "cooldown": 0.55,
+          "range": 215,
+          "energy": 0,
+          "velocity": 330
+        },
+        {
+          "name": "Ice Beam",
+          "type": "ICE",
+          "kind": "chorro",
+          "effect": "slow",
+          "power": 13,
+          "cooldown": 7,
+          "range": 240,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Roost",
+          "type": "FLYING",
+          "kind": "recuperar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 10,
+          "range": 180,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Blizzard",
+          "type": "ICE",
+          "kind": "tormentaHojas",
+          "effect": "slow",
+          "power": 30,
+          "cooldown": 1,
+          "range": 290,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "DEOXYS",
+      "dex": "0386",
+      "types": [
+        "PSYCHIC"
+      ],
+      "hp": 80,
+      "speed": 136,
+      "attack": 1.04,
+      "defense": 0.98,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Confusion",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.2,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 310
+        },
+        {
+          "name": "Psychic",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 14,
+          "cooldown": 7,
+          "range": 220,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Teleport",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Form Change",
+          "type": "PSYCHIC",
+          "kind": "cambioForma",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Psycho Boost",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 30,
+          "cooldown": 1,
+          "range": 360,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "DEOXYS",
+      "dex": "0386",
+      "types": [
+        "PSYCHIC"
+      ],
+      "hp": 88,
+      "speed": 136,
+      "attack": 1.11,
+      "defense": 1.02,
+      "scale": 1.04,
+      "moves": [
+        {
+          "name": "Confusion",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.2,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 310
+        },
+        {
+          "name": "Psychic",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 14,
+          "cooldown": 7,
+          "range": 220,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Teleport",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Form Change",
+          "type": "PSYCHIC",
+          "kind": "cambioForma",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Psycho Boost",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 32,
+          "cooldown": 1,
+          "range": 360,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "DEOXYS",
+      "dex": "0386",
+      "types": [
+        "PSYCHIC"
+      ],
+      "hp": 96,
+      "speed": 136,
+      "attack": 1.18,
+      "defense": 1.06,
+      "scale": 1.08,
+      "moves": [
+        {
+          "name": "Confusion",
+          "type": "PSYCHIC",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 5.2,
+          "cooldown": 0.55,
+          "range": 205,
+          "energy": 0,
+          "velocity": 310
+        },
+        {
+          "name": "Psychic",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 14,
+          "cooldown": 7,
+          "range": 220,
+          "energy": 35,
+          "velocity": 260
+        },
+        {
+          "name": "Teleport",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 6,
+          "range": 140,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Form Change",
+          "type": "PSYCHIC",
+          "kind": "cambioForma",
+          "effect": "",
+          "power": 0,
+          "cooldown": 7,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Psycho Boost",
+          "type": "PSYCHIC",
+          "kind": "chorro",
+          "effect": "",
+          "power": 34,
+          "cooldown": 1,
+          "range": 380,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "NINCADA",
+      "dex": "0290",
+      "types": [
+        "BUG",
+        "GROUND"
+      ],
+      "hp": 68,
+      "speed": 110,
+      "attack": 1,
+      "defense": 1.12,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Scratch",
+          "type": "NORMAL",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.4,
+          "cooldown": 0.72,
+          "range": 44,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Leech Life",
+          "type": "BUG",
+          "kind": "golpe",
+          "effect": "drain",
+          "power": 8,
+          "cooldown": 8,
+          "range": 46,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Dig",
+          "type": "GROUND",
+          "kind": "vuelo",
+          "effect": "",
+          "power": 5,
+          "cooldown": 8,
+          "range": 32,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Harden",
+          "type": "NORMAL",
+          "kind": "escudo",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 10,
+          "range": 180,
+          "energy": 25,
+          "velocity": 260
+        },
+        {
+          "name": "Fury Swipes",
+          "type": "NORMAL",
+          "kind": "rafaga",
+          "effect": "",
+          "power": 20,
+          "cooldown": 1,
+          "range": 58,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "NINJASK",
+      "dex": "0291",
+      "types": [
+        "BUG",
+        "FLYING"
+      ],
+      "hp": 70,
+      "speed": 172,
+      "attack": 1.1,
+      "defense": 0.82,
+      "scale": 1.1,
+      "moves": [
+        {
+          "name": "Fury Cutter",
+          "type": "BUG",
+          "kind": "tajo",
+          "effect": "",
+          "power": 3.4,
+          "cooldown": 0.48,
+          "range": 48,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "X-Scissor",
+          "type": "BUG",
+          "kind": "embestidas",
+          "effect": "",
+          "power": 7.5,
+          "cooldown": 7,
+          "range": 130,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Agility",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Swords Dance",
+          "type": "NORMAL",
+          "kind": "potenciar",
+          "effect": "",
+          "power": 0,
+          "cooldown": 10,
+          "range": 180,
+          "energy": 25,
+          "velocity": 260
+        },
+        {
+          "name": "Bug Buzz",
+          "type": "BUG",
+          "kind": "pulso",
+          "effect": "stun",
+          "power": 24,
+          "cooldown": 1,
+          "range": 78,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "NINJASK",
+      "dex": "0291",
+      "types": [
+        "BUG",
+        "FLYING"
+      ],
+      "hp": 76,
+      "speed": 174,
+      "attack": 1.18,
+      "defense": 0.86,
+      "scale": 1.14,
+      "moves": [
+        {
+          "name": "Fury Cutter",
+          "type": "BUG",
+          "kind": "tajo",
+          "effect": "",
+          "power": 3.7,
+          "cooldown": 0.48,
+          "range": 48,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "X-Scissor",
+          "type": "BUG",
+          "kind": "embestidas",
+          "effect": "",
+          "power": 7.5,
+          "cooldown": 7,
+          "range": 130,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Agility",
+          "type": "PSYCHIC",
+          "kind": "dash",
+          "effect": "",
+          "power": 0,
+          "cooldown": 5,
+          "range": 130,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Grudge",
+          "type": "GHOST",
+          "kind": "escudo",
+          "effect": "slow",
+          "power": 0,
+          "cooldown": 11,
+          "range": 180,
+          "energy": 25,
+          "velocity": 260
+        },
+        {
+          "name": "Bug Buzz",
+          "type": "BUG",
+          "kind": "pulso",
+          "effect": "stun",
+          "power": 28,
+          "cooldown": 1,
+          "range": 90,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "TORCHIC",
+      "dex": "0255",
+      "types": [
+        "FIRE"
+      ],
+      "hp": 60,
+      "speed": 136,
+      "attack": 0.94,
+      "defense": 0.86,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Peck",
+          "type": "FLYING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4,
+          "cooldown": 0.56,
+          "range": 48,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Ember",
+          "type": "FIRE",
+          "kind": "proyectil",
+          "effect": "",
+          "power": 4,
+          "cooldown": 5,
+          "range": 170,
+          "energy": 25,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Spin",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 9,
+          "cooldown": 9.5,
+          "range": 54,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Flare Blitz",
+          "type": "FIRE",
+          "kind": "embestidas",
+          "effect": "burn",
+          "power": 4.5,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "COMBUSKEN",
+      "dex": "0256",
+      "types": [
+        "FIRE",
+        "FIGHTING"
+      ],
+      "hp": 74,
+      "speed": 134,
+      "attack": 1.06,
+      "defense": 0.92,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Double Kick",
+          "type": "FIGHTING",
+          "kind": "tajo",
+          "effect": "",
+          "power": 2.7,
+          "cooldown": 0.56,
+          "range": 52,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Sky Uppercut",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 11,
+          "cooldown": 7,
+          "range": 50,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Quick Attack",
+          "type": "NORMAL",
+          "kind": "dash",
+          "effect": "",
+          "power": 3,
+          "cooldown": 4,
+          "range": 120,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Fire Spin",
+          "type": "FIRE",
+          "kind": "pulso",
+          "effect": "burn",
+          "power": 10,
+          "cooldown": 9.5,
+          "range": 58,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Flare Blitz",
+          "type": "FIRE",
+          "kind": "embestidas",
+          "effect": "burn",
+          "power": 4.5,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    },
+    {
+      "name": "BLAZIKEN",
+      "dex": "0257",
+      "types": [
+        "FIRE",
+        "FIGHTING"
+      ],
+      "hp": 88,
+      "speed": 128,
+      "attack": 1.18,
+      "defense": 0.96,
+      "scale": 1,
+      "moves": [
+        {
+          "name": "Blaze Kick",
+          "type": "FIRE",
+          "kind": "tajo",
+          "effect": "",
+          "power": 4.8,
+          "cooldown": 0.56,
+          "range": 54,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "High Jump Kick",
+          "type": "FIGHTING",
+          "kind": "patada",
+          "effect": "stun",
+          "power": 18,
+          "cooldown": 6,
+          "range": 130,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Flame Charge",
+          "type": "FIRE",
+          "kind": "dash",
+          "effect": "burn",
+          "power": 4,
+          "cooldown": 5,
+          "range": 125,
+          "energy": 0,
+          "velocity": 260
+        },
+        {
+          "name": "Sky Uppercut",
+          "type": "FIGHTING",
+          "kind": "golpe",
+          "effect": "stun",
+          "power": 13,
+          "cooldown": 8,
+          "range": 52,
+          "energy": 30,
+          "velocity": 260
+        },
+        {
+          "name": "Flare Blitz",
+          "type": "FIRE",
+          "kind": "embestidas",
+          "effect": "burn",
+          "power": 4.5,
+          "cooldown": 1,
+          "range": 180,
+          "energy": 0,
+          "velocity": 260
+        }
+      ]
+    }
+  ]
+}

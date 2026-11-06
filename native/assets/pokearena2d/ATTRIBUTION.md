@@ -2,15 +2,14 @@
 
 ## Authorized PokeArena2D.com source
 
-The PokeArena2D.com project holder granted permission to use its web project
-for this 3DS adaptation. `source/web-estadio-amplia.jpg` is the official
-`assets/arenas/ovaladas/estadio-amplia.jpg` asset from that source, converted
-only to the 3DS top-screen dimensions. Its code, HUD geometry, game rules and
-asset structure are the primary reference for subsequent native work.
+The PokeArena2D.com project holder authorized this adaptation. The native port
+uses the web game's roster, move data, evolutions, mega forms, HUD rules, title
+art, logo, and stadium image. `web-roster.json` contains the adapted 33-fighter
+catalog used by the 3DS build. Backgrounds are resized for the top screen.
 
-The grant excludes music. This project bundles no music tracks. Sound effects
-remain synthesized by the native port.
+Music is excluded from the authorization and is not included. The port makes
+its own sound effects at runtime.
 
-`source/pmd/` contains PMD SpriteCollab sheets; PokeArena2D.com identifies
-them as CC BY-NC 4.0 and their upstream attribution and terms continue to
-apply.
+`source/pmd/` contains PMD SpriteCollab sheets used by the web project. The
+website identifies these sprite sheets as CC BY-NC 4.0; that upstream
+attribution and those terms continue to apply.

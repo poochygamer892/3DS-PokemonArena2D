@@ -3,8 +3,8 @@
 #include <string.h>
 #include "arena_sfx.h"
 
-/* Procedural effects adapted for the native port from the Korean project's
-   WebAudio approach. There are no copied audio files and no music. */
+/* Procedural sound effects for the native PokeArena2D.com adaptation.
+   No music or copied audio files are included. */
 #define SFX_RATE 22050
 #define SFX_SAMPLES 4096
 
