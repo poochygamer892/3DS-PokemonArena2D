@@ -1123,19 +1123,20 @@ static void drawArena(void)
     /* Native version of the large procedural retro stadium from the Korean
        source project.  It deliberately uses geometry instead of a borrowed
        arena texture. */
-    rect(0, 0, TOP_W, TOP_H, 0x171C2BFF);
-    rect(0, 31, TOP_W, 178, 0x31445BFF);
-    rect(12, 42, 376, 156, 0x183C2AFF);
+    C2D_DrawRectSolid(0, 0, 0.0f, TOP_W, TOP_H, c2dColor(0x171C2BFF));
+    C2D_DrawRectSolid(0, 31, 0.0f, TOP_W, 178, c2dColor(0x31445BFF));
+    C2D_DrawRectSolid(12, 42, 0.0f, 376, 156, c2dColor(0x183C2AFF));
     for (int x = 16; x < 388; x += 31)
-        rect((float)x, 42, 14, 156, ((x / 31) & 1) ? 0x215333FF : 0x1E4B30FF);
-    rect(12, 42, 376, 2, 0xD6E8C5FF);
-    rect(12, 196, 376, 2, 0xD6E8C5FF);
-    rect(199, 42, 2, 156, 0xD6E8C5FF);
+        C2D_DrawRectSolid((float)x, 42, 0.0f, 14, 156,
+                          c2dColor(((x / 31) & 1) ? 0x215333FF : 0x1E4B30FF));
+    C2D_DrawRectSolid(12, 42, 0.0f, 376, 2, c2dColor(0xD6E8C5FF));
+    C2D_DrawRectSolid(12, 196, 0.0f, 376, 2, c2dColor(0xD6E8C5FF));
+    C2D_DrawRectSolid(199, 42, 0.0f, 2, 156, c2dColor(0xD6E8C5FF));
     C2D_DrawCircleSolid(200, 120, 0.03f, 31, c2dColor(0xD6E8C5FF));
     C2D_DrawCircleSolid(200, 120, 0.04f, 28, c2dColor(0x1F4F32FF));
     C2D_DrawCircleSolid(200, 120, 0.05f, 5, c2dColor(0xEDE6CFFF));
-    rect(0, 25, TOP_W, 8, 0x303B4DFF);
-    rect(0, 207, TOP_W, 8, 0x303B4DFF);
+    C2D_DrawRectSolid(0, 25, 0.0f, TOP_W, 8, c2dColor(0x303B4DFF));
+    C2D_DrawRectSolid(0, 207, 0.0f, TOP_W, 8, c2dColor(0x303B4DFF));
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
