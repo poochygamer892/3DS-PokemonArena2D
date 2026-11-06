@@ -10,11 +10,10 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 
-# Keep the first eight original frames from each web animation.  Atlases are
-# still streamed per active combatant, so this preserves the source timing and
-# pixel art without keeping every fighter resident in Old 2DS VRAM.
+# Keep four original frames from each web animation.  Atlases are streamed per
+# active combatant, preserving the source pixel art within Old 2DS VRAM.
 ANIMATIONS = ("Idle", "Walk", "Attack")
-MAX_FRAMES = 8
+MAX_FRAMES = 4
 DIRECTIONS = 8
 TEXT_FIRST = 32
 TEXT_LAST = 126
