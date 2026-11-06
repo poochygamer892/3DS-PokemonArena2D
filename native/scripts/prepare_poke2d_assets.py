@@ -63,8 +63,9 @@ def write_metadata_header(path: Path, advances: dict[str, int], manifest: dict,
         "#define P2D_TEXT_COUNT 95",
         "",
     ]
-    out.extend(f'#include "poke2d_sprite_indices_{group_name(i, pokemon)}.h"'
-               for i, pokemon in enumerate(roster))
+    for i, pokemon in enumerate(roster):
+        for animation in ANIMATIONS:
+            out.append(f'#include "poke2d_sprite_indices_{group_name(i, pokemon)}_{animation.lower()}.h"')
     out.extend(['#include "poke2d_icon_indices.h"', ""])
 
     out.append("static const float p2dSpeciesScale[P2D_SPECIES_COUNT] = {")
@@ -97,11 +98,11 @@ def write_metadata_header(path: Path, advances: dict[str, int], manifest: dict,
     out.append("static const unsigned short p2dSpriteIndex[P2D_FORM_COUNT][P2D_ANIM_COUNT][P2D_DIR_COUNT][P2D_MAX_FRAMES] = {")
     for form_index, form in enumerate(forms):
         owner_index, pokemon = form_owner[form_index]
-        group = group_name(owner_index, pokemon)
         dex = form["dex"]
         frame_limit = MAX_FRAMES if dex in base_dexes else 1
         out.append("    {")
         for anim in ANIMATIONS:
+            group = f"{group_name(owner_index, pokemon)}_{anim.lower()}"
             out.append("        {")
             for direction in range(DIRECTIONS):
                 indexes = [
@@ -265,24 +266,28 @@ def write_asset_archive_header(roster: list[dict], output: Path) -> None:
         "typedef struct { const unsigned char *start, *end; } P2dEmbeddedAtlas;",
     ]
     for index, pokemon in enumerate(roster):
-        group = group_name(index, pokemon)
-        prefix = f"p2d_fighter_atlas_{group}"
-        lines.extend((f"extern const unsigned char {prefix}_start[];",
-                      f"extern const unsigned char {prefix}_end[];",
-                      "__asm__(",
-                      '    ".section .rodata\\n"',
-                      '    ".balign 4\\n"',
-                      f'    ".global {prefix}_start\\n"',
-                      f'    "{prefix}_start:\\n"',
-                      f'    ".incbin \\\"../generated/pokearena2d/{group}.t3x\\\"\\n"',
-                      f'    ".global {prefix}_end\\n"',
-                      f'    "{prefix}_end:\\n"',
-                      '    ".text\\n"',
-                      ");"))
-    lines.append("static const P2dEmbeddedAtlas p2dFighterAtlasData[ARENA2D_ROSTER_COUNT] = {")
+        for animation in ANIMATIONS:
+            group = f"{group_name(index, pokemon)}_{animation.lower()}"
+            prefix = f"p2d_fighter_atlas_{group}"
+            lines.extend((f"extern const unsigned char {prefix}_start[];",
+                          f"extern const unsigned char {prefix}_end[];",
+                          "__asm__(",
+                          '    ".section .rodata\\n"',
+                          '    ".balign 4\\n"',
+                          f'    ".global {prefix}_start\\n"',
+                          f'    "{prefix}_start:\\n"',
+                          f'    ".incbin \\\"../generated/pokearena2d/{group}.t3x\\\"\\n"',
+                          f'    ".global {prefix}_end\\n"',
+                          f'    "{prefix}_end:\\n"',
+                          '    ".text\\n"',
+                          ");"))
+    lines.append("static const P2dEmbeddedAtlas p2dFighterAtlasData[ARENA2D_ROSTER_COUNT][P2D_ANIM_COUNT] = {")
     for index, pokemon in enumerate(roster):
-        prefix = f"p2d_fighter_atlas_{group_name(index, pokemon)}"
-        lines.append(f"    {{ {prefix}_start, {prefix}_end }},")
+        entries = []
+        for animation in ANIMATIONS:
+            prefix = f"p2d_fighter_atlas_{group_name(index, pokemon)}_{animation.lower()}"
+            entries.append(f"{{ {prefix}_start, {prefix}_end }}")
+        lines.append("    { " + ", ".join(entries) + " },")
     lines.extend(("};", ""))
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines), encoding="utf-8")
@@ -325,8 +330,6 @@ def main() -> None:
     base_dexes = {mon["dex"] for mon in roster}
     for roster_index, pokemon in enumerate(roster):
         group = group_name(roster_index, pokemon)
-        group_dir = atlas_dir / group
-        group_dir.mkdir(parents=True, exist_ok=True)
         form_indices = [pokemon["baseForm"], *pokemon["evolutionForms"],
                         *[form for form in pokemon["megaForms"] if form >= 0]]
         dexes = list(dict.fromkeys(forms[index]["dex"] for index in form_indices))
@@ -334,6 +337,8 @@ def main() -> None:
             prefix = f"p{dex.replace('-', '_')}"
             frame_limit = MAX_FRAMES if dex in base_dexes else 1
             for animation in ANIMATIONS:
+                group_dir = atlas_dir / f"{group}_{animation.lower()}"
+                group_dir.mkdir(parents=True, exist_ok=True)
                 clip = manifest[dex]["anims"].get(animation) or manifest[dex]["anims"].get("Shoot") or manifest[dex]["anims"]["Idle"]
                 frame_w, frame_h = clip["fw"], clip["fh"]
                 frame_count = len(clip["durations"])

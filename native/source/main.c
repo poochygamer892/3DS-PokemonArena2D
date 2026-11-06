@@ -110,7 +110,7 @@ enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
 static C2D_SpriteSheet gIconAtlas;
-static C2D_SpriteSheet gFighterAtlases[2];
+static C2D_SpriteSheet gFighterAtlases[2][P2D_ANIM_COUNT];
 static int gLoadedFighterSpecies[2] = { -1, -1 };
 static C2D_SpriteSheet gFontAtlas;
 static C2D_SpriteSheet gMenuSheet;
@@ -395,29 +395,34 @@ static void drawBar(float x, float y, float w, float h, int hp, int maxHp)
         rect(x + 1.0f, y + 1.0f, (w - 2.0f) * ratio, h - 2.0f, ratio > 0.35f ? C_GREEN : C_RED);
 }
 
-static bool ensureFighterAtlas(int side, int rosterIndex)
+static bool ensureFighterAtlas(int side, int rosterIndex, int animation)
 {
     if (side < 0 || side > 1 || rosterIndex < 0 ||
         rosterIndex >= ARENA2D_ROSTER_COUNT) return false;
-    if (gFighterAtlases[side] && gLoadedFighterSpecies[side] == rosterIndex)
+    if (animation < 0 || animation >= P2D_ANIM_COUNT) return false;
+    if (gFighterAtlases[side][animation] && gLoadedFighterSpecies[side] == rosterIndex)
         return true;
-    if (gFighterAtlases[side]) C2D_SpriteSheetFree(gFighterAtlases[side]);
-    gFighterAtlases[side] = NULL;
-    gLoadedFighterSpecies[side] = -1;
-    const P2dEmbeddedAtlas *asset = &p2dFighterAtlasData[rosterIndex];
+    if (gLoadedFighterSpecies[side] != rosterIndex) {
+        for (int i = 0; i < P2D_ANIM_COUNT; ++i) {
+            if (gFighterAtlases[side][i]) C2D_SpriteSheetFree(gFighterAtlases[side][i]);
+            gFighterAtlases[side][i] = NULL;
+        }
+        gLoadedFighterSpecies[side] = rosterIndex;
+    }
+    const P2dEmbeddedAtlas *asset = &p2dFighterAtlasData[rosterIndex][animation];
     size_t size = (size_t)(asset->end - asset->start);
     if (size == 0) return false;
-    gFighterAtlases[side] = C2D_SpriteSheetLoadFromMem(asset->start, size);
-    if (!gFighterAtlases[side]) return false;
-    gLoadedFighterSpecies[side] = rosterIndex;
+    gFighterAtlases[side][animation] = C2D_SpriteSheetLoadFromMem(asset->start, size);
+    if (!gFighterAtlases[side][animation]) return false;
     return true;
 }
 
 static void freeFighterAtlases(void)
 {
     for (int side = 0; side < 2; ++side) {
-        if (gFighterAtlases[side]) C2D_SpriteSheetFree(gFighterAtlases[side]);
-        gFighterAtlases[side] = NULL;
+        for (int animation = 0; animation < P2D_ANIM_COUNT; ++animation)
+            if (gFighterAtlases[side][animation])
+                C2D_SpriteSheetFree(gFighterAtlases[side][animation]);
         gLoadedFighterSpecies[side] = -1;
     }
 }
@@ -430,12 +435,12 @@ static C2D_Image pokemonFrame(int side, int rosterIndex, int formIndex,
     if (art < 0 || art >= P2D_SPECIES_COUNT) art = 0;
     if (animation < 0 || animation >= P2D_ANIM_COUNT) animation = ANIM_IDLE;
     if (direction < 0 || direction >= P2D_DIR_COUNT) direction = 0;
-    if (!ensureFighterAtlas(side, rosterIndex)) return (C2D_Image){ 0 };
+    if (!ensureFighterAtlas(side, rosterIndex, animation)) return (C2D_Image){ 0 };
     int count = p2dFrameCount[art][animation];
     if (count < 1) count = 1;
     if (frame < 0) frame = 0;
     frame %= count;
-    C2D_Image image = C2D_SpriteSheetGetImage(gFighterAtlases[side],
+    C2D_Image image = C2D_SpriteSheetGetImage(gFighterAtlases[side][animation],
         p2dSpriteIndex[formIndex][animation][direction][frame]);
     C3D_TexSetFilter(image.tex, GPU_NEAREST, GPU_NEAREST);
     return image;
