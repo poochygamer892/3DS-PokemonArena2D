@@ -5,7 +5,6 @@
 #include <string.h>
 #include "arena_sfx.h"
 #include "web_arena_data.h"
-#include "poke2d_background_indices.h"
 #include "poke2d_font_indices.h"
 #include "poke2d_sprite_indices.h"
 #include "poke2d_sprite_meta.h"
@@ -109,8 +108,9 @@ enum { ANIM_IDLE, ANIM_WALK, ANIM_SHOOT };
 static C3D_RenderTarget *gTop;
 static C3D_RenderTarget *gBottom;
 static C2D_SpriteSheet gPoke2dAtlas;
-static C2D_SpriteSheet gEnvironmentAtlas;
 static C2D_SpriteSheet gFontAtlas;
+static C2D_SpriteSheet gMenuSheet;
+static C2D_SpriteSheet gTitleSheet;
 static C2D_SpriteSheet gArenaSheets[ARENA_COUNT];
 static C2D_Image gMenuBackground;
 static C2D_Image gArenaImages[ARENA_COUNT];
@@ -161,10 +161,12 @@ static const u32 C_GOLD = 0xFFC53DFF;
 
 extern const unsigned char poke2d_atlas_start[];
 extern const unsigned char poke2d_atlas_end[];
-extern const unsigned char poke2d_background_atlas_start[];
-extern const unsigned char poke2d_background_atlas_end[];
 extern const unsigned char poke2d_font_atlas_start[];
 extern const unsigned char poke2d_font_atlas_end[];
+extern const unsigned char menu_background_t3x_start[];
+extern const unsigned char menu_background_t3x_end[];
+extern const unsigned char web_title_t3x_start[];
+extern const unsigned char web_title_t3x_end[];
 extern const unsigned char arena_stadium_t3x_start[];
 extern const unsigned char arena_stadium_t3x_end[];
 extern const unsigned char arena_neon_t3x_start[];
@@ -243,11 +245,22 @@ __asm__(
 __asm__(
     ".section .rodata\n"
     ".balign 4\n"
-    ".global poke2d_background_atlas_start\n"
-    "poke2d_background_atlas_start:\n"
-    ".incbin \"../generated/pokearena2d/poke2d_background_atlas.t3x\"\n"
-    ".global poke2d_background_atlas_end\n"
-    "poke2d_background_atlas_end:\n"
+    ".global menu_background_t3x_start\n"
+    "menu_background_t3x_start:\n"
+    ".incbin \"../generated/pokearena2d/menu_background.t3x\"\n"
+    ".global menu_background_t3x_end\n"
+    "menu_background_t3x_end:\n"
+    ".text\n"
+);
+
+__asm__(
+    ".section .rodata\n"
+    ".balign 4\n"
+    ".global web_title_t3x_start\n"
+    "web_title_t3x_start:\n"
+    ".incbin \"../generated/pokearena2d/web_title.t3x\"\n"
+    ".global web_title_t3x_end\n"
+    "web_title_t3x_end:\n"
     ".text\n"
 );
 
@@ -2116,9 +2129,12 @@ int main(int argc, char **argv)
     }
     C2D_Prepare();
     (void)sfxInit();
-    gEnvironmentAtlas = C2D_SpriteSheetLoadFromMem(
-        poke2d_background_atlas_start,
-        (size_t)(poke2d_background_atlas_end - poke2d_background_atlas_start));
+    gMenuSheet = C2D_SpriteSheetLoadFromMem(
+        menu_background_t3x_start,
+        (size_t)(menu_background_t3x_end - menu_background_t3x_start));
+    gTitleSheet = C2D_SpriteSheetLoadFromMem(
+        web_title_t3x_start,
+        (size_t)(web_title_t3x_end - web_title_t3x_start));
     gPoke2dAtlas = C2D_SpriteSheetLoadFromMem(
         poke2d_atlas_start, (size_t)(poke2d_atlas_end - poke2d_atlas_start));
     gFontAtlas = C2D_SpriteSheetLoadFromMem(
@@ -2139,8 +2155,9 @@ int main(int argc, char **argv)
     bool arenaLoadFailed = false;
     for (int i = 0; i < ARENA_COUNT; ++i)
         if (!gArenaSheets[i]) arenaLoadFailed = true;
-    if (!gEnvironmentAtlas || !gPoke2dAtlas || !gFontAtlas || arenaLoadFailed) {
-        if (gEnvironmentAtlas) C2D_SpriteSheetFree(gEnvironmentAtlas);
+    if (!gMenuSheet || !gTitleSheet || !gPoke2dAtlas || !gFontAtlas || arenaLoadFailed) {
+        if (gMenuSheet) C2D_SpriteSheetFree(gMenuSheet);
+        if (gTitleSheet) C2D_SpriteSheetFree(gTitleSheet);
         if (gPoke2dAtlas) C2D_SpriteSheetFree(gPoke2dAtlas);
         if (gFontAtlas) C2D_SpriteSheetFree(gFontAtlas);
         for (int i = 0; i < ARENA_COUNT; ++i)
@@ -2151,12 +2168,10 @@ int main(int argc, char **argv)
         gfxExit();
         return 1;
     }
-    gMenuBackground = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_menu_background_idx);
+    gMenuBackground = C2D_SpriteSheetGetImage(gMenuSheet, 0);
     for (int i = 0; i < ARENA_COUNT; ++i)
         gArenaImages[i] = C2D_SpriteSheetGetImage(gArenaSheets[i], 0);
-    gWebTitle = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_web_title_idx);
+    gWebTitle = C2D_SpriteSheetGetImage(gTitleSheet, 0);
     gGameLogo = C2D_SpriteSheetGetImage(
         gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
@@ -2172,7 +2187,8 @@ int main(int argc, char **argv)
     gBottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     if (!gTop || !gBottom) {
         C2D_SpriteSheetFree(gPoke2dAtlas);
-        C2D_SpriteSheetFree(gEnvironmentAtlas);
+        C2D_SpriteSheetFree(gMenuSheet);
+        C2D_SpriteSheetFree(gTitleSheet);
         C2D_SpriteSheetFree(gFontAtlas);
         for (int i = 0; i < ARENA_COUNT; ++i)
             C2D_SpriteSheetFree(gArenaSheets[i]);
@@ -2230,7 +2246,8 @@ int main(int argc, char **argv)
     }
 
     C2D_SpriteSheetFree(gPoke2dAtlas);
-    C2D_SpriteSheetFree(gEnvironmentAtlas);
+    C2D_SpriteSheetFree(gMenuSheet);
+    C2D_SpriteSheetFree(gTitleSheet);
     C2D_SpriteSheetFree(gFontAtlas);
     for (int i = 0; i < ARENA_COUNT; ++i)
         C2D_SpriteSheetFree(gArenaSheets[i]);
