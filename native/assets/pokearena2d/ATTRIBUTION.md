@@ -16,6 +16,19 @@ The text glyphs are rasterized from **Open Sans Regular** at 40 px. The font is
 Copyright 2010–2011 Google Corporation and licensed under Apache License 2.0;
 the full license is included as `source/font/LICENSE-OpenSans.txt`.
 
+## Arena-2D resources used with permission
+
+The ten source arena images in `../arena2d_authorized/` are adapted from
+[Freakyy-11/Arena-2D](https://github.com/Freakyy-11/Arena-2D) for the 400 × 240
+3DS top screen. They are included under permission granted by that repository's
+author to this project's owner.
+
+The core interface and combat sound effects in
+`../arena2d_authorized/sfx/` are transcodes of files from that same repository,
+used with the same permission. Its README credits the original effects to
+Kenney and rubberduck's “80 CC0 RPG SFX”; no music files from Arena-2D are
+included in this project.
+
 These files are included to build this personal, unofficial homebrew port. This
 repository does not claim ownership of these assets or grant rights beyond the
 licenses and permissions of their original owners. The 3DS project is not

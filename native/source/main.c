@@ -3,12 +3,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "arena_sfx.h"
 #include "poke2d_background_indices.h"
 #include "poke2d_font_indices.h"
 #include "poke2d_sprite_indices.h"
 #include "poke2d_sprite_meta.h"
 
 #define TEAM_SIZE 3
+#define ARENA_COUNT 10
 #define TOP_W 400.0f
 #define TOP_H 240.0f
 #define BOTTOM_W 320.0f
@@ -108,6 +110,10 @@ static const char *const kMoveLabel[6][3] = {
 static const char *const kUltimateLabel[6] = {
     "SOLAR BEAM", "FIRE BLAST", "HYDRO PUMP", "THUNDER", "BLAST BURN", "HYDRO CANNON"
 };
+static const char *const kArenaNames[ARENA_COUNT] = {
+    "STADIUM", "SKY PILLAR", "SPEAR PILLAR", "MT CORONET", "CASTLE",
+    "WHIRL ISLES", "UNOVA", "KALOS", "ALOLA", "PALDEA"
+};
 
 static const MoveDefinition kMoves[6][3] = {
     {
@@ -149,7 +155,7 @@ static C3D_RenderTarget *gBottom;
 static C2D_SpriteSheet gPoke2dAtlas;
 static C2D_SpriteSheet gEnvironmentAtlas;
 static C2D_SpriteSheet gFontAtlas;
-static C2D_Image gArenaImage[4];
+static C2D_Image gArenaImage[ARENA_COUNT];
 static C2D_Image gMenuBackground;
 static C2D_Image gGameLogo;
 static C2D_Image gTextFill[P2D_TEXT_COUNT];
@@ -458,6 +464,7 @@ static void switchPokemon(int side, int slot)
         return;
 
     gActive[side] = slot;
+    sfxPlay(SFX_SWITCH);
     gFighter[side].switchCd = 3.5f;
     gFighter[side].dashIFrames = 0.2f;
     gFighter[side].burnTime = 0.0f;
@@ -491,6 +498,7 @@ static void damagePokemon(int side, int damage, float chargeRatio)
         gFighter[opponent].ultimate = clampf(gFighter[opponent].ultimate + (float)damage / (float)oppMax * chargeRatio, 0.0f, 100.0f);
 
     if (p->hp == 0) {
+        sfxPlay(SFX_KO);
         int next = nextLiving(side, gActive[side]);
         if (next >= 0) {
             gActive[side] = next;
@@ -586,6 +594,8 @@ static void combatHit(int attacker, int rawDamage, AttackType attackType,
     if (gActive[target] != activeBefore || gTeam[target][activeBefore].hp == hpBefore)
         return;
 
+    sfxPlay(damage >= 18 ? SFX_HEAVY_HIT : SFX_BASIC);
+
     Combatant *victim = &gFighter[target];
     victim->knockbackX = dx / length * knockback;
     victim->knockbackY = dy / length * knockback;
@@ -649,6 +659,7 @@ static void useMove(int side, int slot)
     float distance = sqrtf(dx * dx + dy * dy);
     if (distance < 0.1f) return;
     if (distance > move->range) return;
+    sfxPlay(move->type == TYPE_FIRE ? SFX_FIRE : SFX_MOVE);
     dx /= distance;
     dy /= distance;
     playAttackAnimation(side);
@@ -724,6 +735,7 @@ static void performBasicAttack(int side)
     fighter->comboCount = (fighter->comboCount % 3) + 1;
     fighter->comboTimer = 0.92f;
     playAttackAnimation(side);
+    sfxPlay(fighter->comboCount == 3 ? SFX_HEAVY_HIT : SFX_BASIC);
     static const float damageRatio[3] = { 0.032f, 0.046f, 0.066f };
     static const float knockback[3] = { 24.0f, 39.0f, 72.0f };
     static const float stun[3] = { 0.07f, 0.11f, 0.24f };
@@ -778,6 +790,7 @@ static void useDash(void)
         spawnEffect(FX_DODGE, c->x - dx / mag * 20.0f,
                     c->y - dy / mag * 16.0f, c->x, c->y,
                     0.24f, 0x76E4E8FF);
+        sfxPlay(SFX_DASH);
     }
 }
 
@@ -829,6 +842,7 @@ static void updateSupply(float dt)
             gFighter[0].ultimate = clampf(gFighter[0].ultimate + 20.0f, 0.0f, 100.0f);
         else
             gFighter[0].speedBoost = 6.0f;
+        sfxPlay(gSupplyKind == DROP_HEAL ? SFX_HEAL : SFX_UI_CONFIRM);
         gSupplyLife = 0.0f;
     }
     if (gSupplyLife < 0.0f) gSupplyLife = 0.0f;
@@ -970,8 +984,11 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 static void drawArena(void)
 {
     int arena = gArenaIndex;
-    if (arena < 0 || arena >= 4) arena = 0;
-    drawStage(gArenaImage[arena]);
+    if (arena < 0 || arena >= ARENA_COUNT) arena = 0;
+    /* Arena artwork is packed at 320 × 192 to fit ten scenes in Old 2DS
+       texture memory, then scaled with linear filtering to the top screen. */
+    C2D_DrawImageAt(gArenaImage[arena], 0.0f, 0.0f, 0.0f,
+                    NULL, 1.25f, 1.25f);
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -1150,7 +1167,6 @@ static void drawBottomBattle(void)
     const char *modeName = gGameMode == MODE_CPU ? "VS CPU" :
                            (gGameMode == MODE_STORY ? "LEAGUE" :
                             (gGameMode == MODE_RUN ? "ARENA" : "TRAINING"));
-    static const char *const arenaNames[] = { "STADIUM", "NEON", "CRATER", "RUINS" };
     if (gGameMode == MODE_STORY)
         snprintf(matchHeader, sizeof(matchHeader), "%s  /  CHAPTER %02d",
                  modeName, gStoryStage + 1);
@@ -1159,7 +1175,7 @@ static void drawBottomBattle(void)
                  modeName, gRunFloor);
     else
         snprintf(matchHeader, sizeof(matchHeader), "%s  /  %s", modeName,
-                 arenaNames[gArenaIndex]);
+                 kArenaNames[gArenaIndex]);
     fittedText(9, 7, 302.0f, 0.40f, C_TEXT, matchHeader, false);
     for (int i = 0; i < TEAM_SIZE; ++i) {
         float x = 8.0f + i * 103.0f;
@@ -1415,9 +1431,8 @@ static void drawTitleBottom(void)
         break;
     case PAGE_SETTINGS: {
         drawMenuHeader("SETTINGS");
-        static const char *const arenas[] = { "STADIUM", "NEON", "CRATER", "RUINS" };
         char arena[32], cpu[32], size[32];
-        snprintf(arena, sizeof(arena), "ARENA: %s", arenas[gArenaIndex]);
+        snprintf(arena, sizeof(arena), "ARENA: %s", kArenaNames[gArenaIndex]);
         snprintf(cpu, sizeof(cpu), "CPU: %s", gCpuDifficulty == 0 ? "EASY" :
                  (gCpuDifficulty == 1 ? "NORMAL" : "HARD"));
         snprintf(size, sizeof(size), "TEXT SIZE: %s", gUiTextScale > 1.05f ? "LARGE" : "NORMAL");
@@ -1524,6 +1539,7 @@ static void pushMenuPage(MenuPage page)
 
 static void goBackMenu(void)
 {
+    sfxPlay(SFX_UI_BACK);
     MenuPage page = gMenuDepth > 0 ? gMenuStack[--gMenuDepth] : PAGE_HOME;
     setMenuPage(page);
 }
@@ -1537,6 +1553,7 @@ static void startMode(GameMode mode)
 
 static void activateHomeSelection(void)
 {
+    sfxPlay(SFX_UI_SELECT);
     switch (gMenuSelection) {
     case 0: pushMenuPage(PAGE_PLAY); break;
     case 1: pushMenuPage(PAGE_ONLINE); break;
@@ -1551,6 +1568,7 @@ static void activateHomeSelection(void)
 
 static void activatePlaySelection(void)
 {
+    sfxPlay(SFX_UI_SELECT);
     switch (gMenuSelection) {
     case 0: pushMenuPage(PAGE_STORY); gStoryStage = gStoryUnlocked; break;
     case 1: pushMenuPage(PAGE_CPU); break;
@@ -1586,7 +1604,8 @@ static void changePlayerSpecies(int slot, int delta)
 
 static void adjustSetting(int delta)
 {
-    if (gMenuSelection == 0) gArenaIndex = (gArenaIndex + delta + 4) % 4;
+    if (gMenuSelection == 0)
+        gArenaIndex = (gArenaIndex + delta + ARENA_COUNT) % ARENA_COUNT;
     else if (gMenuSelection == 1)
         gCpuDifficulty = (gCpuDifficulty + delta + 3) % 3;
     else if (gMenuSelection == 2)
@@ -1860,6 +1879,7 @@ int main(int argc, char **argv)
         return 1;
     }
     C2D_Prepare();
+    (void)sfxInit();
     gEnvironmentAtlas = C2D_SpriteSheetLoadFromMem(
         poke2d_background_atlas_start,
         (size_t)(poke2d_background_atlas_end - poke2d_background_atlas_start));
@@ -1872,6 +1892,7 @@ int main(int argc, char **argv)
         if (gEnvironmentAtlas) C2D_SpriteSheetFree(gEnvironmentAtlas);
         if (gPoke2dAtlas) C2D_SpriteSheetFree(gPoke2dAtlas);
         if (gFontAtlas) C2D_SpriteSheetFree(gFontAtlas);
+        sfxExit();
         C2D_Fini();
         C3D_Fini();
         gfxExit();
@@ -1880,16 +1901,28 @@ int main(int argc, char **argv)
     gArenaImage[0] = C2D_SpriteSheetGetImage(
         gEnvironmentAtlas, poke2d_background_indices_bg_arena_stadium_idx);
     gArenaImage[1] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_neon_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_sky_pillar_idx);
     gArenaImage[2] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_crater_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_spear_pillar_idx);
     gArenaImage[3] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_ruins_idx);
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_mt_coronet_idx);
+    gArenaImage[4] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_castle_idx);
+    gArenaImage[5] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_whirl_idx);
+    gArenaImage[6] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_unova_idx);
+    gArenaImage[7] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_kalos_idx);
+    gArenaImage[8] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_alola_idx);
+    gArenaImage[9] = C2D_SpriteSheetGetImage(
+        gEnvironmentAtlas, poke2d_background_indices_bg_arena_paldea_idx);
     gMenuBackground = C2D_SpriteSheetGetImage(
         gEnvironmentAtlas, poke2d_background_indices_bg_menu_background_idx);
     gGameLogo = C2D_SpriteSheetGetImage(
         gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < ARENA_COUNT; ++i)
         C3D_TexSetFilter(gArenaImage[i].tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gGameLogo.tex, GPU_NEAREST, GPU_NEAREST);
@@ -1903,6 +1936,7 @@ int main(int argc, char **argv)
         C2D_SpriteSheetFree(gPoke2dAtlas);
         C2D_SpriteSheetFree(gEnvironmentAtlas);
         C2D_SpriteSheetFree(gFontAtlas);
+        sfxExit();
         C2D_Fini();
         C3D_Fini();
         gfxExit();
@@ -1958,6 +1992,7 @@ int main(int argc, char **argv)
     C2D_SpriteSheetFree(gPoke2dAtlas);
     C2D_SpriteSheetFree(gEnvironmentAtlas);
     C2D_SpriteSheetFree(gFontAtlas);
+    sfxExit();
     C2D_Fini();
     C3D_Fini();
     gfxExit();

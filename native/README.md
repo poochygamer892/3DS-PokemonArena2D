@@ -1,7 +1,7 @@
 # Poké Arena 2D homebrew para Nintendo 3DS
 
 Port nativo en progreso del juego web [Poké Arena 2D](https://www.pokearena2d.com/).
-La interfaz adapta los menús del sitio y usa su logo, fondos, cuatro arenas y
+La interfaz adapta los menús del sitio y usa su logo, fondos, diez arenas y
 seis Pokémon animados. Los glifos se generan desde Open Sans Regular a 40 px y
 se almacenan en un atlas RGBA8 filtrado para reducir el grosor y los bordes
 dentados. Las etiquetas se dibujan delante de los paneles del menú.
@@ -28,8 +28,16 @@ recursos está en `assets/pokearena2d/ATTRIBUTION.md`.
 - Pantalla táctil: seleccionar menús y acciones.
 - START durante el combate: pausa, reinicio o regreso al menú.
 - Menús: Circle Pad o cruceta para navegar, A para elegir y B para volver.
-- Ajustes: cambia entre Stadium, Neon, Crater y Ruins, el nivel de CPU y el
-tamaño del texto.
+- Ajustes: cambia entre diez arenas, el nivel de CPU y el tamaño del texto.
+
+## Recursos autorizados de Arena-2D
+
+La v0.7.0 adapta diez texturas de arena de
+[`Freakyy-11/Arena-2D`](https://github.com/Freakyy-11/Arena-2D) a 400 × 240 y
+reproduce una selección de sus efectos de sonido durante el combate y los
+menús. Se usan con permiso del autor comunicado al propietario del proyecto.
+No se incluye ninguna pista musical de ese repositorio. Consulta
+`assets/pokearena2d/ATTRIBUTION.md` para procedencia y créditos de los recursos.
 
 ## Compilar
 

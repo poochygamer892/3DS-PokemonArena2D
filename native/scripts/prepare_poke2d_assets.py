@@ -138,9 +138,16 @@ def write_metadata_header(path: Path, advances: dict[str, int]) -> None:
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
-def make_stage(source: Path, output: Path) -> None:
+def make_stage(source: Path, output: Path,
+               frame: tuple[int, int, int, int] | None = None,
+               target_size: tuple[int, int] = (400, 240)) -> None:
     image = Image.open(source).convert("RGB")
-    target_ratio = 400 / 240
+    if frame is not None:
+        left, top, right, bottom = frame
+        if left < 0 or top < 0 or right > image.width or bottom > image.height:
+            raise ValueError(f"Arena frame {frame} is outside {source}: {image.size}")
+        image = image.crop(frame)
+    target_ratio = target_size[0] / target_size[1]
     source_ratio = image.width / image.height
     if source_ratio > target_ratio:
         crop_width = round(image.height * target_ratio)
@@ -150,7 +157,7 @@ def make_stage(source: Path, output: Path) -> None:
         crop_height = round(image.width / target_ratio)
         top = (image.height - crop_height) // 2
         image = image.crop((0, top, image.width, top + crop_height))
-    image = image.resize((400, 240), Image.Resampling.LANCZOS)
+    image = image.resize(target_size, Image.Resampling.LANCZOS)
     output.parent.mkdir(parents=True, exist_ok=True)
     image.save(output, optimize=True)
 
@@ -179,9 +186,26 @@ def main() -> None:
         for stale in directory.glob("*.png"):
             stale.unlink()
     make_stage(args.source / "menu-background.jpg", background_dir / "bg_menu_background.png")
-    for arena, source_name in (("stadium", "stadium"), ("neon", "neon"),
-                               ("crater", "crater"), ("ruins", "ruinas")):
-        make_stage(args.source / f"arena-{source_name}.jpg", background_dir / f"bg_arena_{arena}.png")
+    # Arena artwork used with the author's permission from Freakyy-11/Arena-2D.
+    # The frame values are the playfield regions documented by that project;
+    # the crop keeps its arena composition intact on the 3DS's 400 x 240 top screen.
+    arena_dir = args.source.parent.parent / "arena2d_authorized"
+    arenas = (
+        ("stadium", "stade.webp", (55, 375, 520, 905)),
+        ("sky_pillar", "pilier.jpg", (130, 556, 636, 1086)),
+        ("spear_pillar", "colonnes.jpg", (130, 556, 636, 1088)),
+        ("mt_coronet", "couronne.webp", (92, 427, 478, 808)),
+        ("castle", "chateau.jpg", (94, 494, 754, 1189)),
+        ("whirl", "tourbillon.jpg", (168, 628, 602, 1080)),
+        ("unova", "unys.webp", (80, 413, 491, 822)),
+        ("kalos", "kalos.webp", (60, 368, 511, 950)),
+        ("alola", "alola.webp", (80, 398, 505, 852)),
+        ("paldea", "paldea.webp", (100, 356, 586, 850)),
+    )
+    for arena, source_name, frame in arenas:
+        make_stage(arena_dir / source_name,
+                   background_dir / f"bg_arena_{arena}.png", frame,
+                   target_size=(320, 192))
     prepare_logo(args.source / "logo.png", atlas_dir / "game_logo.png")
 
     for prefix, _display, dex, _scale, clips in POKEMON:
