@@ -1327,7 +1327,7 @@ static void drawBottomBattle(void)
         if (member->hp <= 0) rect(x + 1.0f, 62.0f, 95.0f, 2.0f, C_RED);
     }
     char ult[32];
-    int species = gTeam[0][gActive[0]].speciesArt;
+    Pokemon *activePokemon = &gTeam[0][gActive[0]];
     char basicLabel[16];
     snprintf(basicLabel, sizeof(basicLabel), "BASIC %d/3",
              (gFighter[0].comboCount % 3) + 1);
