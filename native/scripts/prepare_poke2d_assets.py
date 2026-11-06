@@ -35,15 +35,18 @@ POKEMON = [
         ("Walk", 32, 40, 4, 16, 25),
         ("Shoot", 80, 80, 10, 40, 45),
     ]),
-    ("p6", "Charizard", "0006", 0.82, [
-        ("Idle", 40, 48, 4, 20, 30),
-        ("Walk", 40, 48, 4, 20, 30),
-        ("Shoot", 80, 88, 14, 40, 50),
+    # Local sheets supplied by the authorized Korean Pokemon Arena project.
+    # Four directional walk frames are reused for idle and action poses until
+    # its distinct action animations are ported to the native renderer.
+    ("scyther", "Scyther", "korean:scyther", 0.90, [
+        ("Idle", 40, 48, 4, 20, 31),
+        ("Walk", 40, 48, 4, 20, 31),
+        ("Shoot", 40, 48, 4, 20, 31),
     ]),
-    ("p9", "Blastoise", "0009", 0.84, [
-        ("Idle", 40, 40, 8, 20, 25),
-        ("Walk", 32, 40, 4, 16, 25),
-        ("Shoot", 64, 72, 13, 32, 41),
+    ("lucario", "Lucario", "korean:lucario", 0.92, [
+        ("Idle", 32, 48, 4, 16, 31),
+        ("Walk", 32, 48, 4, 16, 31),
+        ("Shoot", 32, 48, 4, 16, 31),
     ]),
 ]
 
@@ -186,31 +189,17 @@ def main() -> None:
         for stale in directory.glob("*.png"):
             stale.unlink()
     make_stage(args.source / "menu-background.jpg", background_dir / "bg_menu_background.png")
-    # Arena artwork used with the author's permission from Freakyy-11/Arena-2D.
-    # The frame values are the playfield regions documented by that project;
-    # the crop keeps its arena composition intact on the 3DS's 400 x 240 top screen.
-    arena_dir = args.source.parent.parent / "arena2d_authorized"
-    arenas = (
-        ("stadium", "stade.webp", (55, 375, 520, 905)),
-        ("sky_pillar", "pilier.jpg", (130, 556, 636, 1086)),
-        ("spear_pillar", "colonnes.jpg", (130, 556, 636, 1088)),
-        ("mt_coronet", "couronne.webp", (92, 427, 478, 808)),
-        ("castle", "chateau.jpg", (94, 494, 754, 1189)),
-        ("whirl", "tourbillon.jpg", (168, 628, 602, 1080)),
-        ("unova", "unys.webp", (80, 413, 491, 822)),
-        ("kalos", "kalos.webp", (60, 368, 511, 950)),
-        ("alola", "alola.webp", (80, 398, 505, 852)),
-        ("paldea", "paldea.webp", (100, 356, 586, 850)),
-    )
-    for arena, source_name, frame in arenas:
-        make_stage(arena_dir / source_name,
-                   background_dir / f"bg_arena_{arena}.png", frame,
-                   target_size=(320, 192))
+    # The Korean source renders its stadium procedurally.  The native renderer
+    # follows that approach, so no previous project's arena art is packaged.
     prepare_logo(args.source / "logo.png", atlas_dir / "game_logo.png")
 
     for prefix, _display, dex, _scale, clips in POKEMON:
         for animation, frame_w, frame_h, frame_count, _ox, _oy in clips:
-            source = Image.open(args.source / "pmd" / dex / f"{animation}.png").convert("RGBA")
+            if dex.startswith("korean:"):
+                source = Image.open(args.source.parent.parent / "korean_arena_authorized" /
+                                    f"{dex.split(':', 1)[1]}_walk.png").convert("RGBA")
+            else:
+                source = Image.open(args.source / "pmd" / dex / f"{animation}.png").convert("RGBA")
             expected = (frame_w * frame_count, frame_h * DIRECTIONS)
             if source.size != expected:
                 raise ValueError(f"Unexpected {dex}/{animation} sheet: {source.size}, expected {expected}")

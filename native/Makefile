@@ -58,9 +58,6 @@ all: assets $(BUILD)
 # palette. Backgrounds stay at full 24-bit colour before reaching the screen.
 assets:
 	@mkdir -p generated/pokearena2d include
-	@python3 scripts/generate_arena2d_game_data.py \
-		--input assets/arena2d_authorized/data/arena2d_game_data.json \
-		--output include/arena2d_game_data.h
 	@python3 scripts/prepare_poke2d_assets.py \
 		--source assets/pokearena2d/source \
 		--output generated/pokearena2d \

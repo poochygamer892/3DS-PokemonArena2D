@@ -4,14 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "arena_sfx.h"
-#include "arena2d_game_data.h"
+#include "korean_arena_data.h"
 #include "poke2d_background_indices.h"
 #include "poke2d_font_indices.h"
 #include "poke2d_sprite_indices.h"
 #include "poke2d_sprite_meta.h"
 
 #define TEAM_SIZE 3
-#define ARENA_COUNT 10
+#define ARENA_COUNT 1
 #define TOP_W 400.0f
 #define TOP_H 240.0f
 #define BOTTOM_W 320.0f
@@ -40,7 +40,7 @@ typedef struct {
     float moveX, moveY;
     float knockbackX, knockbackY;
     float basicCd;
-    float skillCd[3];
+    float skillCd[4];
     float dashCd;
     float dashIFrames;
     float switchCd;
@@ -113,8 +113,7 @@ static const char *const kUltimateLabel[6] = {
     "SOLAR BEAM", "FIRE BLAST", "HYDRO PUMP", "THUNDER", "BLAST BURN", "HYDRO CANNON"
 };
 static const char *const kArenaNames[ARENA_COUNT] = {
-    "STADIUM", "SKY PILLAR", "SPEAR PILLAR", "MT CORONET", "CASTLE",
-    "WHIRL ISLES", "UNOVA", "KALOS", "ALOLA", "PALDEA"
+    "KOREAN ARENA STADIUM"
 };
 
 static const MoveDefinition kMoves[6][3] = {
@@ -157,7 +156,6 @@ static C3D_RenderTarget *gBottom;
 static C2D_SpriteSheet gPoke2dAtlas;
 static C2D_SpriteSheet gEnvironmentAtlas;
 static C2D_SpriteSheet gFontAtlas;
-static C2D_Image gArenaImage[ARENA_COUNT];
 static C2D_Image gMenuBackground;
 static C2D_Image gGameLogo;
 static C2D_Image gTextFill[P2D_TEXT_COUNT];
@@ -900,7 +898,7 @@ static void useSkill(int slot)
 {
     Combatant *fighter = &gFighter[0];
     Pokemon *activePokemon = &gTeam[0][gActive[0]];
-    if (gScene != SCENE_BATTLE || slot < 0 || slot > 2 ||
+    if (gScene != SCENE_BATTLE || slot < 0 || slot > 3 ||
         fighter->skillCd[slot] > 0.0f || fighter->hitStun > 0.0f)
         return;
     fighter->skillCd[slot] = moveFromRoster(activePokemon, slot).cooldown;
@@ -1100,7 +1098,7 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     cpu->dashIFrames = fmaxf(0.0f, cpu->dashIFrames - dt);
     cpu->hurtFlash = fmaxf(0.0f, cpu->hurtFlash - dt);
     cpu->switchCd = fmaxf(0.0f, cpu->switchCd - dt);
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 4; ++i)
         player->skillCd[i] = fmaxf(0.0f, player->skillCd[i] - dt);
     gHitFlash = fmaxf(0.0f, gHitFlash - dt);
 
@@ -1109,7 +1107,7 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
     if (down & KEY_X) useSkill(1);
     if (down & KEY_Y) useSkill(2);
     if (down & KEY_L) useDash();
-    if (down & KEY_R) useUltimate();
+    if (down & KEY_R) useSkill(3);
     if (down & KEY_SELECT)
         switchPokemon(0, (gActive[0] + 1) % TEAM_SIZE);
 
@@ -1122,12 +1120,22 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
 static void drawArena(void)
 {
-    int arena = gArenaIndex;
-    if (arena < 0 || arena >= ARENA_COUNT) arena = 0;
-    /* Arena artwork is packed at 320 × 192 to fit ten scenes in Old 2DS
-       texture memory, then scaled with linear filtering to the top screen. */
-    C2D_DrawImageAt(gArenaImage[arena], 0.0f, 0.0f, 0.0f,
-                    NULL, 1.25f, 1.25f);
+    /* Native version of the large procedural retro stadium from the Korean
+       source project.  It deliberately uses geometry instead of a borrowed
+       arena texture. */
+    rect(0, 0, TOP_W, TOP_H, 0x171C2BFF);
+    rect(0, 31, TOP_W, 178, 0x31445BFF);
+    rect(12, 42, 376, 156, 0x183C2AFF);
+    for (int x = 16; x < 388; x += 31)
+        rect((float)x, 42, 14, 156, ((x / 31) & 1) ? 0x215333FF : 0x1E4B30FF);
+    rect(12, 42, 376, 2, 0xD6E8C5FF);
+    rect(12, 196, 376, 2, 0xD6E8C5FF);
+    rect(199, 42, 2, 156, 0xD6E8C5FF);
+    C2D_DrawCircleSolid(200, 120, 0.03f, 31, c2dColor(0xD6E8C5FF));
+    C2D_DrawCircleSolid(200, 120, 0.04f, 28, c2dColor(0x1F4F32FF));
+    C2D_DrawCircleSolid(200, 120, 0.05f, 5, c2dColor(0xEDE6CFFF));
+    rect(0, 25, TOP_W, 8, 0x303B4DFF);
+    rect(0, 207, TOP_W, 8, 0x303B4DFF);
 }
 
 static void drawSegmentedBar(float x, float y, float w, float h, int hp, int maxHp)
@@ -1331,18 +1339,18 @@ static void drawBottomBattle(void)
     char basicLabel[16];
     snprintf(basicLabel, sizeof(basicLabel), "BASIC %d/3",
              (gFighter[0].comboCount % 3) + 1);
-    snprintf(ult, sizeof(ult), "ULTIMATE  %d%%", (int)gFighter[0].ultimate);
+    snprintf(ult, sizeof(ult), "KOREAN ARENA MOVESET");
     textAt(9, 73, 0.25f, C_TEXT, ult);
-    drawBar(113, 76, 198, 8, (int)gFighter[0].ultimate, 100);
+    rect(9, 76, 302, 8, 0x315B86FF);
     actionButton(8, 91, "A", basicLabel, gFighter[0].basicCd, 0x75A8F8FF);
     actionButton(112, 91, "B", rosterMoveName(activePokemon, 0), gFighter[0].skillCd[0], 0xF08C43FF);
     actionButton(216, 91, "X", rosterMoveName(activePokemon, 1), gFighter[0].skillCd[1], 0xF2B93AFF);
     actionButton(8, 148, "Y", rosterMoveName(activePokemon, 2), gFighter[0].skillCd[2], 0x9B85E9FF);
     actionButton(112, 148, "L", "DODGE", gFighter[0].dashCd, 0x5BD0D6FF);
     actionButton(216, 148, "R", rosterMoveName(activePokemon, 3),
-                 fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xD28BEEFF);
+                 gFighter[0].skillCd[3], 0xD28BEEFF);
     fittedText(9, 207, 302.0f, 0.22f, C_MUTED, "CIRCLE PAD / D-PAD: MOVE   SELECT: SWITCH", false);
-    fittedText(9, 222, 302.0f, 0.20f, C_MUTED, "A BASIC  B/X/Y MOVES  L DODGE  R ULTIMATE", false);
+    fittedText(9, 222, 302.0f, 0.20f, C_MUTED, "A BASIC  B/X/Y/R SKILLS  L DODGE", false);
 }
 
 static void drawMenuBackdrop(void)
@@ -1584,7 +1592,7 @@ static void drawTitleBottom(void)
         rect(8, 132, 304, 54, 0x14375FFF);
         fittedText(160, 138, 284, 0.33f, C_GOLD, "CONTROLS", true);
         fittedText(160, 157, 284, 0.27f, C_TEXT, "PAD/D-PAD MOVE   A ATTACK   B/X/Y MOVES", true);
-        fittedText(160, 172, 284, 0.27f, C_TEXT, "L DODGE   R ULTIMATE   START PAUSE", true);
+        fittedText(160, 172, 284, 0.27f, C_TEXT, "L DODGE   R SKILL 4   START PAUSE", true);
         fittedText(10, 211, 300.0f, 0.29f, C_GOLD, "A / LEFT / RIGHT: CHANGE  B: BACK", false);
         break;
     }
@@ -1609,7 +1617,7 @@ static void drawTitleBottom(void)
         drawMenuRow(62, "ATTACK", "A CHAINS THREE BASIC HITS", NULL, false, false);
         drawMenuRow(90, "SPECIAL MOVES", "B / X / Y USE YOUR MOVES", NULL, false, false);
         drawMenuRow(118, "DODGE", "L DASHES AND AVOIDS DAMAGE", NULL, false, false);
-        drawMenuRow(146, "ULTIMATE", "R USES A FULL CHARGE", NULL, false, false);
+        drawMenuRow(146, "SKILL 4", "R USES THE FOURTH KOREAN SKILL", NULL, false, false);
         drawMenuRow(174, "TYPE AND STATUS", "MATCH TYPES; MOVES CAN BURN, SLOW OR STUN",
                     NULL, false, false);
         textAt(10, 211, 0.32f, C_GOLD, "B: BACK");
@@ -2011,7 +2019,7 @@ static void handleTouch(const touchPosition *touch)
     } else if (touch->py >= 148 && touch->py <= 197) {
         if (touch->px < 108) useSkill(2);
         else if (touch->px < 212) useDash();
-        else useUltimate();
+        else useSkill(3);
     }
 }
 
@@ -2049,32 +2057,10 @@ int main(int argc, char **argv)
         gfxExit();
         return 1;
     }
-    gArenaImage[0] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_stadium_idx);
-    gArenaImage[1] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_sky_pillar_idx);
-    gArenaImage[2] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_spear_pillar_idx);
-    gArenaImage[3] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_mt_coronet_idx);
-    gArenaImage[4] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_castle_idx);
-    gArenaImage[5] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_whirl_idx);
-    gArenaImage[6] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_unova_idx);
-    gArenaImage[7] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_kalos_idx);
-    gArenaImage[8] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_alola_idx);
-    gArenaImage[9] = C2D_SpriteSheetGetImage(
-        gEnvironmentAtlas, poke2d_background_indices_bg_arena_paldea_idx);
     gMenuBackground = C2D_SpriteSheetGetImage(
         gEnvironmentAtlas, poke2d_background_indices_bg_menu_background_idx);
     gGameLogo = C2D_SpriteSheetGetImage(
         gPoke2dAtlas, poke2d_sprite_indices_game_logo_idx);
-    for (int i = 0; i < ARENA_COUNT; ++i)
-        C3D_TexSetFilter(gArenaImage[i].tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gMenuBackground.tex, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetFilter(gGameLogo.tex, GPU_NEAREST, GPU_NEAREST);
     for (int i = 0; i < P2D_TEXT_COUNT; ++i) {
