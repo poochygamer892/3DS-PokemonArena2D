@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "arena_sfx.h"
+#include "arena2d_game_data.h"
 #include "poke2d_background_indices.h"
 #include "poke2d_font_indices.h"
 #include "poke2d_sprite_indices.h"
@@ -29,6 +30,7 @@ typedef struct {
     const char *name;
     const char *type;
     int speciesArt;
+    int rosterIndex;
     int maxHp;
     int hp;
 } Pokemon;
@@ -91,12 +93,12 @@ typedef struct {
 } AttackEffect;
 
 static const Pokemon kSpecies[6] = {
-    { "BULBASAUR", "GRASS / POISON", 0, 126, 126 },
-    { "CHARMANDER", "FIRE", 1, 119, 119 },
-    { "SQUIRTLE", "WATER", 2, 125, 125 },
-    { "PIKACHU", "ELECTRIC", 3, 110, 110 },
-    { "CHARIZARD", "FIRE / FLYING", 4, 150, 150 },
-    { "BLASTOISE", "WATER", 5, 160, 160 }
+    { "BULBASAUR", "GRASS / POISON", 0, -1, 126, 126 },
+    { "CHARMANDER", "FIRE", 1, -1, 119, 119 },
+    { "SQUIRTLE", "WATER", 2, -1, 125, 125 },
+    { "PIKACHU", "ELECTRIC", 3, -1, 110, 110 },
+    { "CHARIZARD", "FIRE / FLYING", 4, -1, 150, 150 },
+    { "BLASTOISE", "WATER", 5, -1, 160, 160 }
 };
 static Pokemon gTeam[2][TEAM_SIZE];
 static const char *const kMoveLabel[6][3] = {
@@ -382,6 +384,47 @@ static int faceDirection(float dx, float dy)
     return row < 0 ? row + 8 : row;
 }
 
+static Pokemon pokemonFromRoster(int rosterIndex)
+{
+    if (rosterIndex < 0 || rosterIndex >= ARENA2D_ROSTER_COUNT)
+        return kSpecies[0];
+    const Arena2dRosterEntry *entry = &kArena2dRoster[rosterIndex];
+    Pokemon pokemon;
+    pokemon.name = entry->name;
+    pokemon.type = entry->type1;
+    pokemon.speciesArt = entry->fallbackArt;
+    pokemon.rosterIndex = rosterIndex;
+    /* The source project balances on base stats.  This converts its HP base
+       to a compact, readable action-game life bar on the Old 2DS. */
+    pokemon.maxHp = 55 + entry->base[0];
+    pokemon.hp = pokemon.maxHp;
+    return pokemon;
+}
+
+static const char *rosterMoveName(const Pokemon *pokemon, int slot)
+{
+    if (!pokemon || pokemon->rosterIndex < 0 ||
+        pokemon->rosterIndex >= ARENA2D_ROSTER_COUNT || slot < 0 || slot >= 4)
+        return "MOVE";
+    const char *key = kArena2dRoster[pokemon->rosterIndex].moves[slot];
+    for (int i = 0; i < ARENA2D_MOVE_COUNT; ++i)
+        if (strcmp(kArena2dMoves[i].key, key) == 0)
+            return kArena2dMoves[i].name;
+    return key && key[0] ? key : "MOVE";
+}
+
+static const Arena2dMoveEntry *rosterMove(const Pokemon *pokemon, int slot)
+{
+    if (!pokemon || pokemon->rosterIndex < 0 ||
+        pokemon->rosterIndex >= ARENA2D_ROSTER_COUNT || slot < 0 || slot >= 4)
+        return NULL;
+    const char *key = kArena2dRoster[pokemon->rosterIndex].moves[slot];
+    for (int i = 0; i < ARENA2D_MOVE_COUNT; ++i)
+        if (strcmp(kArena2dMoves[i].key, key) == 0)
+            return &kArena2dMoves[i];
+    return NULL;
+}
+
 static void resetBattle(void)
 {
     static const int opponentOrder[6][3] = {
@@ -396,16 +439,16 @@ static void resetBattle(void)
             retainedHp[i] = gTeam[0][i].hp;
     int order = gGameMode == MODE_RUN ? (gRunFloor - 1) % 6 : 0;
     for (int i = 0; i < TEAM_SIZE; ++i) {
-        gTeam[0][i] = kSpecies[gPlayerSpecies[i]];
+        gTeam[0][i] = pokemonFromRoster(gPlayerSpecies[i]);
         gTeam[0][i].hp = gTeam[0][i].maxHp;
-        gTeam[1][i] = kSpecies[opponentOrder[order][i]];
+        gTeam[1][i] = pokemonFromRoster(opponentOrder[order][i]);
         gTeam[1][i].hp = gTeam[1][i].maxHp;
         if (carryRunHp)
             gTeam[0][i].hp = retainedHp[i] < gTeam[0][i].maxHp ?
                              retainedHp[i] : gTeam[0][i].maxHp;
     }
     if (gGameMode == MODE_STORY) {
-        gTeam[1][0] = kSpecies[3 + (gStoryStage % 3)];
+        gTeam[1][0] = pokemonFromRoster(3 + (gStoryStage % 3));
         gTeam[1][0].hp = gTeam[1][0].maxHp;
         for (int i = 1; i < TEAM_SIZE; ++i) {
             gTeam[0][i].hp = 0;
@@ -554,6 +597,57 @@ static AttackType speciesType(int species)
     }
 }
 
+static AttackType attackTypeFromName(const char *type)
+{
+    if (!type) return TYPE_NEUTRAL;
+    if (strcmp(type, "Fire") == 0) return TYPE_FIRE;
+    if (strcmp(type, "Water") == 0 || strcmp(type, "Ice") == 0) return TYPE_WATER;
+    if (strcmp(type, "Grass") == 0 || strcmp(type, "Bug") == 0) return TYPE_GRASS;
+    if (strcmp(type, "Electric") == 0) return TYPE_ELECTRIC;
+    return TYPE_NEUTRAL;
+}
+
+static u32 moveColorForType(AttackType type)
+{
+    switch (type) {
+    case TYPE_FIRE: return 0xF06A3DFF;
+    case TYPE_WATER: return 0x5EADEFFF;
+    case TYPE_GRASS: return 0x70C75DFF;
+    case TYPE_ELECTRIC: return 0xF3D148FF;
+    default: return 0xD9C5A2FF;
+    }
+}
+
+static MoveDefinition moveFromRoster(const Pokemon *pokemon, int slot)
+{
+    const Arena2dMoveEntry *source = rosterMove(pokemon, slot);
+    MoveDefinition move = { MOVE_LINE, 14, 3.0f, 220.0f,
+                            TYPE_NEUTRAL, STATUS_NONE, 0.0f, 0xD9C5A2FF };
+    if (!source) return move;
+    move.type = attackTypeFromName(source->type);
+    move.color = moveColorForType(move.type);
+    move.damage = source->power > 0 ? (int)clampf(source->power * 0.19f, 8.0f, 31.0f) : 0;
+    move.cooldown = source->cooldown > 0.0f ? source->cooldown : 4.0f;
+    move.range = source->range > 0.0f ? clampf(source->range * 0.50f, 60.0f, 290.0f) : 190.0f;
+    if (strcmp(source->kind, "melee") == 0) move.style = MOVE_MELEE;
+    else if (strcmp(source->kind, "dash") == 0) move.style = MOVE_DASH;
+    else if (strcmp(source->kind, "spread") == 0) move.style = MOVE_SPREAD;
+    else if (strcmp(source->kind, "quake") == 0 || strcmp(source->kind, "psy") == 0 ||
+             strcmp(source->kind, "sig") == 0 || strcmp(source->kind, "spec") == 0)
+        move.style = MOVE_BURST;
+    if (strcmp(source->effect, "burn") == 0 || strcmp(source->effect, "poison") == 0) {
+        move.status = STATUS_BURN;
+        move.statusTime = 3.0f;
+    } else if (strcmp(source->effect, "slow") == 0) {
+        move.status = STATUS_SLOW;
+        move.statusTime = 2.0f;
+    } else if (strcmp(source->effect, "stun") == 0 || strcmp(source->effect, "sleep") == 0) {
+        move.status = STATUS_STUN;
+        move.statusTime = 0.6f;
+    }
+    return move;
+}
+
 static float typeMultiplier(AttackType attack, AttackType defender)
 {
     if (attack == TYPE_NEUTRAL || defender == TYPE_NEUTRAL) return 1.0f;
@@ -575,12 +669,17 @@ static void combatHit(int attacker, int rawDamage, AttackType attackType,
                       float stun, u32 color)
 {
     int target = attacker == 0 ? 1 : 0;
-    int attackerSpecies = gTeam[attacker][gActive[attacker]].speciesArt;
-    int targetSpecies = gTeam[target][gActive[target]].speciesArt;
-    AttackType defenderType = speciesType(targetSpecies);
+    Pokemon *attackerPokemon = &gTeam[attacker][gActive[attacker]];
+    Pokemon *targetPokemon = &gTeam[target][gActive[target]];
+    AttackType defenderType = targetPokemon->rosterIndex >= 0 ?
+        attackTypeFromName(kArena2dRoster[targetPokemon->rosterIndex].type1) :
+        speciesType(targetPokemon->speciesArt);
+    AttackType attackerType = attackerPokemon->rosterIndex >= 0 ?
+        attackTypeFromName(kArena2dRoster[attackerPokemon->rosterIndex].type1) :
+        speciesType(attackerPokemon->speciesArt);
     float effectiveness = typeMultiplier(attackType, defenderType);
     float multiplier = effectiveness;
-    if (attackType != TYPE_NEUTRAL && attackType == speciesType(attackerSpecies))
+    if (attackType != TYPE_NEUTRAL && attackType == attackerType)
         multiplier *= 1.2f;
     int damage = (int)ceilf((float)rawDamage * multiplier);
     if (damage < 1) damage = 1;
@@ -649,8 +748,10 @@ static void fireProjectile(int side, const MoveDefinition *move,
 static void useMove(int side, int slot)
 {
     int opponent = side == 0 ? 1 : 0;
-    int species = gTeam[side][gActive[side]].speciesArt;
-    const MoveDefinition *move = &kMoves[species][slot];
+    Pokemon *activePokemon = &gTeam[side][gActive[side]];
+    const Arena2dMoveEntry *sourceMove = rosterMove(activePokemon, slot);
+    MoveDefinition resolvedMove = moveFromRoster(activePokemon, slot);
+    const MoveDefinition *move = &resolvedMove;
     Combatant *fighter = &gFighter[side];
     float startX = fighter->x;
     float startY = fighter->y;
@@ -658,6 +759,41 @@ static void useMove(int side, int slot)
     float dy = gFighter[opponent].y - startY;
     float distance = sqrtf(dx * dx + dy * dy);
     if (distance < 0.1f) return;
+    if (sourceMove && (strcmp(sourceMove->kind, "heal") == 0 ||
+                       strcmp(sourceMove->kind, "rest") == 0 ||
+                       strcmp(sourceMove->kind, "ring") == 0)) {
+        int heal = activePokemon->maxHp *
+                   (strcmp(sourceMove->kind, "rest") == 0 ? 35 : 22) / 100;
+        activePokemon->hp = activePokemon->hp + heal > activePokemon->maxHp ?
+                            activePokemon->maxHp : activePokemon->hp + heal;
+        spawnEffect(FX_BURST, fighter->x, fighter->y, fighter->x, fighter->y,
+                    0.40f, 0x68D987FF);
+        sfxPlay(SFX_HEAL);
+        return;
+    }
+    if (sourceMove && strcmp(sourceMove->kind, "buff") == 0) {
+        fighter->speedBoost = 5.0f;
+        spawnEffect(FX_BURST, fighter->x, fighter->y, fighter->x, fighter->y,
+                    0.36f, 0xE9C94BFF);
+        sfxPlay(SFX_MOVE);
+        return;
+    }
+    if (sourceMove && strcmp(sourceMove->kind, "mirror") == 0) {
+        fighter->dashIFrames = 0.85f;
+        spawnEffect(FX_DODGE, fighter->x, fighter->y, fighter->x, fighter->y,
+                    0.32f, 0xE986D1FF);
+        sfxPlay(SFX_MOVE);
+        return;
+    }
+    if (sourceMove && strcmp(sourceMove->kind, "blink") == 0) {
+        float travel = fminf(100.0f, fmaxf(0.0f, distance - 40.0f));
+        fighter->x = clampf(fighter->x + dx / distance * travel, 26.0f, 374.0f);
+        fighter->y = clampf(fighter->y + dy / distance * travel, 96.0f, 184.0f);
+        spawnEffect(FX_DODGE, startX, startY, fighter->x, fighter->y,
+                    0.28f, 0xB48AEBFF);
+        sfxPlay(SFX_DASH);
+        return;
+    }
     if (distance > move->range) return;
     sfxPlay(move->type == TYPE_FIRE ? SFX_FIRE : SFX_MOVE);
     dx /= distance;
@@ -744,7 +880,8 @@ static void performBasicAttack(int side)
     spawnEffect(FX_SLASH, fighter->x, fighter->y,
                 gFighter[opponent].x, gFighter[opponent].y,
                 0.2f, fighter->comboCount == 3 ? C_GOLD : 0xF4E8C8FF);
-    combatHit(side, damage, speciesType(gTeam[side][gActive[side]].speciesArt),
+    combatHit(side, damage,
+              attackTypeFromName(kArena2dRoster[gTeam[side][gActive[side]].rosterIndex].type1),
               STATUS_NONE, 0.0f, knockback[fighter->comboCount - 1],
               stun[fighter->comboCount - 1], 0xFFF1D2FF);
     if (fighter->comboCount == 3) fighter->comboTimer = 0.0f;
@@ -762,11 +899,11 @@ static void useBasic(int side)
 static void useSkill(int slot)
 {
     Combatant *fighter = &gFighter[0];
-    int species = gTeam[0][gActive[0]].speciesArt;
+    Pokemon *activePokemon = &gTeam[0][gActive[0]];
     if (gScene != SCENE_BATTLE || slot < 0 || slot > 2 ||
         fighter->skillCd[slot] > 0.0f || fighter->hitStun > 0.0f)
         return;
-    fighter->skillCd[slot] = kMoves[species][slot].cooldown;
+    fighter->skillCd[slot] = moveFromRoster(activePokemon, slot).cooldown;
     useMove(0, slot);
 }
 
@@ -800,11 +937,13 @@ static void useUltimate(void)
     if (c->ultimate < 100.0f || c->hitStun > 0.0f) return;
     c->ultimate = 0.0f;
     if (distance2(c->x, c->y, gFighter[1].x, gFighter[1].y) <= 285.0f * 285.0f) {
-        int species = gTeam[0][gActive[0]].speciesArt;
-        u32 color = kMoves[species][2].color;
+        Pokemon *activePokemon = &gTeam[0][gActive[0]];
+        MoveDefinition finalMove = moveFromRoster(activePokemon, 3);
+        u32 color = finalMove.color;
         spawnEffect(FX_BURST, gFighter[1].x, gFighter[1].y,
                     gFighter[1].x, gFighter[1].y, 0.55f, color);
-        combatHit(0, 45, speciesType(species), STATUS_NONE, 0.0f,
+        combatHit(0, finalMove.damage > 0 ? finalMove.damage + 14 : 35,
+                  finalMove.type, finalMove.status, finalMove.statusTime,
                   82.0f, 0.28f, color);
     }
 }
@@ -936,9 +1075,9 @@ static void updateBattle(float dt, u32 held, u32 down, const circlePosition *pad
 
     gCpuSkillCd -= dt;
     if (cpu->hitStun <= 0.0f && gCpuSkillCd <= 0.0f) {
-        int cpuSpecies = gTeam[1][gActive[1]].speciesArt;
         int slot = gActive[1] % 3;
-        if (d <= kMoves[cpuSpecies][slot].range)
+        MoveDefinition cpuMove = moveFromRoster(&gTeam[1][gActive[1]], slot);
+        if (d <= cpuMove.range)
             useMove(1, slot);
         gCpuSkillCd = skillDelay[gCpuDifficulty] + (float)slot * 0.45f;
     }
@@ -1196,11 +1335,11 @@ static void drawBottomBattle(void)
     textAt(9, 73, 0.25f, C_TEXT, ult);
     drawBar(113, 76, 198, 8, (int)gFighter[0].ultimate, 100);
     actionButton(8, 91, "A", basicLabel, gFighter[0].basicCd, 0x75A8F8FF);
-    actionButton(112, 91, "B", kMoveLabel[species][0], gFighter[0].skillCd[0], 0xF08C43FF);
-    actionButton(216, 91, "X", kMoveLabel[species][1], gFighter[0].skillCd[1], 0xF2B93AFF);
-    actionButton(8, 148, "Y", kMoveLabel[species][2], gFighter[0].skillCd[2], 0x9B85E9FF);
+    actionButton(112, 91, "B", rosterMoveName(activePokemon, 0), gFighter[0].skillCd[0], 0xF08C43FF);
+    actionButton(216, 91, "X", rosterMoveName(activePokemon, 1), gFighter[0].skillCd[1], 0xF2B93AFF);
+    actionButton(8, 148, "Y", rosterMoveName(activePokemon, 2), gFighter[0].skillCd[2], 0x9B85E9FF);
     actionButton(112, 148, "L", "DODGE", gFighter[0].dashCd, 0x5BD0D6FF);
-    actionButton(216, 148, "R", kUltimateLabel[species],
+    actionButton(216, 148, "R", rosterMoveName(activePokemon, 3),
                  fmaxf(0.0f, 100.0f - gFighter[0].ultimate), 0xD28BEEFF);
     fittedText(9, 207, 302.0f, 0.22f, C_MUTED, "CIRCLE PAD / D-PAD: MOVE   SELECT: SWITCH", false);
     fittedText(9, 222, 302.0f, 0.20f, C_MUTED, "A BASIC  B/X/Y MOVES  L DODGE  R ULTIMATE", false);
@@ -1314,7 +1453,7 @@ static void drawTitle(void)
         detail = modeDetail;
     } else if (gMenuPage == PAGE_TEAMS) {
         heading = "CUSTOMIZE YOUR TEAM";
-        detail = kSpecies[gPlayerSpecies[gTeamSlot]].name;
+        detail = kArena2dRoster[gPlayerSpecies[gTeamSlot]].name;
     } else if (gMenuPage == PAGE_ONLINE) {
         heading = "ONLINE";
         detail = "NOT AVAILABLE IN THIS 3DS BUILD";
@@ -1323,7 +1462,7 @@ static void drawTitle(void)
         detail = "CHOOSE AN ARENA AND TEXT SIZE";
     } else if (gMenuPage == PAGE_DEX) {
         heading = "POKEDEX";
-        detail = kSpecies[gMenuSelection % P2D_SPECIES_COUNT].name;
+        detail = kArena2dRoster[gMenuSelection % ARENA2D_ROSTER_COUNT].name;
     } else if (gMenuPage == PAGE_TUTORIAL) {
         heading = "HOW TO PLAY";
         detail = "MOVE, AIM, ATTACK AND DODGE";
@@ -1339,8 +1478,8 @@ static void drawTitle(void)
     C2D_DrawImageAt(gGameLogo, 53.0f, 4.0f, 0.12f, NULL, 1.0f, 1.0f);
     fittedText(200.0f, 119.0f, 372.0f, 0.43f, C_TEXT, heading, true);
     fittedText(200.0f, 142.0f, 372.0f, 0.28f, C_GOLD, detail, true);
-    drawPokemonAt(gPlayerSpecies[0], ANIM_IDLE, 6, 0, 62.0f, 216.0f);
-    drawPokemonAt(gPlayerSpecies[1], ANIM_IDLE, 2, 0, 338.0f, 216.0f);
+    drawPokemonAt(kArena2dRoster[gPlayerSpecies[0]].fallbackArt, ANIM_IDLE, 6, 0, 62.0f, 216.0f);
+    drawPokemonAt(kArena2dRoster[gPlayerSpecies[1]].fallbackArt, ANIM_IDLE, 2, 0, 338.0f, 216.0f);
 }
 
 static void drawTitleBottom(void)
@@ -1398,22 +1537,25 @@ static void drawTitleBottom(void)
             if (selected) rect(8, y, 4, 21, 0xFFFFFFFF);
             char label[36];
             snprintf(label, sizeof(label), "SLOT %d   %s", i + 1,
-                     kSpecies[gPlayerSpecies[i]].name);
+                     kArena2dRoster[gPlayerSpecies[i]].name);
             fittedText(17, y, 285, 0.39f,
                        selected ? 0x102849FF : C_TEXT, label, false);
         }
-        textAt(10, 108, 0.35f, C_GOLD, "ROSTER - TAP A POKEMON");
+        textAt(10, 108, 0.35f, C_GOLD, "AUTHORIZED ARENA-2D ROSTER");
         for (int i = 0; i < 6; ++i) {
+            int rosterIndex = (gPlayerSpecies[gTeamSlot] + i - 2 +
+                               ARENA2D_ROSTER_COUNT) % ARENA2D_ROSTER_COUNT;
             int row = i / 2, col = i % 2;
             float x = col == 0 ? 8.0f : 164.0f;
             float y = 125.0f + (float)row * 25.0f;
-            bool chosen = gPlayerSpecies[gTeamSlot] == i;
+            const Arena2dRosterEntry *entry = &kArena2dRoster[rosterIndex];
+            bool chosen = gPlayerSpecies[gTeamSlot] == rosterIndex;
             rect(x, y, 148, 22, chosen ? 0x345F8CFF : 0x21416CFF);
-            drawPokemonIcon(i, x + 2.0f, y + 2.0f, 18.0f);
+            drawPokemonIcon(entry->fallbackArt, x + 2.0f, y + 2.0f, 18.0f);
             fittedText(x + 29.0f, y + 3.0f, 112.0f, 0.34f,
-                       chosen ? C_GOLD : C_TEXT, kSpecies[i].name, false);
+                       chosen ? C_GOLD : C_TEXT, entry->name, false);
         }
-        fittedText(10, 205, 300.0f, 0.27f, C_MUTED, "UP/DOWN: SLOT  LEFT/RIGHT: POKEMON", false);
+        fittedText(10, 205, 300.0f, 0.27f, C_MUTED, "163 MONS  UP/DOWN: SLOT  LEFT/RIGHT: BROWSE", false);
         fittedText(10, 222, 300.0f, 0.29f, C_GOLD, "START: FIGHT  /  B: BACK", false);
         break;
     }
@@ -1448,13 +1590,18 @@ static void drawTitleBottom(void)
     }
     case PAGE_DEX:
         drawMenuHeader("POKEDEX");
-        for (int i = 0; i < P2D_SPECIES_COUNT; ++i) {
-            float y = 29.0f + i * 27.0f;
-            bool selected = i == gMenuSelection;
-            drawMenuRow(y, kSpecies[i].name, kSpecies[i].type, NULL, selected, false);
-            drawPokemonIcon(i, 284.0f, y + 1.0f, 19.0f);
+        {
+            int first = (gMenuSelection / 6) * 6;
+            for (int row = 0; row < 6 && first + row < ARENA2D_ROSTER_COUNT; ++row) {
+                int i = first + row;
+                const Arena2dRosterEntry *entry = &kArena2dRoster[i];
+                float y = 29.0f + row * 27.0f;
+                bool selected = i == gMenuSelection;
+                drawMenuRow(y, entry->name, entry->type1, NULL, selected, false);
+                drawPokemonIcon(entry->fallbackArt, 284.0f, y + 1.0f, 19.0f);
+            }
         }
-        fittedText(10, 211, 300.0f, 0.32f, C_GOLD, "UP/DOWN: BROWSE  B: BACK", false);
+        fittedText(10, 211, 300.0f, 0.32f, C_GOLD, "163 POKEMON  UP/DOWN: BROWSE  B: BACK", false);
         break;
     case PAGE_TUTORIAL:
         drawMenuHeader("HOW TO PLAY");
@@ -1583,8 +1730,9 @@ static void activatePlaySelection(void)
 static void selectPlayerSpecies(int slot, int species)
 {
     if (slot < 0 || slot >= TEAM_SIZE) return;
-    int candidate = (species + 6) % 6;
-    for (int tries = 0; tries < 6; ++tries) {
+    int candidate = (species % ARENA2D_ROSTER_COUNT + ARENA2D_ROSTER_COUNT) %
+                    ARENA2D_ROSTER_COUNT;
+    for (int tries = 0; tries < ARENA2D_ROSTER_COUNT; ++tries) {
         bool used = false;
         for (int i = 0; i < TEAM_SIZE; ++i)
             if (i != slot && gPlayerSpecies[i] == candidate) used = true;
@@ -1592,7 +1740,7 @@ static void selectPlayerSpecies(int slot, int species)
             gPlayerSpecies[slot] = candidate;
             return;
         }
-        candidate = (candidate + 1) % 6;
+        candidate = (candidate + 1) % ARENA2D_ROSTER_COUNT;
     }
 }
 
@@ -1714,8 +1862,8 @@ static void handleMenuInput(u32 down)
     case PAGE_CREDITS:
         break;
     case PAGE_DEX:
-        if (down & KEY_UP) gMenuSelection = (gMenuSelection + P2D_SPECIES_COUNT - 1) % P2D_SPECIES_COUNT;
-        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % P2D_SPECIES_COUNT;
+        if (down & KEY_UP) gMenuSelection = (gMenuSelection + ARENA2D_ROSTER_COUNT - 1) % ARENA2D_ROSTER_COUNT;
+        if (down & KEY_DOWN) gMenuSelection = (gMenuSelection + 1) % ARENA2D_ROSTER_COUNT;
         break;
     case PAGE_HOME:
     case PAGE_PLAY:
@@ -1819,16 +1967,19 @@ static void handleTouch(const touchPosition *touch)
             else if (touch->py >= 125 && touch->py < 200) {
                 int row = (touch->py - 125) / 25;
                 int col = touch->px >= 160 ? 1 : 0;
-                int species = row * 2 + col;
-                if (species >= 0 && species < 6) selectPlayerSpecies(gTeamSlot, species);
+                int species = (gPlayerSpecies[gTeamSlot] + row * 2 + col - 2 +
+                               ARENA2D_ROSTER_COUNT) % ARENA2D_ROSTER_COUNT;
+                selectPlayerSpecies(gTeamSlot, species);
             } else if (touch->py >= 216) startMode(MODE_QUICK);
         } else if (gMenuPage == PAGE_SETTINGS && touch->py >= 35 && touch->py < 122) {
             gMenuSelection = (touch->py - 35) / 29;
             if (gMenuSelection > 2) gMenuSelection = 2;
             adjustSetting(1);
         } else if (gMenuPage == PAGE_DEX && touch->py >= 29 && touch->py < 191) {
-            gMenuSelection = (touch->py - 29) / 27;
-            if (gMenuSelection >= P2D_SPECIES_COUNT) gMenuSelection = P2D_SPECIES_COUNT - 1;
+            int first = (gMenuSelection / 6) * 6;
+            gMenuSelection = first + (touch->py - 29) / 27;
+            if (gMenuSelection >= ARENA2D_ROSTER_COUNT)
+                gMenuSelection = ARENA2D_ROSTER_COUNT - 1;
         }
         return;
     }

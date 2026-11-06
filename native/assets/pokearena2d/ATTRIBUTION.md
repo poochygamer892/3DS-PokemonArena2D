@@ -34,3 +34,13 @@ repository does not claim ownership of these assets or grant rights beyond the
 licenses and permissions of their original owners. The 3DS project is not
 affiliated with, endorsed by, or an official port of Poké Arena 2D, PMDCollab,
 Nintendo, or The Pokémon Company.
+
+## Arena-2D source and game data
+
+`../arena2d_authorized/data/arena2d_game_data.json` is a data-only extraction
+of the authorized [`Freakyy-11/Arena-2D`](https://github.com/Freakyy-11/Arena-2D)
+source revision `79787a8`, captured on 2026-11-06. It supplies the 163-Pokémon
+roster, 242 moves, teams, difficulty profiles, arenas and mega forms used by
+the native port. `scripts/generate_arena2d_game_data.py` converts it to the C
+header compiled by the 3DS build. No music data, files or references are part
+of this snapshot.

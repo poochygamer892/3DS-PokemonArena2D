@@ -5,30 +5,38 @@ como inspiración inicial [Empress Pokémon 2D Arena](https://omniscye.itch.io/e
 y ahora usa [Poké Arena 2D](https://www.pokearena2d.com/) como referencia
 principal para los menús, el arte y el combate.
 
-Versión actual: **v0.7.0** (registrada en [`VERSION`](VERSION)). Los paquetes
+Versión actual: **v0.8.0** (registrada en [`VERSION`](VERSION)). Los paquetes
 generados llevan la versión en el nombre del archivo.
 
 La interfaz incluye Play, Online, Customize, Pokédex, Tutorial, Settings y
 Credits. Play abre League, VS CPU, 2 Players, Training y Arena. La build local
-tiene combate contra CPU, selección de equipos, seis Pokémon y diez arenas,
+tiene combate contra CPU, selección de equipos, los 163 Pokémon del catálogo
+autorizado de Arena-2D y diez arenas,
 con el logo, fondos de color mejorado y Pokémon animados. La interfaz usa Open
 Sans Regular rasterizada con suavizado en una textura RGBA8, sin el contorno
 grueso anterior. El combate incluye una cadena de tres golpes, ataques
 cuerpo a cuerpo, embestidas, áreas, rayos y ráfagas de proyectiles según el
 Pokémon; también hay retroceso, quemadura, lentitud, aturdimiento y ventajas de
 tipo. La cruceta y Circle Pad mueven al personaje y SELECT cambia Pokémon.
-La v0.7.0 incorpora diez arenas adaptadas para 3DS y efectos de interfaz,
-golpes, movimientos, cambio, curación y K.O. No incluye música.
+La v0.8.0 incorpora los datos de combate de Arena-2D (242 movimientos, 12
+equipos, cuatro dificultades y 28 megaevoluciones), diez arenas adaptadas para
+3DS y efectos de interfaz, golpes, movimientos, cambio, curación y K.O. No
+incluye música. Los movimientos de cada Pokémon muestran sus nombres, potencia,
+enfriamiento y categoría de la fuente autorizada; la implementación nativa
+traduce las categorías de acción (proyectil, área, embestida, curación, mejora,
+teletransporte y barrera) al sistema de combate de 3DS.
 
-Esta es una reimplementación nativa en C para 3DS; no empaqueta el juego web ni
-incluye su catálogo completo. La red y el modo de dos jugadores siguen sin
-implementarse. El combate, la progresión y el roster son versiones reducidas.
+Esta es una reimplementación nativa en C para 3DS; no empaqueta el juego web.
+La red y el modo de dos jugadores siguen sin implementarse. La Liga, Torre,
+desafíos, logros y comportamiento de IA del proyecto autorizado se están
+trasladando progresivamente al motor nativo.
 El ZIP de Windows facilitado para esta tarea es *Empress Pokémon Arena*, un
 juego separado; se consultó como referencia general, sin reutilizar su código
 ni sus recursos.
-Las texturas de arena y efectos de sonido de `Freakyy-11/Arena-2D` se usan con
-permiso del autor; sus créditos y licencias de recursos se conservan en la
-atribución del proyecto. Las pistas musicales de ese repositorio no se incluyen.
+El código, datos de combate, texturas de arena y efectos de sonido de
+`Freakyy-11/Arena-2D` se usan con permiso directo del autor para este port; sus
+créditos y licencias de recursos se conservan en la atribución del proyecto.
+Las pistas musicales de ese repositorio no se incluyen.
 La adaptación no está afiliada a los autores de los juegos, PMDCollab, Nintendo
 ni The Pokémon Company.
 
