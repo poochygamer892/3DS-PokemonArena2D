@@ -10,11 +10,11 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 
-# Keep two frames from each of the web game's original idle, walk, and attack
-# sheets. This includes every playable fighter while keeping the Old 2DS
-# texture atlas within its memory budget.
+# Keep the first eight original frames from each web animation.  Atlases are
+# still streamed per active combatant, so this preserves the source timing and
+# pixel art without keeping every fighter resident in Old 2DS VRAM.
 ANIMATIONS = ("Idle", "Walk", "Attack")
-MAX_FRAMES = 2
+MAX_FRAMES = 8
 DIRECTIONS = 8
 TEXT_FIRST = 32
 TEXT_LAST = 126
@@ -68,7 +68,7 @@ def write_metadata_header(path: Path, advances: dict[str, int], manifest: dict,
     out.extend(['#include "poke2d_icon_indices.h"', ""])
 
     out.append("static const float p2dSpeciesScale[P2D_SPECIES_COUNT] = {")
-    out.append("    " + ", ".join("0.550f" for _ in art_dexes) + ",")
+    out.append("    " + ", ".join("1.000f" for _ in art_dexes) + ",")
     out.append("};")
 
     for name, column, ctype in (("p2dFrameHeight", 2, "unsigned short"),
@@ -82,7 +82,7 @@ def write_metadata_header(path: Path, advances: dict[str, int], manifest: dict,
                 dim = clip["fh"] if column == 2 else clip["fw"]
                 if column == 4: dim //= 2
                 if column == 5: dim = clip["fh"]
-                values.append(str(dim * 3 // 4))
+                values.append(str(dim))
             out.append("    { " + ", ".join(values) + " },")
         out.append("};")
 
@@ -243,6 +243,17 @@ def prepare_logo(source: Path, output: Path) -> None:
     image.save(output, optimize=True)
 
 
+def prepare_web_ui_icons(source: Path, output: Path) -> None:
+    """Split the authorised web UI strip into its original 108px icons."""
+    strip = Image.open(source).convert("RGBA")
+    cell = strip.height
+    if cell <= 0 or strip.width % cell:
+        raise ValueError(f"Unexpected web UI strip size: {strip.size}")
+    for index in range(strip.width // cell):
+        icon = strip.crop((index * cell, 0, (index + 1) * cell, cell))
+        icon.save(output / f"ui_icon_{index:02d}.png", optimize=True)
+
+
 def group_name(index: int, pokemon: dict) -> str:
     return f"r{index:02d}_{pokemon['id']}"
 
@@ -305,6 +316,7 @@ def main() -> None:
                    background_dir / f"bg_arena_{arena}.png")
     make_stage(args.source / "web-title-dia.jpg", background_dir / "bg_web_title.png")
     prepare_logo(args.source / "logo.png", icon_dir / "game_logo.png")
+    prepare_web_ui_icons(args.source / "ui-iconos.png", icon_dir)
 
     roster_data = json.loads((args.source / "web-roster.json").read_text())
     roster = roster_data["roster"]
@@ -338,8 +350,6 @@ def main() -> None:
                         source_frame = min(frame, keep - 1)
                         cell = source.crop((source_frame * frame_w, direction * frame_h,
                                             (source_frame + 1) * frame_w, (direction + 1) * frame_h))
-                        resized = (max(1, cell.width * 3 // 4), max(1, cell.height * 3 // 4))
-                        cell = cell.resize(resized, Image.Resampling.NEAREST)
                         cell.save(group_dir / f"{prefix}_{animation.lower()}_d{direction}_f{frame}.png",
                                   optimize=True)
             if dex == pokemon["dex"]:
@@ -349,8 +359,6 @@ def main() -> None:
                     idle_path = args.source / "pmd" / dex / idle["file"].split("/")[-1]
                 sheet = Image.open(idle_path).convert("RGBA")
                 icon = sheet.crop((0, 0, idle["fw"], idle["fh"]))
-                icon = icon.resize((max(1, icon.width * 3 // 4),
-                                    max(1, icon.height * 3 // 4)), Image.Resampling.NEAREST)
                 icon.save(icon_dir / f"roster_{roster_index:02d}_{pokemon['id']}.png",
                           optimize=True)
 

@@ -448,7 +448,8 @@ static void drawPokemonAt(int side, int rosterIndex, int art, int formIndex,
     C2D_Image image = pokemonFrame(side, rosterIndex, formIndex,
                                    animation, direction, frame);
     if (!image.tex) return;
-    float scale = (4.0f / 3.0f) * p2dSpeciesScale[art] * formScale;
+    /* Frames are kept at their original web pixel resolution. */
+    float scale = p2dSpeciesScale[art] * formScale;
     float originX = (float)p2dOriginX[art][animation] * scale;
     float originY = (float)p2dOriginY[art][animation] * scale;
     C2D_DrawImageAt(image, pivotX - originX, pivotY - originY, 0.36f,
@@ -463,6 +464,21 @@ static void drawPokemonIcon(int rosterIndex, float x, float y, float height)
     C3D_TexSetFilter(image.tex, GPU_NEAREST, GPU_NEAREST);
     float sourceHeight = (float)p2dFrameHeight[art][ANIM_IDLE];
     float scale = sourceHeight > 0.0f ? height / sourceHeight : 1.0f;
+    C2D_DrawImageAt(image, x, y, 0.18f, NULL, scale, scale);
+}
+
+static void drawWebUiIcon(int icon, float x, float y, float height)
+{
+    static const unsigned short indices[] = {
+        poke2d_icon_indices_ui_icon_00_idx, poke2d_icon_indices_ui_icon_01_idx,
+        poke2d_icon_indices_ui_icon_02_idx, poke2d_icon_indices_ui_icon_03_idx,
+        poke2d_icon_indices_ui_icon_04_idx, poke2d_icon_indices_ui_icon_05_idx,
+        poke2d_icon_indices_ui_icon_06_idx
+    };
+    if (icon < 0 || icon >= (int)(sizeof(indices) / sizeof(indices[0]))) return;
+    C2D_Image image = C2D_SpriteSheetGetImage(gIconAtlas, indices[icon]);
+    C3D_TexSetFilter(image.tex, GPU_NEAREST, GPU_NEAREST);
+    float scale = height / 108.0f;
     C2D_DrawImageAt(image, x, y, 0.18f, NULL, scale, scale);
 }
 
@@ -1593,9 +1609,11 @@ static void drawHomeMenuBottom(void)
         "CONTROLS AND RULES", "ARENA AND TEXT SIZE", "PROJECT CREDITS"
     };
     drawMenuHeader("POKE ARENA 2D");
-    for (int i = 0; i < 7; ++i)
+    for (int i = 0; i < 7; ++i) {
         drawMenuRow(27.0f + (float)i * 25.0f, titles[i], subtitles[i],
                     NULL, gMenuSelection == i, false);
+        drawWebUiIcon(i, 17.0f, 30.0f + (float)i * 25.0f, 16.0f);
+    }
     textAt(10, 210, 0.33f, C_GOLD, "A / TOUCH: SELECT");
     textAt(10, 224, 0.27f, C_MUTED, "B: BACK");
 }
